@@ -1,190 +1,178 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
-import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/brand_progress_indicator.dart';
 import '../controllers/menu_dashboard_controller.dart';
-import '../widgets/qr_scan_chart.dart';
+import '../widgets/active_session_strip.dart';
+import '../widgets/dashboard_hero_card.dart';
+import '../widgets/qr_scan_analytics_card.dart';
+import '../widgets/quick_actions_grid.dart';
+import '../widgets/top_categories_list.dart';
+import '../widgets/unpublished_status_banner.dart';
 
+/// Enterprise Dashboard View displaying menu analytics, real-time scan metrics,
+/// active session statuses, and quick action shortcuts.
 class DashboardScreen extends GetView<MenuDashboardController> {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final shortestSide = MediaQuery.of(context).size.shortestSide;
-    final isTablet = shortestSide >= 550;
-
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
+        backgroundColor: AppColors.primary,
+        elevation: 0,
         title: Text(
           "Menu Dashboard",
-          style: AppTypography.h3.copyWith(fontWeight: FontWeight.w800),
+          style: GoogleFonts.nunito(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w800,
+            color: Colors.white,
+          ),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh_rounded, size: 24.sp, color: AppColors.text),
+            icon: Icon(Icons.refresh_rounded, size: 22.sp, color: Colors.white),
             onPressed: () => controller.fetchAnalytics(forceRefresh: true),
           ),
           IconButton(
-            icon: Icon(Icons.logout_rounded, size: 22.sp, color: AppColors.primary),
-            onPressed: () async {
-              // Perform logout redirection
-              Get.offAllNamed('/login');
-            },
+            icon: Icon(Icons.logout_rounded, size: 20.sp, color: Colors.white),
+            onPressed: () => Get.offAllNamed('/login'),
           ),
-          SShiftSpacer(width: 8.w),
+          SizedBox(width: 4.w),
         ],
       ),
       body: controller.obx(
         (state) {
-          if (state == null) return const SizedBox();
+          if (state == null) return const SizedBox.shrink();
 
           return SingleChildScrollView(
-            padding: EdgeInsets.all(AppDimensions.space16),
+            physics: const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Scan Metrics Header Card
-                Container(
-                  padding: EdgeInsets.all(AppDimensions.space16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(AppDimensions.radius12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Total Menu Scans",
-                                style: AppTypography.bodySmall,
-                              ),
-                              Text(
-                                state.totalScans.toString(),
-                                style: AppTypography.h1.copyWith(
-                                  fontSize: 32.sp,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          // Period Selector Row
-                          Row(
-                            children: ['today', 'week', 'month'].map((p) {
-                              final isSelected = controller.selectedPeriod.value == p;
-                              return GestureDetector(
-                                onTap: () => controller.changePeriod(p),
-                                child: Container(
-                                  margin: EdgeInsets.only(left: 6.w),
-                                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? AppColors.primaryLight : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(AppDimensions.radius16),
-                                  ),
-                                  child: Text(
-                                    p.toUpperCase(),
-                                    style: AppTypography.caption.copyWith(
-                                      color: isSelected ? AppColors.primary : AppColors.textSecondary,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16.h),
-                      // Line chart rendering scan values
-                      QrScanChart(
-                        data: state.scanChartData,
-                        labels: state.scanChartLabels,
-                      ),
-                    ],
-                  ),
+                // 1. Hero Card (Restaurant Branding & Items Summary)
+                DashboardHeroCard(
+                  restaurantName: state.restaurantName,
+                  restaurantUrl: state.restaurantUrl,
+                  isPublished: state.isPublished,
+                  totalItems: state.totalItems,
+                  availableItems: state.availableItems,
+                  hiddenItems: state.hiddenItems,
                 ),
-                SizedBox(height: 20.h),
 
-                // 2. Active Session / Templates Grid summary cards
-                Text("Management Overview", style: AppTypography.h3),
-                SizedBox(height: 10.h),
-                GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: isTablet ? 3 : 1,
-                  crossAxisSpacing: 12.w,
-                  mainAxisSpacing: 12.h,
-                  childAspectRatio: isTablet ? 1.6 : 2.5,
-                  children: [
-                    // Published Items Card
-                    _buildOverviewCard(
-                      icon: Icons.restaurant_menu_rounded,
-                      title: "Menu Items",
-                      value: "${state.publishedItemsCount} / ${state.totalItems}",
-                      subtitle: "Published / Total Items",
-                      color: AppColors.success,
-                      backgroundColor: AppColors.successLight,
+                // 2. Overlapping Scans Analytics Card
+                Transform.translate(
+                  offset: Offset(0, -28.h),
+                  child: Obx(
+                    () => QrScanAnalyticsCard(
+                      totalScans: state.qrScansToday,
+                      deltaPercent: state.qrScanDeltaPercent,
+                      activePeriod: controller.selectedPeriod.value,
+                      onPeriodChanged: (p) => controller.changePeriod(p),
+                      chartData: state.scanChartData,
+                      chartLabels: state.scanChartLabels,
+                      avgScansPerHour: state.avgScansPerHour,
+                      peakScans: state.peakScans,
+                      yesterdayScans: state.yesterdayScans,
                     ),
-                    // Theme Template Card
-                    _buildOverviewCard(
-                      icon: Icons.palette_outlined,
-                      title: "Active Template",
-                      value: state.activeTemplateName ?? "Default Theme",
-                      subtitle: "Current active visual layout",
-                      color: AppColors.primary,
-                      backgroundColor: AppColors.primaryLight,
-                    ),
-                    // Active Session Card
-                    _buildOverviewCard(
-                      icon: Icons.timer_outlined,
-                      title: "Menu Session",
-                      value: state.activeSessionName ?? "No Session",
-                      subtitle: "Active menu display session",
-                      color: AppColors.warning,
-                      backgroundColor: AppColors.warningLight,
-                    ),
-                  ],
+                  ),
                 ),
+
+                // Negative spacer compensation for Transform.translate
+                SizedBox(height: -20.h),
+
+                // 3. Unpublished Menu Changes Notice Banner
+                _buildSectionHeader("Menu Status"),
+                UnpublishedStatusBanner(
+                  count: state.unpublishedChangesCount,
+                  summary: state.unpublishedChangesSummary,
+                  onPublishPressed: () => Get.toNamed('/menu'),
+                ),
+
+                // 4. Active Session Strip
+                _buildSectionHeader("Active Now"),
+                ActiveSessionStrip(
+                  sessionName: state.activeSessionName,
+                  sessionTime: state.activeSessionTime,
+                ),
+
+                // 5. Top Categories Today
+                _buildSectionHeader(
+                  "Top Categories Today",
+                  actionText: "by views",
+                ),
+                TopCategoriesList(
+                  categories: state.topCategories,
+                ),
+
+                // 6. Quick Actions Grid
+                _buildSectionHeader("Quick Actions"),
+                QuickActionsGrid(
+                  onAllItemsPressed: () => Get.toNamed('/items'),
+                  onPublishPressed: () => Get.toNamed('/menu'),
+                  onQrSharePressed: () => Get.toNamed('/share'),
+                  onAddItemPressed: () => Get.toNamed('/items'),
+                ),
+
+                SizedBox(height: 24.h),
               ],
             ),
           );
         },
-        onLoading: const Center(child: CircularProgressIndicator()),
+        onLoading: const Center(
+          child: BrandProgressIndicator(size: 44, color: AppColors.primary),
+        ),
         onError: (err) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 48.sp, color: AppColors.primary),
-              SizedBox(height: 12.h),
-              Text(err ?? "Error loading dashboard", style: AppTypography.bodyLarge),
-              SizedBox(height: 12.h),
-              ElevatedButton(
-                onPressed: () => controller.fetchAnalytics(forceRefresh: true),
-                child: const Text("Retry"),
-              ),
-            ],
+          child: Padding(
+            padding: EdgeInsets.all(24.w),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline_rounded, size: 48.sp, color: AppColors.primary),
+                SizedBox(height: 12.h),
+                Text(
+                  err ?? "Failed to load dashboard data",
+                  style: GoogleFonts.nunito(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textDark,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 16.h),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppDimensions.radius8),
+                    ),
+                  ),
+                  onPressed: () => controller.fetchAnalytics(forceRefresh: true),
+                  child: const Text("Retry"),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-      // Aligned Bottom Navigation Placeholder
+      // Aligned Enterprise Bottom Navigation Bar
       bottomNavigationBar: Container(
-        height: AppDimensions.bottomNavHeight,
+        height: 60.h,
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border(top: BorderSide(color: AppColors.border, width: 1.h)),
+          border: Border(top: BorderSide(color: const Color(0xFFF3F4F6), width: 1.h)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, -2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -199,46 +187,29 @@ class DashboardScreen extends GetView<MenuDashboardController> {
     );
   }
 
-  Widget _buildOverviewCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required String subtitle,
-    required Color color,
-    required Color backgroundColor,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(AppDimensions.space16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radius12),
-        border: Border.all(color: AppColors.borderLight, width: 1.w),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildSectionHeader(String title, {String? actionText}) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 6.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(6.w),
-                decoration: BoxDecoration(
-                  color: backgroundColor,
-                  borderRadius: BorderRadius.circular(AppDimensions.radius4),
-                ),
-                child: Icon(icon, size: 18.sp, color: color),
-              ),
-              SShiftSpacer(width: 8.w),
-              Text(title, style: AppTypography.bodySmall),
-            ],
-          ),
-          SShiftSpacer(height: 8.h),
           Text(
-            value,
-            overflow: TextOverflow.ellipsis,
-            style: AppTypography.h3.copyWith(fontSize: 16.sp),
+            title,
+            style: GoogleFonts.nunito(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF111827),
+            ),
           ),
-          Text(subtitle, style: AppTypography.caption),
+          if (actionText != null)
+            Text(
+              actionText,
+              style: GoogleFonts.nunito(
+                fontSize: 11.sp,
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
         ],
       ),
     );
@@ -256,30 +227,20 @@ class DashboardScreen extends GetView<MenuDashboardController> {
         children: [
           Icon(
             icon,
-            size: AppDimensions.icon24,
-            color: isSelected ? AppColors.primary : AppColors.textMuted,
+            size: 22.sp,
+            color: isSelected ? AppColors.primary : const Color(0xFF9CA3AF),
           ),
+          SizedBox(height: 2.h),
           Text(
             label,
-            style: AppTypography.caption.copyWith(
-              color: isSelected ? AppColors.primary : AppColors.textMuted,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            style: GoogleFonts.nunito(
+              fontSize: 11.sp,
+              color: isSelected ? AppColors.primary : const Color(0xFF9CA3AF),
+              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
             ),
           ),
         ],
       ),
     );
-  }
-}
-
-// Simple spacer widget to avoid duplicate code
-class SShiftSpacer extends StatelessWidget {
-  final double? width;
-  final double? height;
-  const SShiftSpacer({super.key, this.width, this.height});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(width: width, height: height);
   }
 }

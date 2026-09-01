@@ -19,6 +19,7 @@ class AppColors {
 
   // Neutrals
   static const Color text = Color(0xFF0F0F0F);          // Ink900
+  static const Color textDark = Color(0xFF111827);      // Charcoal Dark
   static const Color textSecondary = Color(0xFF4B4B4B); // Ink600
   static const Color textMuted = Color(0xFF9A9A9A);     // Ink400
   static const Color border = Color(0xFFE4E4E2);        // Ink200
