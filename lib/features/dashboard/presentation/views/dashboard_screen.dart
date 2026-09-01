@@ -39,15 +39,18 @@ class DashboardScreen extends GetView<MenuDashboardController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Overlapping Hero + Analytics Stack
+                        // Overlapping Hero + Analytics Stack (Exact match of prototype HTML lines 392-414)
                         SizedBox(
                           width: double.infinity,
+                          height: 368.h,
                           child: Stack(
                             clipBehavior: Clip.none,
                             children: [
-                              // Hero Background Banner
-                              Padding(
-                                padding: EdgeInsets.only(bottom: 100.h),
+                              // Hero Background Banner with Title, Published Badge, and 3 Stat Boxes
+                              Positioned(
+                                top: 0,
+                                left: 0,
+                                right: 0,
                                 child: DashboardHeroCard(
                                   restaurantName: state.restaurantName,
                                   restaurantUrl: state.restaurantUrl,
@@ -57,11 +60,11 @@ class DashboardScreen extends GetView<MenuDashboardController> {
                                   hiddenItems: state.hiddenItems,
                                 ),
                               ),
-                              // Overlapping Scans Analytics Card
+                              // Overlapping Scans Analytics Card (Starts right below the 3 stat boxes at top: 114.h)
                               Positioned(
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
+                                left: 12.w,
+                                right: 12.w,
+                                top: 114.h,
                                 child: Obx(
                                   () => QrScanAnalyticsCard(
                                     totalScans: state.qrScansToday,

@@ -37,14 +37,14 @@ class QrScanAnalyticsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: margin ?? EdgeInsets.symmetric(horizontal: 12.w),
+      margin: margin,
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radius16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.09),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -125,11 +125,11 @@ class QrScanAnalyticsCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 14.h),
+          SizedBox(height: 12.h),
 
           // Cubic Curve Chart (fl_chart with fixed integer step interval)
           SizedBox(
-            height: 90.h,
+            height: 92.h,
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(
@@ -198,10 +198,12 @@ class QrScanAnalyticsCard extends StatelessWidget {
                     dotData: FlDotData(
                       show: true,
                       getDotPainter: (spot, percent, barData, index) {
+                        final isPeak = index == 4; // 6pm peak dot
                         return FlDotCirclePainter(
-                          radius: 2.5,
-                          color: AppColors.primary,
-                          strokeWidth: 0,
+                          radius: isPeak ? 4.0 : 2.5,
+                          color: isPeak ? Colors.white : AppColors.primary,
+                          strokeColor: AppColors.primary,
+                          strokeWidth: isPeak ? 2.0 : 0.0,
                         );
                       },
                     ),
@@ -221,7 +223,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 10.h),
 
           // Bottom Metric Footer Row (Matching Prototype HTML lines 480-495)
           Container(

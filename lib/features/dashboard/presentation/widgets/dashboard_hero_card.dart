@@ -25,7 +25,7 @@ class DashboardHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 52.h),
+      padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 44.h),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -37,6 +37,7 @@ class DashboardHeroCard extends StatelessWidget {
         ),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Top Row: Restaurant Identity & Published Status Pill
@@ -62,7 +63,7 @@ class DashboardHeroCard extends StatelessWidget {
                     Text(
                       restaurantUrl,
                       style: GoogleFonts.nunito(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withOpacity(0.85),
                         fontSize: 11.sp,
                         fontWeight: FontWeight.w500,
                       ),
@@ -106,7 +107,7 @@ class DashboardHeroCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 12.h),
 
           // 3 Top-Level Menu Stats Grid Cards
           Row(
@@ -126,13 +127,14 @@ class DashboardHeroCard extends StatelessWidget {
   Widget _buildStatCard(String label, String value) {
     return Expanded(
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 9.h, horizontal: 6.w),
+        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color: Colors.white.withOpacity(0.16),
           borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(color: Colors.white.withOpacity(0.2)),
+          border: Border.all(color: Colors.white.withOpacity(0.22)),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               value,
@@ -140,14 +142,15 @@ class DashboardHeroCard extends StatelessWidget {
                 color: Colors.white,
                 fontSize: 19.sp,
                 fontWeight: FontWeight.w800,
+                height: 1.1,
               ),
             ),
             SizedBox(height: 1.h),
             Text(
               label,
               style: GoogleFonts.nunito(
-                color: Colors.white.withOpacity(0.8),
-                fontSize: 10.sp,
+                color: Colors.white.withOpacity(0.85),
+                fontSize: 9.5.sp,
                 fontWeight: FontWeight.w600,
               ),
               maxLines: 1,
