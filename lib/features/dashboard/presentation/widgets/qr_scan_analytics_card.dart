@@ -7,7 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 
 /// Enterprise Analytics Card displaying QR scans metrics, period filters,
-/// cubic curve charts via fl_chart, and summary metric footers.
+/// cubic curve charts via fl_chart, and summary metric footers matching prototype HTML specs.
 class QrScanAnalyticsCard extends StatelessWidget {
   final int totalScans;
   final double deltaPercent;
@@ -15,7 +15,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
   final ValueChanged<String> onPeriodChanged;
   final List<int> chartData;
   final List<String> chartLabels;
-  final int avgScansPerHour;
+  final String peakHour;
   final int peakScans;
   final int yesterdayScans;
   final EdgeInsetsGeometry? margin;
@@ -28,7 +28,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
     required this.onPeriodChanged,
     required this.chartData,
     required this.chartLabels,
-    required this.avgScansPerHour,
+    this.peakHour = "6–7 PM",
     required this.peakScans,
     required this.yesterdayScans,
     this.margin,
@@ -53,80 +53,83 @@ class QrScanAnalyticsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row: Scans Count + Period Selector Pills
+          // Header Row: Scans Count + Compact Period Selector Pills
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.qr_code_scanner_rounded,
-                        size: 14.sp,
-                        color: AppColors.primary,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        "QR Scans Today",
-                        style: GoogleFonts.nunito(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textMuted,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.qr_code_scanner_rounded,
+                          size: 13.sp,
+                          color: AppColors.primary,
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4.h),
-                  Text(
-                    totalScans.toString(),
-                    style: GoogleFonts.nunito(
-                      fontSize: 26.sp,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textDark,
-                      height: 1.0,
+                        SizedBox(width: 4.w),
+                        Text(
+                          "QR Scans Today",
+                          style: GoogleFonts.nunito(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.trending_up_rounded,
-                        size: 14.sp,
-                        color: const Color(0xFF16A34A),
+                    SizedBox(height: 3.h),
+                    Text(
+                      totalScans.toString(),
+                      style: GoogleFonts.nunito(
+                        fontSize: 28.sp,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textDark,
+                        height: 1.0,
                       ),
-                      SizedBox(width: 2.w),
-                      Text(
-                        "↑ ${deltaPercent.toInt()}% vs yesterday",
-                        style: GoogleFonts.nunito(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w700,
+                    ),
+                    SizedBox(height: 3.h),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.trending_up_rounded,
+                          size: 13.sp,
                           color: const Color(0xFF16A34A),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        SizedBox(width: 2.w),
+                        Text(
+                          "↑ ${deltaPercent.toInt()}% vs yesterday",
+                          style: GoogleFonts.nunito(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF16A34A),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              // Period Selector Pills
+              // Compact Period Selector Pills
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   _buildPeriodPill("today", "Today"),
-                  SizedBox(width: 4.w),
+                  SizedBox(width: 3.w),
                   _buildPeriodPill("week", "Week"),
-                  SizedBox(width: 4.w),
+                  SizedBox(width: 3.w),
                   _buildPeriodPill("month", "Month"),
                 ],
               ),
             ],
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 14.h),
 
-          // Cubic Curve Chart (fl_chart)
+          // Cubic Curve Chart (fl_chart with fixed integer step interval)
           SizedBox(
-            height: 95.h,
+            height: 90.h,
             child: LineChart(
               LineChartData(
                 gridData: FlGridData(
@@ -143,13 +146,13 @@ class QrScanAnalyticsCard extends StatelessWidget {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: 24,
+                      reservedSize: 22,
                       getTitlesWidget: (value, meta) {
                         return Text(
                           value.toInt().toString(),
                           style: GoogleFonts.nunito(
-                            fontSize: 9.sp,
-                            color: Colors.grey.shade400,
+                            fontSize: 8.sp,
+                            color: const Color(0xFFD1D5DB),
                           ),
                         );
                       },
@@ -159,15 +162,20 @@ class QrScanAnalyticsCard extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 18,
+                      interval: 1.0, // Fixed 1.0 step prevents duplicate labels
                       getTitlesWidget: (value, meta) {
                         final idx = value.toInt();
                         if (idx >= 0 && idx < chartLabels.length) {
-                          return Text(
-                            chartLabels[idx],
-                            style: GoogleFonts.nunito(
-                              fontSize: 9.sp,
-                              color: Colors.grey.shade500,
-                              fontWeight: FontWeight.w600,
+                          final isNow = chartLabels[idx].toLowerCase() == 'now';
+                          return Padding(
+                            padding: EdgeInsets.only(top: 4.h),
+                            child: Text(
+                              chartLabels[idx],
+                              style: GoogleFonts.nunito(
+                                fontSize: 9.sp,
+                                color: isNow ? AppColors.primary : const Color(0xFF9CA3AF),
+                                fontWeight: isNow ? FontWeight.w700 : FontWeight.w600,
+                              ),
                             ),
                           );
                         }
@@ -185,17 +193,26 @@ class QrScanAnalyticsCard extends StatelessWidget {
                     isCurved: true,
                     curveSmoothness: 0.35,
                     color: AppColors.primary,
-                    barWidth: 2.5,
+                    barWidth: 2.0,
                     isStrokeCapRound: true,
-                    dotData: const FlDotData(show: false),
+                    dotData: FlDotData(
+                      show: true,
+                      getDotPainter: (spot, percent, barData, index) {
+                        return FlDotCirclePainter(
+                          radius: 2.5,
+                          color: AppColors.primary,
+                          strokeWidth: 0,
+                        );
+                      },
+                    ),
                     belowBarData: BarAreaData(
                       show: true,
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          AppColors.primary.withOpacity(0.25),
-                          AppColors.primary.withOpacity(0.0),
+                          AppColors.primary.withOpacity(0.15),
+                          AppColors.primary.withOpacity(0.01),
                         ],
                       ),
                     ),
@@ -206,7 +223,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
 
-          // Bottom Metric Footer Row
+          // Bottom Metric Footer Row (Matching Prototype HTML lines 480-495)
           Container(
             padding: EdgeInsets.symmetric(vertical: 8.h),
             decoration: const BoxDecoration(
@@ -214,7 +231,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                _buildSummaryStat("Average", "$avgScansPerHour/hr"),
+                _buildSummaryStat("Peak Hour", peakHour),
                 _buildSummaryDivider(),
                 _buildSummaryStat("Peak Scans", peakScans.toString()),
                 _buildSummaryDivider(),
@@ -232,8 +249,8 @@ class QrScanAnalyticsCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => onPeriodChanged(id),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : const Color(0xFFF3F4F6),
           borderRadius: BorderRadius.circular(AppDimensions.radius8),
@@ -241,7 +258,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
         child: Text(
           label,
           style: GoogleFonts.nunito(
-            fontSize: 11.sp,
+            fontSize: 10.sp,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
             color: isSelected ? Colors.white : const Color(0xFF4B5563),
           ),

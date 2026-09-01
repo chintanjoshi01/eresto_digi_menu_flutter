@@ -30,7 +30,7 @@ class DashboardModel with _$DashboardModel {
     required int hiddenItems,
     required int qrScansToday,
     required double qrScanDeltaPercent,
-    required int avgScansPerHour,
+    required String peakHour,
     required int peakScans,
     required int yesterdayScans,
     required List<int> scanChartData,

@@ -36,7 +36,7 @@ _$DashboardModelImpl _$$DashboardModelImplFromJson(Map<String, dynamic> json) =>
       hiddenItems: (json['hiddenItems'] as num).toInt(),
       qrScansToday: (json['qrScansToday'] as num).toInt(),
       qrScanDeltaPercent: (json['qrScanDeltaPercent'] as num).toDouble(),
-      avgScansPerHour: (json['avgScansPerHour'] as num).toInt(),
+      peakHour: json['peakHour'] as String,
       peakScans: (json['peakScans'] as num).toInt(),
       yesterdayScans: (json['yesterdayScans'] as num).toInt(),
       scanChartData: (json['scanChartData'] as List<dynamic>)
@@ -65,7 +65,7 @@ Map<String, dynamic> _$$DashboardModelImplToJson(
       'hiddenItems': instance.hiddenItems,
       'qrScansToday': instance.qrScansToday,
       'qrScanDeltaPercent': instance.qrScanDeltaPercent,
-      'avgScansPerHour': instance.avgScansPerHour,
+      'peakHour': instance.peakHour,
       'peakScans': instance.peakScans,
       'yesterdayScans': instance.yesterdayScans,
       'scanChartData': instance.scanChartData,

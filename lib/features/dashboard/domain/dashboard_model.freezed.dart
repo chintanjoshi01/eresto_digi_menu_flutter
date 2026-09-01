@@ -244,7 +244,7 @@ mixin _$DashboardModel {
   int get hiddenItems => throw _privateConstructorUsedError;
   int get qrScansToday => throw _privateConstructorUsedError;
   double get qrScanDeltaPercent => throw _privateConstructorUsedError;
-  int get avgScansPerHour => throw _privateConstructorUsedError;
+  String get peakHour => throw _privateConstructorUsedError;
   int get peakScans => throw _privateConstructorUsedError;
   int get yesterdayScans => throw _privateConstructorUsedError;
   List<int> get scanChartData => throw _privateConstructorUsedError;
@@ -277,7 +277,7 @@ abstract class $DashboardModelCopyWith<$Res> {
       int hiddenItems,
       int qrScansToday,
       double qrScanDeltaPercent,
-      int avgScansPerHour,
+      String peakHour,
       int peakScans,
       int yesterdayScans,
       List<int> scanChartData,
@@ -310,7 +310,7 @@ class _$DashboardModelCopyWithImpl<$Res, $Val extends DashboardModel>
     Object? hiddenItems = null,
     Object? qrScansToday = null,
     Object? qrScanDeltaPercent = null,
-    Object? avgScansPerHour = null,
+    Object? peakHour = null,
     Object? peakScans = null,
     Object? yesterdayScans = null,
     Object? scanChartData = null,
@@ -354,10 +354,10 @@ class _$DashboardModelCopyWithImpl<$Res, $Val extends DashboardModel>
           ? _value.qrScanDeltaPercent
           : qrScanDeltaPercent // ignore: cast_nullable_to_non_nullable
               as double,
-      avgScansPerHour: null == avgScansPerHour
-          ? _value.avgScansPerHour
-          : avgScansPerHour // ignore: cast_nullable_to_non_nullable
-              as int,
+      peakHour: null == peakHour
+          ? _value.peakHour
+          : peakHour // ignore: cast_nullable_to_non_nullable
+              as String,
       peakScans: null == peakScans
           ? _value.peakScans
           : peakScans // ignore: cast_nullable_to_non_nullable
@@ -415,7 +415,7 @@ abstract class _$$DashboardModelImplCopyWith<$Res>
       int hiddenItems,
       int qrScansToday,
       double qrScanDeltaPercent,
-      int avgScansPerHour,
+      String peakHour,
       int peakScans,
       int yesterdayScans,
       List<int> scanChartData,
@@ -446,7 +446,7 @@ class __$$DashboardModelImplCopyWithImpl<$Res>
     Object? hiddenItems = null,
     Object? qrScansToday = null,
     Object? qrScanDeltaPercent = null,
-    Object? avgScansPerHour = null,
+    Object? peakHour = null,
     Object? peakScans = null,
     Object? yesterdayScans = null,
     Object? scanChartData = null,
@@ -490,10 +490,10 @@ class __$$DashboardModelImplCopyWithImpl<$Res>
           ? _value.qrScanDeltaPercent
           : qrScanDeltaPercent // ignore: cast_nullable_to_non_nullable
               as double,
-      avgScansPerHour: null == avgScansPerHour
-          ? _value.avgScansPerHour
-          : avgScansPerHour // ignore: cast_nullable_to_non_nullable
-              as int,
+      peakHour: null == peakHour
+          ? _value.peakHour
+          : peakHour // ignore: cast_nullable_to_non_nullable
+              as String,
       peakScans: null == peakScans
           ? _value.peakScans
           : peakScans // ignore: cast_nullable_to_non_nullable
@@ -546,7 +546,7 @@ class _$DashboardModelImpl implements _DashboardModel {
       required this.hiddenItems,
       required this.qrScansToday,
       required this.qrScanDeltaPercent,
-      required this.avgScansPerHour,
+      required this.peakHour,
       required this.peakScans,
       required this.yesterdayScans,
       required final List<int> scanChartData,
@@ -580,7 +580,7 @@ class _$DashboardModelImpl implements _DashboardModel {
   @override
   final double qrScanDeltaPercent;
   @override
-  final int avgScansPerHour;
+  final String peakHour;
   @override
   final int peakScans;
   @override
@@ -619,7 +619,7 @@ class _$DashboardModelImpl implements _DashboardModel {
 
   @override
   String toString() {
-    return 'DashboardModel(restaurantName: $restaurantName, restaurantUrl: $restaurantUrl, isPublished: $isPublished, totalItems: $totalItems, availableItems: $availableItems, hiddenItems: $hiddenItems, qrScansToday: $qrScansToday, qrScanDeltaPercent: $qrScanDeltaPercent, avgScansPerHour: $avgScansPerHour, peakScans: $peakScans, yesterdayScans: $yesterdayScans, scanChartData: $scanChartData, scanChartLabels: $scanChartLabels, unpublishedChangesCount: $unpublishedChangesCount, unpublishedChangesSummary: $unpublishedChangesSummary, activeSessionName: $activeSessionName, activeSessionTime: $activeSessionTime, topCategories: $topCategories)';
+    return 'DashboardModel(restaurantName: $restaurantName, restaurantUrl: $restaurantUrl, isPublished: $isPublished, totalItems: $totalItems, availableItems: $availableItems, hiddenItems: $hiddenItems, qrScansToday: $qrScansToday, qrScanDeltaPercent: $qrScanDeltaPercent, peakHour: $peakHour, peakScans: $peakScans, yesterdayScans: $yesterdayScans, scanChartData: $scanChartData, scanChartLabels: $scanChartLabels, unpublishedChangesCount: $unpublishedChangesCount, unpublishedChangesSummary: $unpublishedChangesSummary, activeSessionName: $activeSessionName, activeSessionTime: $activeSessionTime, topCategories: $topCategories)';
   }
 
   @override
@@ -643,8 +643,8 @@ class _$DashboardModelImpl implements _DashboardModel {
                 other.qrScansToday == qrScansToday) &&
             (identical(other.qrScanDeltaPercent, qrScanDeltaPercent) ||
                 other.qrScanDeltaPercent == qrScanDeltaPercent) &&
-            (identical(other.avgScansPerHour, avgScansPerHour) ||
-                other.avgScansPerHour == avgScansPerHour) &&
+            (identical(other.peakHour, peakHour) ||
+                other.peakHour == peakHour) &&
             (identical(other.peakScans, peakScans) ||
                 other.peakScans == peakScans) &&
             (identical(other.yesterdayScans, yesterdayScans) ||
@@ -679,7 +679,7 @@ class _$DashboardModelImpl implements _DashboardModel {
       hiddenItems,
       qrScansToday,
       qrScanDeltaPercent,
-      avgScansPerHour,
+      peakHour,
       peakScans,
       yesterdayScans,
       const DeepCollectionEquality().hash(_scanChartData),
@@ -715,7 +715,7 @@ abstract class _DashboardModel implements DashboardModel {
           required final int hiddenItems,
           required final int qrScansToday,
           required final double qrScanDeltaPercent,
-          required final int avgScansPerHour,
+          required final String peakHour,
           required final int peakScans,
           required final int yesterdayScans,
           required final List<int> scanChartData,
@@ -747,7 +747,7 @@ abstract class _DashboardModel implements DashboardModel {
   @override
   double get qrScanDeltaPercent;
   @override
-  int get avgScansPerHour;
+  String get peakHour;
   @override
   int get peakScans;
   @override

@@ -58,9 +58,9 @@ class DashboardRepositoryImpl implements DashboardRepository {
       chartData = [1200, 1500, 1800, 2400];
       chartLabels = ['W1', 'W2', 'W3', 'W4'];
     } else {
-      // today
-      chartData = [12, 28, 45, 62, 50, 38, 12];
-      chartLabels = ['10am', '12pm', '2pm', '4pm', '6pm', '8pm', '10pm'];
+      // today (6 points matching exact prototype: 6am, 9am, 12pm, 3pm, 6pm, Now)
+      chartData = [10, 24, 42, 60, 78, 52];
+      chartLabels = ['6am', '9am', '12pm', '3pm', '6pm', 'Now'];
     }
 
     final model = DashboardModel(
@@ -72,7 +72,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
       hiddenItems: 38,
       qrScansToday: 247,
       qrScanDeltaPercent: 18.0,
-      avgScansPerHour: 31,
+      peakHour: "6–7 PM",
       peakScans: 38,
       yesterdayScans: 209,
       scanChartData: chartData,

@@ -70,7 +70,7 @@ class DashboardScreen extends GetView<MenuDashboardController> {
                                     onPeriodChanged: (p) => controller.changePeriod(p),
                                     chartData: state.scanChartData,
                                     chartLabels: state.scanChartLabels,
-                                    avgScansPerHour: state.avgScansPerHour,
+                                    peakHour: state.peakHour,
                                     peakScans: state.peakScans,
                                     yesterdayScans: state.yesterdayScans,
                                   ),
