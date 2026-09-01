@@ -128,7 +128,7 @@ class LoginScreen extends GetView<LoginController> {
                             child: Column(
                               children: [
                                 SvgPicture.asset(
-                                  'assets/images/eresto-pos-logo.svg',
+                                  'assets/images/eresto-pos-logo.png',
                                   height: 40.h,
                                   placeholderBuilder: (context) => Text(
                                     "eResto",

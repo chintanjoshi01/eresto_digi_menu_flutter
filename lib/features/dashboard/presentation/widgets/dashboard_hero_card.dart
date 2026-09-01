@@ -2,10 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/theme/app_dimensions.dart';
-
-/// Enterprise Dashboard Hero Component displaying restaurant identity,
-/// live publishing status badge, and key item counters.
+/// Enterprise Dashboard Hero Component matching eresto_menu_mobile_v5.html prototype.
 class DashboardHeroCard extends StatelessWidget {
   final String restaurantName;
   final String restaurantUrl;
@@ -28,25 +25,21 @@ class DashboardHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 42.h),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+      padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 52.h),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: [
-            Color(0xFFC1272D),
             Color(0xFF9E1F24),
+            Color(0xFFC1272D),
           ],
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(AppDimensions.radius20),
-          bottomRight: Radius.circular(AppDimensions.radius20),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Restaurant Name & Live Status Badge
+          // Top Row: Restaurant Identity & Published Status Pill
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +52,7 @@ class DashboardHeroCard extends StatelessWidget {
                       restaurantName,
                       style: GoogleFonts.nunito(
                         color: Colors.white,
-                        fontSize: 20.sp,
+                        fontSize: 17.sp,
                         fontWeight: FontWeight.w800,
                       ),
                       maxLines: 1,
@@ -69,8 +62,8 @@ class DashboardHeroCard extends StatelessWidget {
                     Text(
                       restaurantUrl,
                       style: GoogleFonts.nunito(
-                        color: Colors.white.withOpacity(0.85),
-                        fontSize: 12.sp,
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.w500,
                       ),
                       maxLines: 1,
@@ -79,14 +72,14 @@ class DashboardHeroCard extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(width: 12.w),
-              // Published Status Pill Badge
+              SizedBox(width: 8.w),
+              // Live Pill Badge
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(AppDimensions.radius12),
-                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(color: Colors.white.withOpacity(0.35)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -99,12 +92,12 @@ class DashboardHeroCard extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                     ),
-                    SizedBox(width: 6.w),
+                    SizedBox(width: 4.w),
                     Text(
                       isPublished ? "Published" : "Draft",
                       style: GoogleFonts.nunito(
                         color: Colors.white,
-                        fontSize: 11.sp,
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -113,16 +106,16 @@ class DashboardHeroCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: 18.h),
+          SizedBox(height: 16.h),
 
-          // 3-Column Items Stats Row
+          // 3 Top-Level Menu Stats Grid Cards
           Row(
             children: [
-              _buildStatColumn("Total Items", totalItems.toString()),
-              _buildDivider(),
-              _buildStatColumn("Available", availableItems.toString()),
-              _buildDivider(),
-              _buildStatColumn("Hidden", hiddenItems.toString()),
+              _buildStatCard("Total Items", totalItems.toString()),
+              SizedBox(width: 8.w),
+              _buildStatCard("Available", availableItems.toString()),
+              SizedBox(width: 8.w),
+              _buildStatCard("Hidden", hiddenItems.toString()),
             ],
           ),
         ],
@@ -130,37 +123,39 @@ class DashboardHeroCard extends StatelessWidget {
     );
   }
 
-  Widget _buildStatColumn(String label, String value) {
+  Widget _buildStatCard(String label, String value) {
     return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: GoogleFonts.nunito(
-              color: Colors.white,
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w900,
+      child: Container(
+        padding: EdgeInsets.symmetric(vertical: 9.h, horizontal: 6.w),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            Text(
+              value,
+              style: GoogleFonts.nunito(
+                color: Colors.white,
+                fontSize: 19.sp,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-          ),
-          SizedBox(height: 2.h),
-          Text(
-            label,
-            style: GoogleFonts.nunito(
-              color: Colors.white.withOpacity(0.8),
-              fontSize: 11.sp,
-              fontWeight: FontWeight.w600,
+            SizedBox(height: 1.h),
+            Text(
+              label,
+              style: GoogleFonts.nunito(
+                color: Colors.white.withOpacity(0.8),
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildDivider() {
-    return Container(
-      width: 1.w,
-      height: 24.h,
-      color: Colors.white.withOpacity(0.2),
     );
   }
 }

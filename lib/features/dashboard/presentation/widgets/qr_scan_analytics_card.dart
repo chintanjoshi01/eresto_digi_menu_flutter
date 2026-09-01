@@ -37,7 +37,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: margin ?? EdgeInsets.only(left: 14.w, right: 14.w, top: -28.h),
+      margin: margin ?? EdgeInsets.symmetric(horizontal: 12.w),
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: Colors.white,
