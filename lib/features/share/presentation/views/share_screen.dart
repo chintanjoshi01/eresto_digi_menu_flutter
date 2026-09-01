@@ -457,15 +457,18 @@ class ShareScreen extends GetView<ShareController> {
                 padding: EdgeInsets.all(6.w),
               ),
               SizedBox(width: 8.w),
-              CircleAvatar(
-                radius: 14.r,
-                backgroundColor: AppColors.primaryLight,
-                child: Text(
-                  "CI",
-                  style: GoogleFonts.nunito(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.primary,
+              InkWell(
+                onTap: () => Get.toNamed('/profile'),
+                child: CircleAvatar(
+                  radius: 14.r,
+                  backgroundColor: AppColors.primaryLight,
+                  child: Text(
+                    "CI",
+                    style: GoogleFonts.nunito(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
                   ),
                 ),
               ),

@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/brand_progress_indicator.dart';
 import '../controllers/login_controller.dart';
 
+/// Enterprise Responsive Login Screen supporting Mobile, POS Terminals, and Desktop layouts.
 class LoginScreen extends GetView<LoginController> {
   const LoginScreen({super.key});
 
@@ -22,136 +23,143 @@ class LoginScreen extends GetView<LoginController> {
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Center(
-          child: Container(
-            width: isTablet ? 900.w : 340.w,
-            height: isTablet ? 560.h : null,
-            margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(AppDimensions.radius16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.06),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                )
-              ],
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isTablet ? 920.w : 380.w,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(AppDimensions.radius16),
-              child: isTablet
-                  ? Row(
-                      children: [
-                        // --- LEFT SIDE (Brand Banner & Animated Illustration) ---
-                        Expanded(
-                          child: Container(
-                            color: const Color(0xFFFAFAFA),
-                            padding: EdgeInsets.all(36.w),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                // Brand Logo
-                                SvgPicture.asset(
-                                  'assets/images/eresto-pos-logo.png',
-                                  height: 48.h,
-                                  placeholderBuilder: (context) => Text(
-                                    "eResto",
-                                    style: GoogleFonts.nunito(
-                                      color: AppColors.primary,
-                                      fontSize: 32.sp,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 12.h),
-                                Text(
-                                  "Manage Resto From Mobile",
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.nunito(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 16.sp,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                SizedBox(height: 32.h),
-                                // Floating Animated Vector Illustration
-                                Flexible(
-                                  child: TweenAnimationBuilder<double>(
-                                    duration: const Duration(milliseconds: 900),
-                                    tween: Tween(begin: 0.0, end: 1.0),
-                                    curve: Curves.easeOutCubic,
-                                    builder: (context, value, child) {
-                                      return Transform.translate(
-                                        offset: Offset(0, 24 * (1 - value)),
-                                        child: Opacity(opacity: value, child: child),
-                                      );
-                                    },
-                                    child: SvgPicture.asset(
-                                      'assets/images/left_login.svg',
-                                      height: 240.h,
-                                      fit: BoxFit.contain,
-                                      placeholderBuilder: (context) => Icon(
-                                        Icons.restaurant_rounded,
-                                        size: 100.sp,
-                                        color: AppColors.primaryLight,
+            child: Container(
+              height: isTablet ? 560.h : null,
+              margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(AppDimensions.radius16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppDimensions.radius16),
+                child: isTablet
+                    ? Row(
+                        children: [
+                          // --- LEFT SIDE (Brand Banner & Animated Illustration) ---
+                          Expanded(
+                            child: Container(
+                              color: const Color(0xFFFAFAFA),
+                              padding: EdgeInsets.all(36.w),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  // Brand Logo (Image.asset for .png format)
+                                  Image.asset(
+                                    'assets/images/eresto-pos-logo.png',
+                                    height: 54.h,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) => Text(
+                                      "eResto",
+                                      style: GoogleFonts.nunito(
+                                        color: AppColors.primary,
+                                        fontSize: 32.sp,
+                                        fontWeight: FontWeight.w900,
                                       ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        // Divider Line
-                        Container(width: 1.w, color: Colors.grey.shade200),
-                        // --- RIGHT SIDE (Form Content) ---
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.symmetric(horizontal: 44.w, vertical: 36.h),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: _buildAnimatedForm(context),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  : SingleChildScrollView(
-                      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Center(
-                            child: Column(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/images/eresto-pos-logo.png',
-                                  height: 40.h,
-                                  placeholderBuilder: (context) => Text(
-                                    "eResto",
+                                  SizedBox(height: 12.h),
+                                  Text(
+                                    "Enterprise Digital Menu POS",
+                                    textAlign: TextAlign.center,
                                     style: GoogleFonts.nunito(
-                                      color: AppColors.primary,
-                                      fontSize: 28.sp,
-                                      fontWeight: FontWeight.w900,
+                                      color: Colors.grey.shade600,
+                                      fontSize: 16.sp,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ),
-                                SizedBox(height: 6.h),
-                                Text(
-                                  "Digital Menu Management",
-                                  style: AppTypography.bodySmall,
-                                ),
-                              ],
+                                  SizedBox(height: 32.h),
+                                  // Floating Animated Vector Illustration
+                                  Flexible(
+                                    child: TweenAnimationBuilder<double>(
+                                      duration: const Duration(milliseconds: 900),
+                                      tween: Tween(begin: 0.0, end: 1.0),
+                                      curve: Curves.easeOutCubic,
+                                      builder: (context, value, child) {
+                                        return Transform.translate(
+                                          offset: Offset(0, 24 * (1 - value)),
+                                          child: Opacity(opacity: value, child: child),
+                                        );
+                                      },
+                                      child: SvgPicture.asset(
+                                        'assets/images/left_login.svg',
+                                        height: 240.h,
+                                        fit: BoxFit.contain,
+                                        placeholderBuilder: (context) => Icon(
+                                          Icons.restaurant_rounded,
+                                          size: 100.sp,
+                                          color: AppColors.primaryLight,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          SizedBox(height: 28.h),
-                          ..._buildAnimatedForm(context),
+                          // Divider Line
+                          Container(width: 1.w, color: Colors.grey.shade200),
+                          // --- RIGHT SIDE (Form Content) ---
+                          Expanded(
+                            child: SingleChildScrollView(
+                              padding: EdgeInsets.symmetric(horizontal: 44.w, vertical: 36.h),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: _buildAnimatedForm(context),
+                              ),
+                            ),
+                          ),
                         ],
+                      )
+                    : SingleChildScrollView(
+                        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Column(
+                                children: [
+                                  // Brand Logo for Mobile Layout
+                                  Image.asset(
+                                    'assets/images/eresto-pos-logo.png',
+                                    height: 48.h,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) => Text(
+                                      "eResto",
+                                      style: GoogleFonts.nunito(
+                                        color: AppColors.primary,
+                                        fontSize: 28.sp,
+                                        fontWeight: FontWeight.w900,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(height: 6.h),
+                                  Text(
+                                    "Digital Menu Management",
+                                    style: AppTypography.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 28.h),
+                            ..._buildAnimatedForm(context),
+                          ],
+                        ),
                       ),
-                    ),
+              ),
             ),
           ),
         ),
@@ -226,7 +234,7 @@ class LoginScreen extends GetView<LoginController> {
       ),
       SizedBox(height: 24.h),
 
-      // Login Button incorporating the BrandProgressIndicator loader from Edge
+      // Login Button incorporating the BrandProgressIndicator loader
       SizedBox(
         width: double.infinity,
         height: 48.h,

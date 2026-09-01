@@ -1,4 +1,6 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:toastification/toastification.dart';
@@ -7,9 +9,10 @@ import 'core/api/api_client.dart';
 import 'core/storage/database_service.dart';
 import 'core/storage/storage_service.dart';
 import 'core/theme/app_theme.dart';
-
-// Features bindings
 import 'features/auth/bindings/auth_binding.dart';
+import 'features/auth/data/datasources/auth_remote_datasource.dart';
+import 'features/auth/data/repositories/auth_repository_impl.dart';
+import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/views/login_screen.dart';
 import 'features/dashboard/bindings/dashboard_binding.dart';
 import 'features/dashboard/presentation/views/dashboard_screen.dart';
@@ -17,32 +20,41 @@ import 'features/items/bindings/items_binding.dart';
 import 'features/items/presentation/views/items_screen.dart';
 import 'features/menu/bindings/menu_binding.dart';
 import 'features/menu/presentation/views/menu_screen.dart';
+import 'features/profile/bindings/profile_binding.dart';
+import 'features/profile/presentation/views/profile_screen.dart';
 import 'features/share/bindings/share_binding.dart';
 import 'features/share/presentation/views/share_screen.dart';
-
-import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase with registered App options
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // Screen orientation lock
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
 
-  // 1. Initialize core storage & DB services
-  await Get.putAsync<StorageService>(() => StorageService().init());
-  await Get.putAsync<DatabaseService>(() => DatabaseService().init());
+  // Firebase initialization
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  } catch (_) {}
 
-  // 2. Initialize Core API Client
-  Get.put<ApiClient>(ApiClient());
+  // Core Service Dependencies Initialization
+  final storageService = await Get.putAsync(() => StorageService().init());
+  await Get.putAsync(() => DatabaseService().init());
+  final apiClient = Get.put(ApiClient());
 
-  runApp(const ErestoMenuApp());
+  Get.put<AuthRemoteDataSource>(AuthRemoteDataSourceImpl(apiClient));
+  Get.put<AuthRepository>(AuthRepositoryImpl(Get.find(), storageService));
+
+  runApp(const ERestoMenuApp());
 }
 
-class ErestoMenuApp extends StatelessWidget {
-  const ErestoMenuApp({super.key});
+class ERestoMenuApp extends StatelessWidget {
+  const ERestoMenuApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +63,7 @@ class ErestoMenuApp extends StatelessWidget {
 
     return ToastificationWrapper(
       child: ScreenUtilInit(
-        designSize: const Size(360, 690), // Standard layout responsive canvas size
+        designSize: const Size(360, 690),
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (context, child) {
@@ -85,6 +97,11 @@ class ErestoMenuApp extends StatelessWidget {
                 name: '/share',
                 page: () => ShareScreen(),
                 binding: ShareBinding(),
+              ),
+              GetPage(
+                name: '/profile',
+                page: () => const ProfileScreen(),
+                binding: ProfileBinding(),
               ),
             ],
           );
