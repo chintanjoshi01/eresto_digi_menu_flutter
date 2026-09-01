@@ -16,6 +16,7 @@ class ShareController extends GetxController {
   final StorageService _storageService;
 
   final qrUrl = ''.obs;
+  final activeQrTab = 'dine_in'.obs;
   final isGeneratingPdf = false.obs;
 
   ShareController(this._storageService);
@@ -27,31 +28,42 @@ class ShareController extends GetxController {
   }
 
   void generateQrUrl() {
-    final id = _storageService.restoId;
-    if (id != 0) {
-      qrUrl.value = "https://menu.eresto.in/r/$id";
+    updateQrTab(activeQrTab.value);
+  }
+
+  void updateQrTab(String tabId) {
+    activeQrTab.value = tabId;
+    if (tabId == 'ird') {
+      qrUrl.value = "https://menu.eresto.in/trulyy-tadkaaz/ird";
+    } else if (tabId == 'tables') {
+      qrUrl.value = "https://menu.eresto.in/trulyy-tadkaaz/tables";
     } else {
-      qrUrl.value = "https://menu.eresto.in/r/default";
+      qrUrl.value = "https://menu.eresto.in/trulyy-tadkaaz/dine-in";
     }
+  }
+
+  void copyUrl() {
+    Clipboard.setData(ClipboardData(text: qrUrl.value));
+    ToastService.showSuccess("Menu link copied to clipboard");
   }
 
   Future<void> triggerNativeShare(GlobalKey qrKey) async {
     try {
       final imageBytes = await _captureQrPng(qrKey);
-      if (imageBytes == null) return;
+      if (imageBytes == null) {
+        // Fallback to text share
+        await Share.share("View our digital menu online: ${qrUrl.value}");
+        return;
+      }
 
       final tempDir = await getTemporaryDirectory();
       final file = await File('${tempDir.path}/eresto_menu_qr.png').create();
       await file.writeAsBytes(imageBytes);
 
-      final result = await Share.shareXFiles(
+      await Share.shareXFiles(
         [XFile(file.path)],
         text: "Scan this QR code to view our digital menu: ${qrUrl.value}",
       );
-
-      if (result.status == ShareResultStatus.success) {
-        ToastService.showSuccess("Shared successfully");
-      }
     } catch (e) {
       ToastService.showError("Failed to share QR: $e");
     }
@@ -75,7 +87,7 @@ class ShareController extends GetxController {
                 mainAxisAlignment: pw.MainAxisAlignment.center,
                 children: [
                   pw.Text(
-                    "eResto Menu",
+                    "Trulyy Tadkaaz",
                     style: pw.TextStyle(fontSize: 32, fontWeight: pw.FontWeight.bold),
                   ),
                   pw.SizedBox(height: 10),
@@ -91,7 +103,7 @@ class ShareController extends GetxController {
                   ),
                   pw.SizedBox(height: 40),
                   pw.Text(
-                    "Powered by eResto DigiMenu",
+                    "Powered by eResto",
                     style: pw.TextStyle(fontSize: 12, color: PdfColors.grey500),
                   ),
                 ],
@@ -103,7 +115,7 @@ class ShareController extends GetxController {
 
       await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => doc.save(),
-        name: "eResto_Menu_QR",
+        name: "Trulyy_Tadkaaz_Menu_QR",
       );
     } catch (e) {
       ToastService.showError("Failed to print/generate PDF: $e");
@@ -121,7 +133,6 @@ class ShareController extends GetxController {
       final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       return byteData?.buffer.asUint8List();
     } catch (e) {
-      ToastService.showError("Repaint capture error: $e");
       return null;
     }
   }
