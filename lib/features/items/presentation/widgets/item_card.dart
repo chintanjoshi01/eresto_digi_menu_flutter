@@ -1,12 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
-import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/item_model.dart';
 
+/// Enterprise Item Card component matching eresto_menu_mobile_v5.html prototype specs.
 class ItemCard extends StatelessWidget {
   final ItemModel item;
   final ValueChanged<bool> onAvailabilityChanged;
@@ -23,161 +24,285 @@ class ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isVeg = item.vegType.toLowerCase() == 'veg';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppDimensions.radius12),
-        border: Border.all(color: AppColors.borderLight, width: 1.w),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 1. Image Header slot
-          Expanded(
-            child: Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radius12)),
-                  child: item.imageUrl != null && item.imageUrl!.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: item.imageUrl!,
-                          width: double.infinity,
-                          height: double.infinity,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Shimmer.fromColors(
-                            baseColor: Colors.grey.shade100,
-                            highlightColor: Colors.grey.shade50,
-                            child: Container(color: Colors.white),
+    return GestureDetector(
+      onTap: onEditPressed,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(AppDimensions.radius12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1. Image / Gradient Thumbnail Banner (icard-img)
+            SizedBox(
+              height: 104.h,
+              width: double.infinity,
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(AppDimensions.radius12)),
+                    child: item.imageUrl != null && item.imageUrl!.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: item.imageUrl!,
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => _buildGradientPlaceholder(isVeg),
+                          )
+                        : _buildGradientPlaceholder(isVeg),
+                  ),
+
+                  // Veg / Non-Veg Indicator Badge (veg-dot)
+                  Positioned(
+                    top: 6.h,
+                    left: 6.w,
+                    child: Container(
+                      width: 15.w,
+                      height: 15.h,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(2.5.r),
+                        border: Border.all(
+                          color: isVeg ? const Color(0xFF16A34A) : const Color(0xFFC1272D),
+                          width: 1.2.w,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 7.w,
+                        height: 7.h,
+                        decoration: BoxDecoration(
+                          color: isVeg ? const Color(0xFF16A34A) : const Color(0xFFC1272D),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Favorite / Edit Star Button (star-btn)
+                  Positioned(
+                    top: 6.h,
+                    right: 6.w,
+                    child: GestureDetector(
+                      onTap: onEditPressed,
+                      child: Container(
+                        width: 24.w,
+                        height: 24.h,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          Icons.star_outline_rounded,
+                          size: 13.sp,
+                          color: const Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // Hidden Status Overlay Badge (if item is hidden)
+                  if (!item.isAvailable)
+                    Positioned(
+                      bottom: 6.h,
+                      right: 6.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.55),
+                          borderRadius: BorderRadius.circular(3.r),
+                        ),
+                        child: Text(
+                          "UNAVAILABLE",
+                          style: GoogleFonts.nunito(
+                            color: Colors.white,
+                            fontSize: 8.sp,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
                           ),
-                          errorWidget: (context, url, error) => _buildPlaceholderImage(),
-                        )
-                      : _buildPlaceholderImage(),
-                ),
-                // Veg/Non-Veg Dot badge
-                Positioned(
-                  top: 8.h,
-                  left: 8.w,
-                  child: Container(
-                    padding: EdgeInsets.all(4.w),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(4.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
-                        )
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            // 2. Info Details Body (icard-body)
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.name,
+                          style: GoogleFonts.nunito(
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFF111827),
+                            height: 1.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 3.h),
+                        // Portion label
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.grid_view_rounded,
+                              size: 10.sp,
+                              color: const Color(0xFF9CA3AF),
+                            ),
+                            SizedBox(width: 3.w),
+                            Text(
+                              item.portion ?? "Per Unit",
+                              style: GoogleFonts.nunito(
+                                fontSize: 10.sp,
+                                color: const Color(0xFF6B7280),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
-                    child: Container(
-                      width: 8.w,
-                      height: 8.w,
-                      decoration: BoxDecoration(
-                        color: isVeg ? AppColors.veg : AppColors.nonVeg,
-                        shape: BoxShape.circle,
-                      ),
+
+                    // Card Footer (icard-foot)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Price column
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "PRICE (₹)",
+                              style: GoogleFonts.nunito(
+                                fontSize: 8.5.sp,
+                                color: const Color(0xFF9CA3AF),
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                            Text(
+                              item.price.toStringAsFixed(2),
+                              style: GoogleFonts.nunito(
+                                fontSize: 13.5.sp,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Availability status + Prototype toggle switch (.tog)
+                        GestureDetector(
+                          onTap: () => onAvailabilityChanged(!item.isAvailable),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                item.isAvailable ? "AVAILABLE" : "DISABLED",
+                                style: GoogleFonts.nunito(
+                                  fontSize: 8.sp,
+                                  color: item.isAvailable
+                                      ? const Color(0xFF16A34A)
+                                      : const Color(0xFF9CA3AF),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              SizedBox(height: 2.h),
+                              // Prototype iOS Pill Toggle Switch (.tog)
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                width: 36.w,
+                                height: 19.h,
+                                decoration: BoxDecoration(
+                                  color: item.isAvailable
+                                      ? const Color(0xFF16A34A)
+                                      : const Color(0xFFD1D5DB),
+                                  borderRadius: BorderRadius.circular(10.r),
+                                ),
+                                child: Stack(
+                                  children: [
+                                    AnimatedPositioned(
+                                      duration: const Duration(milliseconds: 180),
+                                      curve: Curves.easeOut,
+                                      left: item.isAvailable ? 19.w : 2.w,
+                                      top: 2.h,
+                                      child: Container(
+                                        width: 15.w,
+                                        height: 15.h,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.2),
+                                              blurRadius: 3,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ),
-                // Edit Button Overlay
-                Positioned(
-                  top: 8.h,
-                  right: 8.w,
-                  child: GestureDetector(
-                    onTap: onEditPressed,
-                    child: Container(
-                      padding: EdgeInsets.all(6.w),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.edit_rounded, size: 14.sp, color: AppColors.primary),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // 2. Info Details
-          Padding(
-            padding: EdgeInsets.all(8.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 2.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "₹${item.price.toStringAsFixed(2)}",
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    if (item.portion != null && item.portion!.isNotEmpty)
-                      Text(
-                        item.portion!,
-                        style: AppTypography.caption,
-                      ),
                   ],
                 ),
-                SizedBox(height: 6.h),
-                // Availability Toggle
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      item.isAvailable ? "Available" : "Unavailable",
-                      style: AppTypography.bodySmall.copyWith(
-                        color: item.isAvailable ? AppColors.success : AppColors.textMuted,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(
-                      height: 24.h,
-                      child: Switch(
-                        value: item.isAvailable,
-                        onChanged: onAvailabilityChanged,
-                        activeColor: Colors.white,
-                        activeTrackColor: AppColors.success,
-                        inactiveThumbColor: Colors.grey.shade400,
-                        inactiveTrackColor: Colors.grey.shade200,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildPlaceholderImage() {
+  Widget _buildGradientPlaceholder(bool isVeg) {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      color: Colors.grey.shade100,
-      child: Icon(
-        Icons.flatware_rounded,
-        size: 32.sp,
-        color: Colors.grey.shade400,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isVeg
+              ? const [Color(0xFFBBF7D0), Color(0xFF6EE7B7)]
+              : const [Color(0xFFFED7AA), Color(0xFFFDBA74)],
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.restaurant_rounded,
+          size: 32.sp,
+          color: (isVeg ? const Color(0xFF15803D) : const Color(0xFFC1272D)).withOpacity(0.35),
+        ),
       ),
     );
   }
