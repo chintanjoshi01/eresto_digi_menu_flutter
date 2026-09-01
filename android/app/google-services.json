@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "989050456812",
+    "project_id": "eresto-edge-app-5829",
+    "storage_bucket": "eresto-edge-app-5829.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:989050456812:android:a844ea63b9286f715b33c9",
+        "android_client_info": {
+          "package_name": "edge.eresto.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpqoSiS9z6SjVfsM40e97uteVWR_NBCKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:989050456812:android:7db34221283745ad5b33c9",
+        "android_client_info": {
+          "package_name": "in.eresto.eresto_menu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpqoSiS9z6SjVfsM40e97uteVWR_NBCKc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

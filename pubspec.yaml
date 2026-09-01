@@ -1,0 +1,82 @@
+name: eresto_menu
+description: eResto Digital Menu Management Standalone App
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # --- Architecture & State Management ---
+  get: ^4.6.6                 # State Management & DI
+  equatable: ^2.0.5           # Value comparisons
+  dartz: ^0.10.1              # Functional Error Handling
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # --- Networking & API ---
+  dio: ^5.7.0
+  pretty_dio_logger: ^1.4.0
+
+  # --- Forms ---
+  reactive_forms: ^17.0.1
+
+  # --- Database & Storage ---
+  isar: ^3.1.0                # High-speed NoSQL DB
+  isar_flutter_libs: ^3.1.0
+  path_provider: ^2.1.2
+  shared_preferences: ^2.3.2
+
+  # --- UI Sizing & Aesthetics ---
+  flutter_screenutil: ^5.9.0  # Adaptive scaling
+  google_fonts: ^6.1.0        # Typography
+  shimmer: ^3.0.0             # Loading state shimmer
+  flutter_svg: any            # Svg icon support
+  lottie: ^3.1.2              # Dynamic animations
+  gap: ^3.0.1                 # Flex spacing
+  intl: ^0.19.0               # Date & Currency formatting
+  toastification: ^2.1.0      # Styled toasts (aligned with Edge)
+  fl_chart: ^0.69.0           # Graphs (Analytics)
+
+  # --- QR & Sharing (Menu publishing) ---
+  qr_flutter: ^4.1.0          # QR code rendering
+  share_plus: ^7.2.2          # System sharing
+  pdf: ^3.11.1                # PDF export
+  printing: ^5.13.2           # Printing helper
+
+  # --- Image Handling ---
+  image_picker: ^1.1.2        # Image uploading
+  cached_network_image: ^3.4.1 # Network image caching
+  flutter_image_compress: ^2.3.0 # Compress image sizes
+
+  # --- Core Services ---
+  uuid: ^4.3.3                # ID generator
+  connectivity_plus: ^6.0.0   # Connection tracking
+
+  # --- Firebase & Analytics (Push alerts) ---
+  firebase_core: ^3.1.1
+  firebase_crashlytics: ^4.0.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.8        # Code Generator
+  freezed: ^2.5.2             # Immutable model generator (pins analyzer to 5.13.0)
+  json_serializable: ^6.8.0   # JSON serializer
+  isar_generator: ^3.1.0      # Isar Database generator
+
+dependency_overrides:
+  network_info_plus: ^7.0.0
+  image: ^4.2.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/

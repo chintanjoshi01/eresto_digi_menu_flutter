@@ -1,0 +1,41 @@
+# Standalone eresto_menu Implementation Tasks
+
+- [x] **Step 1: Scaffold Standalone Application**
+  - [x] Run `flutter create --org in.eresto --project-name eresto_menu .`
+- [x] **Step 2: Configure Dependencies**
+  - [x] Add required dependencies (GetX, Isar, Dio, Freezed, ScreenUtil, Toastification) to `pubspec.yaml`
+  - [x] Run `flutter pub get` and verify dependencies resolve without conflicts
+- [x] **Step 3: Core Services Setup**
+  - [x] Create Isar collections and run code-gen (`menu_collections.dart` + `menu_collections.g.dart`)
+  - [x] Implement `StorageService` (GetxService using SharedPreferences for local token and resto_id storage)
+  - [x] Implement `DatabaseService` (GetxService initializing Isar)
+  - [x] Implement `ApiClient` (Dio wrapper with Authorization header interceptor)
+  - [x] Implement `ToastService` (wraps `toastification` to handle alerts and technical error dialog bottom sheets)
+  - [x] Set up theme colors (`AppColors`), typography (`AppTypography`), and dimensions (`AppDimensions`)
+- [x] **Step 4: Auth Feature (MVVM)**
+  - [x] Create `AuthModel` (Freezed) and `AuthRepository` interface
+  - [x] Implement remote datasource and repository using functional error handling (`Either`)
+  - [x] Create `LoginController` (ViewModel) and login binding
+  - [x] Build `LoginScreen` (View) using `reactive_forms` or standard Form validators
+- [x] **Step 5: Dashboard Feature (MVVM)**
+  - [x] Create scan stats model, repository, and controller
+  - [x] Build scan analytics chart using `fl_chart`
+  - [x] Build `DashboardScreen` (displays stats, active session, menu status, top categories)
+- [x] **Step 6: Items Feature (MVVM)**
+  - [x] Create `ItemModel` (Freezed) and `ItemsRepository`
+  - [x] Implement local database caching datasource (Isar) and remote API datasource (Dio)
+  - [x] Create `ItemsController` (ViewModel) managing states and availability toggles
+  - [x] Build `ItemsScreen` (displays list/grid, search, category filter)
+  - [x] Build `ItemEditSheet` (bottom sheet with fields, image pickers, and validators)
+- [x] **Step 7: Menu templates & Sessions Feature (MVVM)**
+  - [x] Create template & session models, repositories, and controllers
+  - [x] Build `MenuScreen` displaying templates list and sessions list
+  - [x] Build `ThemePickerSheet` (colors picker) and `SessionEditSheet`
+- [x] **Step 8: Share & QR Feature (MVVM)**
+  - [x] Create QR code models, repositories, and controllers
+  - [x] Build `ShareScreen` (with download, print, WhatsApp shares, and PDF wizard sheets)
+  - [x] Implement native sharing (`share_plus`)
+- [x] **Step 9: Compile and Verify**
+  - [x] Run code generation on all features
+  - [x] Verify codebase with static analyzer (`flutter analyze`)
+  - [x] Confirm clean build setup for standalone testing and eventual parent integration

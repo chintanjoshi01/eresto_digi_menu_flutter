@@ -1,0 +1,297 @@
+# eResto Digital Menu - MVVM Federated Package Plan
+
+This document outlines the architecture, layer separation, and step-by-step plan for building and integrating the **eResto Digital Menu** as a federated package (`packages/digital_menu`) inside `eresto_edge_flutter`.
+
+We will implement a clean **MVVM (Model-View-ViewModel)** architectural pattern. This ensures complete separation of business logic (Model/ViewModel) and UI logic (View), matching the expectations of an enterprise-level codebase.
+
+---
+
+## 1. Enterprise Architecture: MVVM + Federated Package
+
+To ensure scalability, modularity, and dual-mode execution (both integrated into the parent POS app and running as a standalone app), we will structure the module as a local Dart package:
+
+```
+packages/digital_menu/
+├── pubspec.yaml                          # Package dependencies (Dio, Isar, Get, Freezed)
+├── lib/
+│   ├── digital_menu.dart                 # Public API (exposes routes and initialization)
+│   └── src/
+│       ├── core/                         # Common configuration
+│       │   ├── api/                      # Dio Client, Interceptors
+│       │   ├── isar/                     # Isar schemas (DB caching)
+│       │   ├── config/                   # Module configuration (Token/Auth Bridges)
+│       │   └── theme/                    # Theme extensions (Menu colors/dimensions)
+│       │
+│       └── features/                     # Feature-sliced folders
+│           ├── items/
+│           │   ├── data/                 # MODEL: Data sources, Repository implementation
+│           │   │   ├── datasources/
+│           │   │   │   ├── items_remote_datasource.dart
+│           │   │   │   └── items_local_datasource.dart
+│           │   │   └── repositories/
+│           │   │       └── items_repository_impl.dart
+│           │   │
+│           │   ├── domain/               # MODEL: Business objects & Repo interfaces
+│           │   │   ├── models/
+│           │   │   │   └── item_model.dart
+│           │   │   └── repositories/
+│           │   │       └── items_repository.dart
+│           │   │
+│           │   ├── presentation/         # VIEW & VIEWMODEL
+│           │   │   ├── viewmodels/
+│           │   │   │   └── menu_items_viewmodel.dart
+│           │   │   ├── views/
+│           │   │   │   ├── menu_items_page.dart
+│           │   │   │   └── widgets/
+│           │   │   └── bindings/
+│           │   │       └── items_binding.dart
+│           └── dashboard/
+│           └── menu/
+│           └── share/
+```
+
+---
+
+## 2. Separation of Concerns (MVVM Pattern)
+
+### Data Layer (Model)
+- **Entities & Models**: Immutable Freezed models (e.g. `ItemModel`) that have `fromJson` / `toJson` capabilities.
+- **Data Sources**:
+  - `RemoteDataSource`: Direct API communication via `MenuApiClient` (Dio).
+  - `LocalDataSource`: Local database persistence using `Isar`.
+- **Repository Pattern**: Exposes a clean interface (`ItemsRepository`). Uses Functional Error Handling with Dartz `Either<Failure, Success>` to return errors as values. **Never throws exceptions to the ViewModel.**
+
+### ViewModel Layer
+- Represented by GetX's `GetxController`.
+- Contains the **observable state** (loading status, error messages, model arrays) and **intent handlers** (functions like `fetchItems()`, `toggleAvailability()`).
+- Does **not** import any Flutter UI widgets or `material.dart`. It is completely testable via pure unit tests.
+
+### View Layer (UI)
+- Custom widgets inheriting from `GetView<ViewModel>` or stateless/stateful widgets using `Obx` or `GetX` listeners.
+- Contains zero business logic, API calls, or storage lookups.
+- Propagates user input/actions directly to the ViewModel (e.g., `onPressed: () => controller.toggleAvailability(id, val)`).
+
+---
+
+## 3. Key Design Solutions
+
+### A. Authentication Token Bridge (Integrated vs Standalone)
+To solve the dual-mode authentication challenge, we define an abstract `MenuAuthConfig` in the package:
+
+```dart
+// packages/digital_menu/lib/src/core/config/menu_auth_config.dart
+abstract class MenuAuthConfig {
+  String get token;
+  bool get isLoggedIn;
+  Future<void> logout();
+}
+```
+
+* **Integrated Mode**: The host application implements this config by mapping it to its own `StorageService` and registers it in GetX:
+  ```dart
+  class HostAuthConfig implements MenuAuthConfig {
+    @override
+    String get token => Get.find<StorageService>().token;
+    @override
+    bool get isLoggedIn => Get.find<StorageService>().isLoggedIn;
+    @override
+    Future<void> logout() => Get.find<StorageService>().logout();
+  }
+  
+  // Registered during host startup in init_app.dart
+  Get.put<MenuAuthConfig>(HostAuthConfig());
+  ```
+* **Standalone Mode**: The package registers its own local implementation (`LocalAuthConfig`) utilizing its own internal shared preferences/secure storage.
+
+This keeps the package completely independent and generic!
+
+### B. Isar DB Integration Suggestion
+Instead of introducing Hive, which causes dual database initialization overhead, we will define Isar collections inside the package:
+
+```dart
+// packages/digital_menu/lib/src/core/isar/menu_item_collection.dart
+import 'package:isar/isar.dart';
+
+@collection
+class MenuItemCollection {
+  Id id = Isar.autoIncrement;
+  
+  @Index(unique: true)
+  late int remoteId;
+  late String name;
+  late String price;
+  late bool isAvailable;
+  // ...other fields matching ItemModel
+}
+```
+
+* **Integrated Mode**: The host application's `DatabaseService` imports the package's Isar schemas and appends them during database initialization:
+  ```dart
+  final isar = await Isar.open(
+    [
+      // Host schemas
+      InvoiceSchema,
+      PosSchema,
+      // Digital Menu schemas (imported from package)
+      MenuItemCollectionSchema,
+      MenuTemplateCollectionSchema,
+      MenuSessionCollectionSchema,
+    ],
+    directory: dir.path,
+  );
+  ```
+* **Standalone Mode**: The standalone app shell initializes Isar with only the digital menu schemas.
+
+This provides the most performant, unified local storage solution possible.
+
+### C. Toast & Smart Error Handling Bridge (Integrated vs Standalone)
+To use the same user interface elements for errors and toast notifications as the main host app (which includes smart logic to filter standard validation errors vs technical SQL/Dio exception dialogs with "Share to Tech" logs), we define a `MenuToastService` interface inside the package:
+
+```dart
+// packages/digital_menu/lib/src/core/services/menu_toast_service.dart
+abstract class MenuToastService {
+  void showSuccess(String message);
+  void showError(String message, {String? techDetail});
+  void showWarning(String message);
+  void showInfo(String message);
+}
+```
+
+* **Integrated Mode**: The parent app (`eresto_edge_flutter`) implements this interface by wrapping its native `ToastService` and registers it in GetX during app initialization:
+  ```dart
+  class HostToastServiceBridge implements MenuToastService {
+    @override
+    void showSuccess(String message) => ToastService.showSuccess(message);
+    
+    @override
+    void showError(String message, {String? techDetail}) => 
+        ToastService.showError(message, techDetail: techDetail);
+
+    @override
+    void showWarning(String message) => ToastService.showWarning(message);
+
+    @override
+    void showInfo(String message) => ToastService.showInfo(message);
+  }
+  
+  // In host initAppServices:
+  Get.put<MenuToastService>(HostToastServiceBridge());
+  ```
+  Within the package, components show toasts using `Get.find<MenuToastService>().showSuccess("...")` or `.showError("...")`.
+* **Standalone Mode**: The package injects a local implementation (`LocalToastServiceBridge`) that references the standard `toastification` package directly, showing generic clean toast alerts.
+
+### D. Standalone Application Shell Target
+A Dart package library alone cannot be run directly via `flutter run`. To run, develop, and test the Digital Menu in absolute isolation without loading the entire POS local websocket servers, SQLite decrypters, and printer engine dependencies, we configure a **Standalone Shell**.
+
+* **What it is**: A minimal, self-contained Flutter app located at `packages/digital_menu/example` (or as a separate root project `eresto_digital_menu_standalone`) that references the local package path:
+  ```yaml
+  dependencies:
+    digital_menu:
+      path: ../
+  ```
+* **Structure & Bootstrap**: It contains its own `main.dart` that initializes mock configurations for local testing:
+  ```dart
+  void main() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // 1. Initialize Standalone Mock Configurations
+    Get.put<MenuAuthConfig>(LocalMockAuthConfig()); // Local Pref login
+    Get.put<MenuToastService>(LocalToastServiceBridge()); // Direct toastification
+    
+    // 2. Initialize Standalone Isar instance with only Menu collections
+    final dir = await getApplicationDocumentsDirectory();
+    final isar = await Isar.open(
+      [
+        MenuItemCollectionSchema,
+        MenuTemplateCollectionSchema,
+        MenuSessionCollectionSchema,
+      ],
+      directory: dir.path,
+    );
+    Get.put(isar);
+
+    runApp(const StandaloneMenuApp());
+  }
+  ```
+* **Why it's essential**: It gives developers a lightweight environment to compile, debug, and build the Digital Menu standalone APK/IPA in seconds, while still allowing the exact same package to be mounted directly inside the host app for integrated execution.
+
+---
+
+## 4. Layer Implementation Details
+
+### MVVM Flow Example (Menu Items Feature)
+
+```mermaid
+sequenceDiagram
+    participant View as MenuItemsPage (View)
+    participant VM as MenuItemsViewModel (ViewModel)
+    participant Repo as ItemsRepository (Model)
+    participant Remote as ItemsRemoteDataSource
+    participant Local as ItemsLocalDataSource (Isar Cache)
+
+    View->>VM: onInit()
+    activate VM
+    VM->>VM: change(status: RxStatus.loading())
+    VM->>Repo: getItems()
+    activate Repo
+    Repo->>Local: getCachedItems()
+    Repo-->>VM: return cached items (optimistic fast render)
+    VM-->>View: update Obx (cached UI)
+    
+    Repo->>Remote: fetchItems()
+    activate Remote
+    Remote-->>Repo: return fresh items from Laravel REST API
+    deactivate Remote
+    Repo->>Local: saveItemsToCache(freshItems)
+    Repo-->>VM: return fresh items (Dartz Right)
+    deactivate Repo
+    VM->>VM: change(freshItems, status: RxStatus.success())
+    VM-->>View: update Obx (fresh UI)
+    deactivate VM
+```
+
+---
+
+## 5. Step-by-Step Build Order Plan
+
+To construct this app module without breaking the existing parent app:
+
+### Step 1: Package Scaffolding
+1. Create the folder `packages/digital_menu` inside `eresto_edge_flutter`.
+2. Configure `packages/digital_menu/pubspec.yaml` with the dependencies listed in `eresto_flutter_setup_prompt.md` (e.g., `dio`, `get`, `freezed`, `isar`, `reactive_forms`).
+3. Add the package reference to the parent `pubspec.yaml` using path references.
+
+### Step 2: Core Data Infrastructure
+1. Define Isar Collections inside the package (`MenuItemCollection`, `MenuTemplateCollection`, etc.) and run `build_runner` to generate schemas.
+2. Initialize `MenuApiClient` (Dio) inside the package. Configure it to read base URL and use `MenuAuthConfig` for request token headers.
+3. Build the core error failure classes and `Either` responses structure.
+
+### Step 3: Feature Construction (MVVM Order)
+Implement features in the following sequence: **Data Layer first, then ViewModel, and lastly View.**
+
+#### 1. Items Feature
+- **Model**: `ItemModel` (Freezed) + `ItemsRepository` + Remote/Local datasources.
+- **ViewModel**: `MenuItemsViewModel` (`GetxController` managing loading states, items lists, search filtering, and toggle availability logic).
+- **View**: `MenuItemsPage` (displays grid of item cards, toggle switches, and links to edit screen) + `ItemEditSheet`.
+
+#### 2. Dashboard Feature
+- **Model**: `DashboardModel` + `DashboardRepository` + local caching.
+- **ViewModel**: `MenuDashboardViewModel` (fetches analytics statistics).
+- **View**: `MenuDashboardPage` (graphs and analytics widgets using `fl_chart`).
+
+#### 3. Menu Template & Session Feature
+- **Model**: `TemplateModel`, `SessionModel` + `MenuRepository`.
+- **ViewModel**: `MenuViewModel` (handles custom templates/splash/offers updates).
+- **View**: `MenuPage` (theme/template settings and sessions sheets).
+
+#### 4. Share & QR Feature
+- **Model**: `QrModel` + `ShareRepository`.
+- **ViewModel**: `MenuShareViewModel` (handles PDF exports and QR image generation).
+- **View**: `MenuSharePage` (download and share controls).
+
+### Step 4: Host App Integration
+1. Mount Digital Menu schemas into the host's `DatabaseService`.
+2. Register the host's `MenuAuthConfig` inside `initAppServices` in `lib/core/init_app.dart`.
+3. Add routes for Digital Menu pages into the host's `AppPages.routes` inside `lib/config/routes/app_pages.dart`.
+4. Run code generation in both parent and package directories to verify compiling.
+5. Create a navigation shortcut on the POS Dashboard to route user to the Digital Menu pages (`Get.toNamed('/digital-menu/dashboard')`).
