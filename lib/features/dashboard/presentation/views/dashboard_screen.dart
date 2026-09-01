@@ -66,25 +66,19 @@ class DashboardScreen extends GetView<MenuDashboardController> {
                 ),
 
                 // 2. Overlapping Scans Analytics Card
-                Transform.translate(
-                  offset: Offset(0, -28.h),
-                  child: Obx(
-                    () => QrScanAnalyticsCard(
-                      totalScans: state.qrScansToday,
-                      deltaPercent: state.qrScanDeltaPercent,
-                      activePeriod: controller.selectedPeriod.value,
-                      onPeriodChanged: (p) => controller.changePeriod(p),
-                      chartData: state.scanChartData,
-                      chartLabels: state.scanChartLabels,
-                      avgScansPerHour: state.avgScansPerHour,
-                      peakScans: state.peakScans,
-                      yesterdayScans: state.yesterdayScans,
-                    ),
+                Obx(
+                  () => QrScanAnalyticsCard(
+                    totalScans: state.qrScansToday,
+                    deltaPercent: state.qrScanDeltaPercent,
+                    activePeriod: controller.selectedPeriod.value,
+                    onPeriodChanged: (p) => controller.changePeriod(p),
+                    chartData: state.scanChartData,
+                    chartLabels: state.scanChartLabels,
+                    avgScansPerHour: state.avgScansPerHour,
+                    peakScans: state.peakScans,
+                    yesterdayScans: state.yesterdayScans,
                   ),
                 ),
-
-                // Negative spacer compensation for Transform.translate
-                SizedBox(height: -20.h),
 
                 // 3. Unpublished Menu Changes Notice Banner
                 _buildSectionHeader("Menu Status"),

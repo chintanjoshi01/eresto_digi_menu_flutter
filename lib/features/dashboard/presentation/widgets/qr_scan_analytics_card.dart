@@ -18,6 +18,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
   final int avgScansPerHour;
   final int peakScans;
   final int yesterdayScans;
+  final EdgeInsetsGeometry? margin;
 
   const QrScanAnalyticsCard({
     super.key,
@@ -30,12 +31,13 @@ class QrScanAnalyticsCard extends StatelessWidget {
     required this.avgScansPerHour,
     required this.peakScans,
     required this.yesterdayScans,
+    this.margin,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.symmetric(horizontal: 14.w),
+      margin: margin ?? EdgeInsets.only(left: 14.w, right: 14.w, top: -28.h),
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
         color: Colors.white,
