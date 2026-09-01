@@ -194,7 +194,7 @@ class ItemsScreen extends GetView<ItemsController> {
                       crossAxisCount: isTablet ? 4 : 2,
                       crossAxisSpacing: 10.w,
                       mainAxisSpacing: 10.h,
-                      childAspectRatio: isTablet ? 0.92 : 0.78,
+                      childAspectRatio: isTablet ? 0.90 : 0.70,
                     ),
                     itemCount: state.length,
                     itemBuilder: (context, index) {

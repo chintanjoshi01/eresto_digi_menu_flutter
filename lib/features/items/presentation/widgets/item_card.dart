@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../domain/models/item_model.dart';
 
@@ -43,7 +42,7 @@ class ItemCard extends StatelessWidget {
           children: [
             // 1. Image / Gradient Thumbnail Banner (icard-img)
             SizedBox(
-              height: 104.h,
+              height: 88.h,
               width: double.infinity,
               child: Stack(
                 children: [
@@ -144,7 +143,7 @@ class ItemCard extends StatelessWidget {
             // 2. Info Details Body (icard-body)
             Expanded(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+                padding: EdgeInsets.fromLTRB(8.w, 6.h, 8.w, 6.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -155,30 +154,34 @@ class ItemCard extends StatelessWidget {
                         Text(
                           item.name,
                           style: GoogleFonts.nunito(
-                            fontSize: 13.sp,
+                            fontSize: 12.5.sp,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF111827),
-                            height: 1.2,
+                            height: 1.1,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: 3.h),
+                        SizedBox(height: 2.h),
                         // Portion label
                         Row(
                           children: [
                             Icon(
                               Icons.grid_view_rounded,
-                              size: 10.sp,
+                              size: 9.sp,
                               color: const Color(0xFF9CA3AF),
                             ),
                             SizedBox(width: 3.w),
-                            Text(
-                              item.portion ?? "Per Unit",
-                              style: GoogleFonts.nunito(
-                                fontSize: 10.sp,
-                                color: const Color(0xFF6B7280),
-                                fontWeight: FontWeight.w500,
+                            Expanded(
+                              child: Text(
+                                item.portion ?? "Per Unit",
+                                style: GoogleFonts.nunito(
+                                  fontSize: 9.5.sp,
+                                  color: const Color(0xFF6B7280),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -198,7 +201,7 @@ class ItemCard extends StatelessWidget {
                             Text(
                               "PRICE (₹)",
                               style: GoogleFonts.nunito(
-                                fontSize: 8.5.sp,
+                                fontSize: 8.sp,
                                 color: const Color(0xFF9CA3AF),
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.3,
@@ -207,7 +210,7 @@ class ItemCard extends StatelessWidget {
                             Text(
                               item.price.toStringAsFixed(2),
                               style: GoogleFonts.nunito(
-                                fontSize: 13.5.sp,
+                                fontSize: 12.5.sp,
                                 fontWeight: FontWeight.w800,
                                 color: const Color(0xFF111827),
                               ),
@@ -224,7 +227,7 @@ class ItemCard extends StatelessWidget {
                               Text(
                                 item.isAvailable ? "AVAILABLE" : "DISABLED",
                                 style: GoogleFonts.nunito(
-                                  fontSize: 8.sp,
+                                  fontSize: 7.5.sp,
                                   color: item.isAvailable
                                       ? const Color(0xFF16A34A)
                                       : const Color(0xFF9CA3AF),
@@ -235,8 +238,8 @@ class ItemCard extends StatelessWidget {
                               // Prototype iOS Pill Toggle Switch (.tog)
                               AnimatedContainer(
                                 duration: const Duration(milliseconds: 180),
-                                width: 36.w,
-                                height: 19.h,
+                                width: 34.w,
+                                height: 18.h,
                                 decoration: BoxDecoration(
                                   color: item.isAvailable
                                       ? const Color(0xFF16A34A)
@@ -248,11 +251,11 @@ class ItemCard extends StatelessWidget {
                                     AnimatedPositioned(
                                       duration: const Duration(milliseconds: 180),
                                       curve: Curves.easeOut,
-                                      left: item.isAvailable ? 19.w : 2.w,
+                                      left: item.isAvailable ? 18.w : 2.w,
                                       top: 2.h,
                                       child: Container(
-                                        width: 15.w,
-                                        height: 15.h,
+                                        width: 14.w,
+                                        height: 14.h,
                                         decoration: BoxDecoration(
                                           color: Colors.white,
                                           shape: BoxShape.circle,
@@ -300,7 +303,7 @@ class ItemCard extends StatelessWidget {
       child: Center(
         child: Icon(
           Icons.restaurant_rounded,
-          size: 32.sp,
+          size: 30.sp,
           color: (isVeg ? const Color(0xFF15803D) : const Color(0xFFC1272D)).withOpacity(0.35),
         ),
       ),
