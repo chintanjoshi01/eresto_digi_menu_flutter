@@ -39,10 +39,10 @@ class DashboardScreen extends GetView<MenuDashboardController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Overlapping Hero + Analytics Stack (Exact match of prototype HTML lines 392-414)
+                        // Overlapping Hero + Analytics Stack (Pixel perfect match of prototype screenshot 2)
                         SizedBox(
                           width: double.infinity,
-                          height: 368.h,
+                          height: 384.h,
                           child: Stack(
                             clipBehavior: Clip.none,
                             children: [
@@ -60,11 +60,11 @@ class DashboardScreen extends GetView<MenuDashboardController> {
                                   hiddenItems: state.hiddenItems,
                                 ),
                               ),
-                              // Overlapping Scans Analytics Card (Starts right below the 3 stat boxes at top: 114.h)
+                              // Overlapping Scans Analytics Card (Placed at top: 130.h with clean red gap below stat boxes)
                               Positioned(
                                 left: 12.w,
                                 right: 12.w,
-                                top: 114.h,
+                                top: 130.h,
                                 child: Obx(
                                   () => QrScanAnalyticsCard(
                                     totalScans: state.qrScansToday,

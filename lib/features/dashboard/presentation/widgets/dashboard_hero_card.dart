@@ -25,7 +25,7 @@ class DashboardHeroCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 44.h),
+      padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 54.h),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
