@@ -15,6 +15,64 @@ class MenuRepositoryImpl implements MenuRepository {
   MenuRepositoryImpl(this._remoteDataSource, this._dbService);
 
   @override
+  Future<Either<ApiException, Map<String, dynamic>>> getMenuBuilderData() async {
+    try {
+      final res = await _remoteDataSource.getMenuBuilderData();
+      return Right(res);
+    } catch (e) {
+      if (e is ApiException) return Left(e);
+      return Left(ApiException(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<ApiException, Map<String, dynamic>>> changeTheme({
+    required int templateId,
+    required int themeId,
+  }) async {
+    try {
+      final res = await _remoteDataSource.changeTheme(
+        templateId: templateId,
+        themeId: themeId,
+      );
+      return Right(res);
+    } catch (e) {
+      if (e is ApiException) return Left(e);
+      return Left(ApiException(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<ApiException, List<dynamic>>> getThemesCatalog() async {
+    try {
+      final res = await _remoteDataSource.getThemesCatalog();
+      return Right(res);
+    } catch (e) {
+      if (e is ApiException) return Left(e);
+      return Left(ApiException(message: e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<ApiException, Map<String, dynamic>>> updateChannelSession({
+    required int sessionId,
+    required String op,
+    required Map<String, dynamic> sessionJson,
+  }) async {
+    try {
+      final res = await _remoteDataSource.updateChannelSession(
+        sessionId: sessionId,
+        op: op,
+        sessionJson: sessionJson,
+      );
+      return Right(res);
+    } catch (e) {
+      if (e is ApiException) return Left(e);
+      return Left(ApiException(message: e.toString()));
+    }
+  }
+
+  @override
   Future<Either<ApiException, List<TemplateModel>>> getTemplates({bool forceRefresh = false}) async {
     final isar = _dbService.isar;
     if (!forceRefresh) {
@@ -34,17 +92,21 @@ class MenuRepositoryImpl implements MenuRepository {
 
     try {
       final remoteList = await _remoteDataSource.getTemplates();
+      final existingTemplates = await isar.menuTemplateCollections.where().findAll();
+      final existingMap = {for (final t in existingTemplates) t.remoteId: t};
+      final toSave = <MenuTemplateCollection>[];
+      for (final item in remoteList) {
+        final existing = existingMap[item.id];
+        final dbObj = existing ?? (MenuTemplateCollection()..remoteId = item.id);
+        dbObj.name = item.name;
+        dbObj.primaryColor = item.primaryColor;
+        dbObj.backgroundColor = item.backgroundColor;
+        dbObj.textColor = item.textColor;
+        dbObj.isActive = item.isActive;
+        toSave.add(dbObj);
+      }
       await isar.writeTxn(() async {
-        for (final item in remoteList) {
-          final existing = await isar.menuTemplateCollections.filter().remoteIdEqualTo(item.id).findFirst();
-          final dbObj = existing ?? MenuTemplateCollection()..remoteId = item.id;
-          dbObj.name = item.name;
-          dbObj.primaryColor = item.primaryColor;
-          dbObj.backgroundColor = item.backgroundColor;
-          dbObj.textColor = item.textColor;
-          dbObj.isActive = item.isActive;
-          await isar.menuTemplateCollections.put(dbObj);
-        }
+        await isar.menuTemplateCollections.putAll(toSave);
       });
       return Right(remoteList);
     } catch (e) {
@@ -118,19 +180,23 @@ class MenuRepositoryImpl implements MenuRepository {
 
     try {
       final remoteList = await _remoteDataSource.getSessions();
+      final existingSessions = await isar.menuSessionCollections.where().findAll();
+      final existingMap = {for (final s in existingSessions) s.remoteId: s};
+      final toSave = <MenuSessionCollection>[];
+      for (final item in remoteList) {
+        final existing = existingMap[item.id];
+        final dbObj = existing ?? (MenuSessionCollection()..remoteId = item.id);
+        dbObj.name = item.name;
+        dbObj.startTime = item.startTime;
+        dbObj.endTime = item.endTime;
+        dbObj.isActive = item.isActive;
+        dbObj.splashImageUrl = item.splashImageUrl;
+        dbObj.offerImageUrl = item.offerImageUrl;
+        dbObj.offerDescription = item.offerDescription;
+        toSave.add(dbObj);
+      }
       await isar.writeTxn(() async {
-        for (final item in remoteList) {
-          final existing = await isar.menuSessionCollections.filter().remoteIdEqualTo(item.id).findFirst();
-          final dbObj = existing ?? MenuSessionCollection()..remoteId = item.id;
-          dbObj.name = item.name;
-          dbObj.startTime = item.startTime;
-          dbObj.endTime = item.endTime;
-          dbObj.isActive = item.isActive;
-          dbObj.splashImageUrl = item.splashImageUrl;
-          dbObj.offerImageUrl = item.offerImageUrl;
-          dbObj.offerDescription = item.offerDescription;
-          await isar.menuSessionCollections.put(dbObj);
-        }
+        await isar.menuSessionCollections.putAll(toSave);
       });
       return Right(remoteList);
     } catch (e) {

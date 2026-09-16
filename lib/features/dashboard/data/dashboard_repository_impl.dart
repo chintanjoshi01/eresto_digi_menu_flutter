@@ -1,89 +1,41 @@
 import 'package:dartz/dartz.dart';
-import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/storage/database_service.dart';
-import '../domain/dashboard_model.dart';
+import 'datasources/dashboard_remote_datasource.dart';
+import '../domain/models/v6_dashboard_response.dart';
 import '../domain/repositories/dashboard_repository.dart';
 
 class DashboardRepositoryImpl implements DashboardRepository {
-  final ApiClient apiClient;
-  final DatabaseService dbService;
+  final DashboardRemoteDataSource _remoteDataSource;
+  // ignore: unused_field
+  final DatabaseService? _dbService;
 
-  DashboardRepositoryImpl(this.apiClient, this.dbService);
+  DashboardRepositoryImpl(this._remoteDataSource, [this._dbService]);
 
   @override
-  Future<Either<ApiException, DashboardModel>> getAnalytics({
-    required String period,
+  Future<Either<ApiException, V6DashboardData>> getDashboardData({
     bool forceRefresh = false,
   }) async {
-    // Return rich prototype metrics matching eresto_menu_mobile_v5.html specs
-    final mockTopCategories = [
-      const CategoryViewStat(
-        rank: 1,
-        name: "Mocktails",
-        views: 203,
-        percentage: 0.82,
-        colorHex: "0xFFC1272D",
-      ),
-      const CategoryViewStat(
-        rank: 2,
-        name: "Starters",
-        views: 151,
-        percentage: 0.61,
-        colorHex: "0xFFF59E0B",
-      ),
-      const CategoryViewStat(
-        rank: 3,
-        name: "Main Course",
-        views: 119,
-        percentage: 0.48,
-        colorHex: "0xFF3B82F6",
-      ),
-      const CategoryViewStat(
-        rank: 4,
-        name: "Soups",
-        views: 84,
-        percentage: 0.34,
-        colorHex: "0xFF16A34A",
-      ),
-    ];
+    try {
+      final response = await _remoteDataSource.getDashboardData();
+      if (response.isSuccess && response.data != null) {
+        return Right(response.data!);
+      }
 
-    List<int> chartData;
-    List<String> chartLabels;
-
-    if (period == 'week') {
-      chartData = [120, 180, 240, 310, 290, 380, 420];
-      chartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    } else if (period == 'month') {
-      chartData = [1200, 1500, 1800, 2400];
-      chartLabels = ['W1', 'W2', 'W3', 'W4'];
-    } else {
-      // today (6 points matching exact prototype: 6am, 9am, 12pm, 3pm, 6pm, Now)
-      chartData = [10, 24, 42, 60, 78, 52];
-      chartLabels = ['6am', '9am', '12pm', '3pm', '6pm', 'Now'];
+      // If status == 0 with a message from server
+      return Left(ApiException(
+        message: response.message.isNotEmpty
+            ? response.message
+            : "Failed to load dashboard data.",
+        statusCode: 200,
+      ));
+    } on ApiException catch (e) {
+      return Left(e);
+    } catch (e) {
+      return Left(ApiException(
+        message: "An unexpected error occurred: $e",
+        statusCode: 500,
+      ));
     }
-
-    final model = DashboardModel(
-      restaurantName: "Trulyy Tadkaaz",
-      restaurantUrl: "menu.eresto.in/trulyy-tadkaaz",
-      isPublished: true,
-      totalItems: 361,
-      availableItems: 323,
-      hiddenItems: 38,
-      qrScansToday: 247,
-      qrScanDeltaPercent: 18.0,
-      peakHour: "6–7 PM",
-      peakScans: 38,
-      yesterdayScans: 209,
-      scanChartData: chartData,
-      scanChartLabels: chartLabels,
-      unpublishedChangesCount: 3,
-      unpublishedChangesSummary: "Aqua Marine hidden · 2 prices updated",
-      activeSessionName: "Lunch Session",
-      activeSessionTime: "10:30 – 18:30 · Dine-In menu · Customer orders on",
-      topCategories: mockTopCategories,
-    );
-
-    return Right(model);
   }
 }

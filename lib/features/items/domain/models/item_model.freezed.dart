@@ -40,6 +40,9 @@ mixin _$ItemModel {
   String? get salesCategory => throw _privateConstructorUsedError;
   List<String>? get dietaryTags => throw _privateConstructorUsedError;
   List<String>? get allergens => throw _privateConstructorUsedError;
+  String? get variantsJson => throw _privateConstructorUsedError;
+  String? get addonsJson => throw _privateConstructorUsedError;
+  List<String>? get specialInstructions => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -71,7 +74,10 @@ abstract class $ItemModelCopyWith<$Res> {
       String? kitchenCategory,
       String? salesCategory,
       List<String>? dietaryTags,
-      List<String>? allergens});
+      List<String>? allergens,
+      String? variantsJson,
+      String? addonsJson,
+      List<String>? specialInstructions});
 }
 
 /// @nodoc
@@ -106,6 +112,9 @@ class _$ItemModelCopyWithImpl<$Res, $Val extends ItemModel>
     Object? salesCategory = freezed,
     Object? dietaryTags = freezed,
     Object? allergens = freezed,
+    Object? variantsJson = freezed,
+    Object? addonsJson = freezed,
+    Object? specialInstructions = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -184,6 +193,18 @@ class _$ItemModelCopyWithImpl<$Res, $Val extends ItemModel>
           ? _value.allergens
           : allergens // ignore: cast_nullable_to_non_nullable
               as List<String>?,
+      variantsJson: freezed == variantsJson
+          ? _value.variantsJson
+          : variantsJson // ignore: cast_nullable_to_non_nullable
+              as String?,
+      addonsJson: freezed == addonsJson
+          ? _value.addonsJson
+          : addonsJson // ignore: cast_nullable_to_non_nullable
+              as String?,
+      specialInstructions: freezed == specialInstructions
+          ? _value.specialInstructions
+          : specialInstructions // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
     ) as $Val);
   }
 }
@@ -215,7 +236,10 @@ abstract class _$$ItemModelImplCopyWith<$Res>
       String? kitchenCategory,
       String? salesCategory,
       List<String>? dietaryTags,
-      List<String>? allergens});
+      List<String>? allergens,
+      String? variantsJson,
+      String? addonsJson,
+      List<String>? specialInstructions});
 }
 
 /// @nodoc
@@ -248,6 +272,9 @@ class __$$ItemModelImplCopyWithImpl<$Res>
     Object? salesCategory = freezed,
     Object? dietaryTags = freezed,
     Object? allergens = freezed,
+    Object? variantsJson = freezed,
+    Object? addonsJson = freezed,
+    Object? specialInstructions = freezed,
   }) {
     return _then(_$ItemModelImpl(
       id: null == id
@@ -326,13 +353,25 @@ class __$$ItemModelImplCopyWithImpl<$Res>
           ? _value._allergens
           : allergens // ignore: cast_nullable_to_non_nullable
               as List<String>?,
+      variantsJson: freezed == variantsJson
+          ? _value.variantsJson
+          : variantsJson // ignore: cast_nullable_to_non_nullable
+              as String?,
+      addonsJson: freezed == addonsJson
+          ? _value.addonsJson
+          : addonsJson // ignore: cast_nullable_to_non_nullable
+              as String?,
+      specialInstructions: freezed == specialInstructions
+          ? _value._specialInstructions
+          : specialInstructions // ignore: cast_nullable_to_non_nullable
+              as List<String>?,
     ));
   }
 }
 
 /// @nodoc
 @JsonSerializable()
-class _$ItemModelImpl implements _ItemModel {
+class _$ItemModelImpl extends _ItemModel {
   const _$ItemModelImpl(
       {required this.id,
       required this.name,
@@ -352,9 +391,14 @@ class _$ItemModelImpl implements _ItemModel {
       this.kitchenCategory,
       this.salesCategory,
       final List<String>? dietaryTags,
-      final List<String>? allergens})
+      final List<String>? allergens,
+      this.variantsJson,
+      this.addonsJson,
+      final List<String>? specialInstructions})
       : _dietaryTags = dietaryTags,
-        _allergens = allergens;
+        _allergens = allergens,
+        _specialInstructions = specialInstructions,
+        super._();
 
   factory _$ItemModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$ItemModelImplFromJson(json);
@@ -415,8 +459,23 @@ class _$ItemModelImpl implements _ItemModel {
   }
 
   @override
+  final String? variantsJson;
+  @override
+  final String? addonsJson;
+  final List<String>? _specialInstructions;
+  @override
+  List<String>? get specialInstructions {
+    final value = _specialInstructions;
+    if (value == null) return null;
+    if (_specialInstructions is EqualUnmodifiableListView)
+      return _specialInstructions;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(value);
+  }
+
+  @override
   String toString() {
-    return 'ItemModel(id: $id, name: $name, shortCode: $shortCode, price: $price, isAvailable: $isAvailable, isFrequentlySold: $isFrequentlySold, vegType: $vegType, imageUrl: $imageUrl, portion: $portion, calorificValue: $calorificValue, serviceTime: $serviceTime, ingredients: $ingredients, shortDescription: $shortDescription, itemGroup: $itemGroup, taxTemplate: $taxTemplate, kitchenCategory: $kitchenCategory, salesCategory: $salesCategory, dietaryTags: $dietaryTags, allergens: $allergens)';
+    return 'ItemModel(id: $id, name: $name, shortCode: $shortCode, price: $price, isAvailable: $isAvailable, isFrequentlySold: $isFrequentlySold, vegType: $vegType, imageUrl: $imageUrl, portion: $portion, calorificValue: $calorificValue, serviceTime: $serviceTime, ingredients: $ingredients, shortDescription: $shortDescription, itemGroup: $itemGroup, taxTemplate: $taxTemplate, kitchenCategory: $kitchenCategory, salesCategory: $salesCategory, dietaryTags: $dietaryTags, allergens: $allergens, variantsJson: $variantsJson, addonsJson: $addonsJson, specialInstructions: $specialInstructions)';
   }
 
   @override
@@ -456,7 +515,13 @@ class _$ItemModelImpl implements _ItemModel {
             const DeepCollectionEquality()
                 .equals(other._dietaryTags, _dietaryTags) &&
             const DeepCollectionEquality()
-                .equals(other._allergens, _allergens));
+                .equals(other._allergens, _allergens) &&
+            (identical(other.variantsJson, variantsJson) ||
+                other.variantsJson == variantsJson) &&
+            (identical(other.addonsJson, addonsJson) ||
+                other.addonsJson == addonsJson) &&
+            const DeepCollectionEquality()
+                .equals(other._specialInstructions, _specialInstructions));
   }
 
   @JsonKey(ignore: true)
@@ -481,7 +546,10 @@ class _$ItemModelImpl implements _ItemModel {
         kitchenCategory,
         salesCategory,
         const DeepCollectionEquality().hash(_dietaryTags),
-        const DeepCollectionEquality().hash(_allergens)
+        const DeepCollectionEquality().hash(_allergens),
+        variantsJson,
+        addonsJson,
+        const DeepCollectionEquality().hash(_specialInstructions)
       ]);
 
   @JsonKey(ignore: true)
@@ -498,7 +566,7 @@ class _$ItemModelImpl implements _ItemModel {
   }
 }
 
-abstract class _ItemModel implements ItemModel {
+abstract class _ItemModel extends ItemModel {
   const factory _ItemModel(
       {required final int id,
       required final String name,
@@ -518,7 +586,11 @@ abstract class _ItemModel implements ItemModel {
       final String? kitchenCategory,
       final String? salesCategory,
       final List<String>? dietaryTags,
-      final List<String>? allergens}) = _$ItemModelImpl;
+      final List<String>? allergens,
+      final String? variantsJson,
+      final String? addonsJson,
+      final List<String>? specialInstructions}) = _$ItemModelImpl;
+  const _ItemModel._() : super._();
 
   factory _ItemModel.fromJson(Map<String, dynamic> json) =
       _$ItemModelImpl.fromJson;
@@ -561,6 +633,12 @@ abstract class _ItemModel implements ItemModel {
   List<String>? get dietaryTags;
   @override
   List<String>? get allergens;
+  @override
+  String? get variantsJson;
+  @override
+  String? get addonsJson;
+  @override
+  List<String>? get specialInstructions;
   @override
   @JsonKey(ignore: true)
   _$$ItemModelImplCopyWith<_$ItemModelImpl> get copyWith =>

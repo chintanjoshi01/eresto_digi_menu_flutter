@@ -5,6 +5,18 @@ import '../../domain/models/template_model.dart';
 import '../../domain/models/session_model.dart';
 
 abstract class MenuRemoteDataSource {
+  // --- V6 Menu Builder APIs (Official) ---
+  Future<Map<String, dynamic>> getMenuBuilderData();
+  Future<Map<String, dynamic>> changeTheme({required int templateId, required int themeId});
+  Future<List<dynamic>> getThemesCatalog();
+  Future<Map<String, dynamic>> updateChannelSession({
+    required int sessionId,
+    required String op,
+    required Map<String, dynamic> sessionJson,
+  });
+  Future<Map<String, dynamic>> getSingleSession({required int sessionId});
+
+  // --- Legacy Methods ---
   Future<List<TemplateModel>> getTemplates();
   Future<TemplateModel> updateTheme({
     required int id,
@@ -23,6 +35,112 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
   final ApiClient _apiClient;
 
   MenuRemoteDataSourceImpl(this._apiClient);
+
+  // --------------------------------------------------------------------------
+  // V6 Menu Builder APIs (Official)
+  // --------------------------------------------------------------------------
+
+  @override
+  Future<Map<String, dynamic>> getMenuBuilderData() async {
+    try {
+      final response = await _apiClient.dio.post(Endpoints.v6MenuBuilderData, data: {});
+      final data = response.data;
+      if (data != null && data['status'] == 1 && data['data'] != null) {
+        return data['data'] as Map<String, dynamic>;
+      } else {
+        throw Exception(data?['message'] ?? 'Failed to load menu builder data');
+      }
+    } on DioException catch (e) {
+      throw _apiClient.handleDioError(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> changeTheme({
+    required int templateId,
+    required int themeId,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        Endpoints.v6ChangeTheme,
+        data: {
+          'menu_tmpl_id': templateId,
+          'theme_id': themeId,
+        },
+      );
+      final data = response.data;
+      if (data != null && data['status'] == 1) {
+        return (data['data'] as Map<String, dynamic>?) ?? {};
+      } else {
+        throw Exception(data?['message'] ?? 'Failed to change theme');
+      }
+    } on DioException catch (e) {
+      throw _apiClient.handleDioError(e);
+    }
+  }
+
+  @override
+  Future<List<dynamic>> getThemesCatalog() async {
+    try {
+      final response = await _apiClient.dio.post(Endpoints.v6GetThemes, data: {});
+      final data = response.data;
+      if (data != null && data['status'] == 1 && data['data'] is List) {
+        return data['data'] as List<dynamic>;
+      } else {
+        throw Exception(data?['message'] ?? 'Failed to load themes catalog');
+      }
+    } on DioException catch (e) {
+      throw _apiClient.handleDioError(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateChannelSession({
+    required int sessionId,
+    required String op,
+    required Map<String, dynamic> sessionJson,
+  }) async {
+    try {
+      final response = await _apiClient.dio.post(
+        Endpoints.v6UpdateSession,
+        data: {
+          'session_id': sessionId,
+          'op': op,
+          'session_json': sessionJson,
+        },
+      );
+      final data = response.data;
+      if (data != null && data['status'] == 1) {
+        return (data['data'] as Map<String, dynamic>?) ?? {};
+      } else {
+        throw Exception(data?['message'] ?? 'Failed to update channel session');
+      }
+    } on DioException catch (e) {
+      throw _apiClient.handleDioError(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> getSingleSession({required int sessionId}) async {
+    try {
+      final response = await _apiClient.dio.post(
+        Endpoints.v6GetSession,
+        data: {'session_id': sessionId},
+      );
+      final data = response.data;
+      if (data != null && data['status'] == 1) {
+        return (data['data'] as Map<String, dynamic>?) ?? {};
+      } else {
+        throw Exception(data?['message'] ?? 'Failed to get session details');
+      }
+    } on DioException catch (e) {
+      throw _apiClient.handleDioError(e);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Legacy / Backward Compatibility
+  // --------------------------------------------------------------------------
 
   @override
   Future<List<TemplateModel>> getTemplates() async {

@@ -5,14 +5,17 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
+import '../../domain/menu_service_stat.dart';
 
-/// Enterprise Analytics Card displaying QR scans metrics, period filters,
-/// cubic curve charts via fl_chart, and summary metric footers matching prototype HTML specs.
+/// Enterprise Analytics Card matching prototype screenshot media_1789021404987.png 100%.
 class QrScanAnalyticsCard extends StatelessWidget {
   final int totalScans;
   final double deltaPercent;
   final String activePeriod;
   final ValueChanged<String> onPeriodChanged;
+  final String selectedMenuFilter;
+  final ValueChanged<String> onMenuFilterChanged;
+  final List<MenuServiceStat> menuServices;
   final List<int> chartData;
   final List<String> chartLabels;
   final String peakHour;
@@ -26,6 +29,9 @@ class QrScanAnalyticsCard extends StatelessWidget {
     required this.deltaPercent,
     required this.activePeriod,
     required this.onPeriodChanged,
+    this.selectedMenuFilter = 'all',
+    required this.onMenuFilterChanged,
+    required this.menuServices,
     required this.chartData,
     required this.chartLabels,
     this.peakHour = "6–7 PM",
@@ -36,15 +42,24 @@ class QrScanAnalyticsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    int maxVal = 0;
+    int maxIdx = 0;
+    for (int i = 0; i < chartData.length; i++) {
+      if (chartData[i] > maxVal) {
+        maxVal = chartData[i];
+        maxIdx = i;
+      }
+    }
+
     return Container(
       margin: margin,
-      padding: EdgeInsets.all(14.w),
+      padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 14.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radius16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.09),
+            color: Colors.black.withOpacity(0.08),
             blurRadius: 16,
             offset: const Offset(0, 4),
           ),
@@ -53,66 +68,88 @@ class QrScanAnalyticsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header Row: Scans Count + Compact Period Selector Pills
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.qr_code_scanner_rounded,
-                          size: 13.sp,
-                          color: AppColors.primary,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          "QR Scans Today",
-                          style: GoogleFonts.nunito(
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF6B7280),
+          // 1. Menu Filter Bar (Horizontally scrollable for any number of categories)
+          Container(
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFF3F4F6), width: 1.5)),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: menuServices.map((service) {
+                  final isSelected = selectedMenuFilter == service.id;
+                  return InkWell(
+                    onTap: () => onMenuFilterChanged(service.id),
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 7.h),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: isSelected ? const Color(0xFFC1272D) : Colors.transparent,
+                            width: 2.w,
                           ),
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 3.h),
-                    Text(
-                      totalScans.toString(),
-                      style: GoogleFonts.nunito(
-                        fontSize: 28.sp,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
-                        height: 1.0,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            service.name,
+                            style: GoogleFonts.nunito(
+                              fontSize: 11.sp,
+                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                              color: isSelected ? const Color(0xFFC1272D) : const Color(0xFF9CA3AF),
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                          Text(
+                            service.scansCount.toString(),
+                            style: GoogleFonts.nunito(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w800,
+                              color: isSelected ? const Color(0xFFC1272D) : const Color(0xFF374151),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 3.h),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.trending_up_rounded,
-                          size: 13.sp,
-                          color: const Color(0xFF16A34A),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+          SizedBox(height: 12.h),
+
+          // 2. Trend Subtitle + Period Selector Pills (Today / Week / Month)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.access_time_rounded,
+                      size: 13.sp,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                    SizedBox(width: 4.w),
+                    Expanded(
+                      child: Text(
+                        "${_getPeriodLabel(activePeriod)} scan trend",
+                        style: GoogleFonts.nunito(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF6B7280),
                         ),
-                        SizedBox(width: 2.w),
-                        Text(
-                          "↑ ${deltaPercent.toInt()}% vs yesterday",
-                          style: GoogleFonts.nunito(
-                            fontSize: 11.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF16A34A),
-                          ),
-                        ),
-                      ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
               ),
-              // Compact Period Selector Pills
+              SizedBox(width: 6.w),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -125,181 +162,248 @@ class QrScanAnalyticsCard extends StatelessWidget {
               ),
             ],
           ),
+          SizedBox(height: 8.h),
+
+          // 3. Main Metric readout (247 + ↑ 18% vs yesterday)
+          Builder(
+            builder: (context) {
+              final isPositive = deltaPercent >= 0;
+              final deltaColor = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
+              final deltaIcon = isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    totalScans.toString(),
+                    style: GoogleFonts.nunito(
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF111827),
+                      height: 1.0,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Row(
+                    children: [
+                      Icon(deltaIcon, size: 11.sp, color: deltaColor),
+                      SizedBox(width: 2.w),
+                      Text(
+                        "${deltaPercent.abs().toInt()}% vs yesterday",
+                        style: GoogleFonts.nunito(
+                          fontSize: 10.5.sp,
+                          fontWeight: FontWeight.w700,
+                          color: deltaColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
           SizedBox(height: 12.h),
 
-          // Cubic Curve Chart (fl_chart with fixed integer step interval)
-          SizedBox(
-            height: 92.h,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(
-                  show: true,
-                  drawVerticalLine: false,
-                  getDrawingHorizontalLine: (val) => FlLine(
-                    color: const Color(0xFFF3F4F6),
-                    strokeWidth: 1,
-                  ),
-                ),
-                titlesData: FlTitlesData(
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 22,
-                      getTitlesWidget: (value, meta) {
-                        return Text(
-                          value.toInt().toString(),
-                          style: GoogleFonts.nunito(
-                            fontSize: 8.sp,
-                            color: const Color(0xFFD1D5DB),
+          // 4. Cubic Curve Chart with Floating Tooltip Box (Peak - 38)
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              SizedBox(
+                height: 94.h,
+                child: LineChart(
+                  LineChartData(
+                    gridData: const FlGridData(show: false),
+                    titlesData: FlTitlesData(
+                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 18,
+                          interval: 1.0,
+                          getTitlesWidget: (value, meta) {
+                            final idx = value.toInt();
+                            if (idx >= 0 && idx < chartLabels.length) {
+                              final isNow = chartLabels[idx].toLowerCase() == 'now';
+                              return Padding(
+                                padding: EdgeInsets.only(top: 4.h),
+                                child: Text(
+                                  chartLabels[idx],
+                                  style: GoogleFonts.nunito(
+                                    fontSize: 8.5.sp,
+                                    color: isNow ? AppColors.primary : const Color(0xFF9CA3AF),
+                                    fontWeight: isNow ? FontWeight.w900 : FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    minX: 0,
+                    maxX: (chartData.isNotEmpty ? (chartData.length - 1) : 0).toDouble(),
+                    minY: 0,
+                    maxY: (maxVal > 0 ? maxVal * 1.3 : 10).toDouble(),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: List.generate(
+                          chartData.length,
+                          (i) => FlSpot(i.toDouble(), chartData[i].toDouble()),
+                        ),
+                        isCurved: true,
+                        curveSmoothness: 0.35,
+                        color: AppColors.primary,
+                        barWidth: 2.4.w,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) {
+                            if (maxVal > 0 && index == maxIdx) {
+                              return FlDotCirclePainter(
+                                radius: 4.r,
+                                color: Colors.white,
+                                strokeWidth: 2.w,
+                                strokeColor: const Color(0xFFC1272D),
+                              );
+                            }
+                            if (maxVal > 0 && index == chartData.length - 1) {
+                              return FlDotCirclePainter(
+                                radius: 3.5.r,
+                                color: Colors.white,
+                                strokeWidth: 1.8.w,
+                                strokeColor: const Color(0xFFC1272D),
+                              );
+                            }
+                            return FlDotCirclePainter(
+                              radius: 0,
+                              color: Colors.transparent,
+                              strokeWidth: 0,
+                            );
+                          },
+                        ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              const Color(0xFFC1272D).withOpacity(0.12),
+                              const Color(0xFFC1272D).withOpacity(0.0),
+                            ],
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 18,
-                      interval: 1.0, // Fixed 1.0 step prevents duplicate labels
-                      getTitlesWidget: (value, meta) {
-                        final idx = value.toInt();
-                        if (idx >= 0 && idx < chartLabels.length) {
-                          final isNow = chartLabels[idx].toLowerCase() == 'now';
-                          return Padding(
-                            padding: EdgeInsets.only(top: 4.h),
-                            child: Text(
-                              chartLabels[idx],
-                              style: GoogleFonts.nunito(
-                                fontSize: 9.sp,
-                                color: isNow ? AppColors.primary : const Color(0xFF9CA3AF),
-                                fontWeight: isNow ? FontWeight.w700 : FontWeight.w600,
-                              ),
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                borderData: FlBorderData(show: false),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: chartData.asMap().entries.map((e) {
-                      return FlSpot(e.key.toDouble(), e.value.toDouble());
-                    }).toList(),
-                    isCurved: true,
-                    curveSmoothness: 0.35,
-                    color: AppColors.primary,
-                    barWidth: 2.0,
-                    isStrokeCapRound: true,
-                    dotData: FlDotData(
-                      show: true,
-                      getDotPainter: (spot, percent, barData, index) {
-                        final isPeak = index == 4; // 6pm peak dot
-                        return FlDotCirclePainter(
-                          radius: isPeak ? 4.0 : 2.5,
-                          color: isPeak ? Colors.white : AppColors.primary,
-                          strokeColor: AppColors.primary,
-                          strokeWidth: isPeak ? 2.0 : 0.0,
-                        );
-                      },
+              ),
+              // Floating Peak Tooltip Callout Box (Peak · 38)
+              if (peakScans > 0)
+                Positioned(
+                  right: 36.w,
+                  top: 2.h,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.5.h),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFC1272D),
+                      borderRadius: BorderRadius.circular(4.r),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFC1272D).withOpacity(0.25),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          AppColors.primary.withOpacity(0.15),
-                          AppColors.primary.withOpacity(0.01),
-                        ],
+                    child: Text(
+                      "Peak · $peakScans",
+                      style: GoogleFonts.nunito(
+                        color: Colors.white,
+                        fontSize: 8.5.sp,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+            ],
           ),
+          SizedBox(height: 12.h),
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
           SizedBox(height: 10.h),
 
-          // Bottom Metric Footer Row (Matching Prototype HTML lines 480-495)
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 8.h),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
-            ),
-            child: Row(
-              children: [
-                _buildSummaryStat("Peak Hour", peakHour),
-                _buildSummaryDivider(),
-                _buildSummaryStat("Peak Scans", peakScans.toString()),
-                _buildSummaryDivider(),
-                _buildSummaryStat("Yesterday", yesterdayScans.toString()),
-              ],
-            ),
+          // 5. Bottom Stats Row (Peak Hour, Peak Scans, Yesterday)
+          Row(
+            children: [
+              Expanded(child: Center(child: _buildFooterMetric("Peak Hour", peakHour))),
+              Container(width: 1.w, height: 26.h, color: const Color(0xFFF3F4F6)),
+              Expanded(child: Center(child: _buildFooterMetric("Peak Scans", peakScans.toString()))),
+              Container(width: 1.w, height: 26.h, color: const Color(0xFFF3F4F6)),
+              Expanded(child: Center(child: _buildFooterMetric("Yesterday", yesterdayScans.toString()))),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  String _getPeriodLabel(String period) {
+    if (period == 'week') return "This week's";
+    if (period == 'month') return "This month's";
+    return "Today's";
   }
 
   Widget _buildPeriodPill(String id, String label) {
     final isSelected = activePeriod == id;
-    return GestureDetector(
+    return InkWell(
       onTap: () => onPeriodChanged(id),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+      borderRadius: BorderRadius.circular(20.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 3.h),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(AppDimensions.radius8),
+          color: isSelected ? const Color(0xFFC1272D) : Colors.white,
+          borderRadius: BorderRadius.circular(20.r),
+          border: Border.all(
+            color: isSelected ? const Color(0xFFC1272D) : const Color(0xFFE5E7EB),
+            width: 1.5.w,
+          ),
         ),
         child: Text(
           label,
           style: GoogleFonts.nunito(
-            fontSize: 10.sp,
+            fontSize: 9.5.sp,
+            color: isSelected ? Colors.white : const Color(0xFF6B7280),
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF4B5563),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSummaryStat(String label, String value) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.nunito(
-              fontSize: 10.sp,
-              color: const Color(0xFF9CA3AF),
-              fontWeight: FontWeight.w600,
-            ),
+  Widget _buildFooterMetric(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          label,
+          style: GoogleFonts.nunito(
+            fontSize: 9.sp,
+            color: const Color(0xFF9CA3AF),
+            fontWeight: FontWeight.w600,
           ),
-          SizedBox(height: 2.h),
-          Text(
-            value,
-            style: GoogleFonts.nunito(
-              fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
-            ),
+        ),
+        SizedBox(height: 2.h),
+        Text(
+          value,
+          style: GoogleFonts.nunito(
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF111827),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryDivider() {
-    return Container(
-      width: 1.w,
-      height: 20.h,
-      color: const Color(0xFFF3F4F6),
+        ),
+      ],
     );
   }
 }

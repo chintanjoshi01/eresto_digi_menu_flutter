@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -74,7 +75,10 @@ class QuickActionsGrid extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(AppDimensions.radius12),
         child: InkWell(
-          onTap: onTap,
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
           borderRadius: BorderRadius.circular(AppDimensions.radius12),
           child: Container(
             padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 4.w),

@@ -26,6 +26,9 @@ class MenuItemCollection {
   List<String>? dietaryTags;
   List<String>? allergens;
   String? imageUrl;
+  String? variantsJson;
+  String? addonsJson;
+  List<String>? specialInstructions;
 }
 
 @collection

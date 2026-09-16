@@ -31,6 +31,11 @@ _$ItemModelImpl _$$ItemModelImplFromJson(Map<String, dynamic> json) =>
       allergens: (json['allergens'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      variantsJson: json['variantsJson'] as String?,
+      addonsJson: json['addonsJson'] as String?,
+      specialInstructions: (json['specialInstructions'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
 
 Map<String, dynamic> _$$ItemModelImplToJson(_$ItemModelImpl instance) =>
@@ -54,4 +59,7 @@ Map<String, dynamic> _$$ItemModelImplToJson(_$ItemModelImpl instance) =>
       'salesCategory': instance.salesCategory,
       'dietaryTags': instance.dietaryTags,
       'allergens': instance.allergens,
+      'variantsJson': instance.variantsJson,
+      'addonsJson': instance.addonsJson,
+      'specialInstructions': instance.specialInstructions,
     };

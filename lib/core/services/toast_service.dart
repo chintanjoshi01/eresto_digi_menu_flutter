@@ -8,6 +8,10 @@ import 'package:share_plus/share_plus.dart';
 import 'package:toastification/toastification.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../api/api_client.dart';
+import '../services/device_service.dart';
+import '../storage/storage_service.dart';
+
 class ToastService {
   // Shadow matching Edge app style
   static final List<BoxShadow> highModeShadow = [
@@ -103,9 +107,11 @@ class ToastService {
   }
 
   // Smart Error Handler (aligned with Edge)
-  static void showError(String message, {String? techDetail}) {
+  static void showError(String message, {dynamic techDetail}) {
     final lowerMsg = message.toLowerCase();
-    final isTechnical = lowerMsg.contains("sql") || 
+    final hasExplicitTechDetail = techDetail != null && techDetail.toString().trim().isNotEmpty;
+    final isTechnical = hasExplicitTechDetail ||
+                        lowerMsg.contains("sql") || 
                         lowerMsg.contains("exception") || 
                         lowerMsg.contains("unknown column") || 
                         lowerMsg.contains("dio") || 
@@ -113,6 +119,7 @@ class ToastService {
                         lowerMsg.contains("connection") || 
                         lowerMsg.contains("something went wrong") || 
                         lowerMsg.contains("internal server error") || 
+                        lowerMsg.contains("undefined variable") || 
                         lowerMsg.contains("500") || 
                         message.length > 200;
 
@@ -152,7 +159,7 @@ class ToastService {
   }
 
   // Actionable Technical Error Dialog
-  static void _showActionableErrorDialog(String message, {String? techDetail}) {
+  static void _showActionableErrorDialog(String message, {dynamic techDetail}) {
     Get.bottomSheet(
       Container(
         padding: EdgeInsets.all(20.w),
@@ -197,15 +204,48 @@ class ToastService {
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(color: Colors.grey.shade300),
               ),
-              child: Text(
-                message,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.sourceCodePro(
-                  fontSize: 11.sp,
-                  color: Colors.grey.shade800,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    message,
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.sourceCodePro(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade900,
+                    ),
+                  ),
+                  if (techDetail != null &&
+                      techDetail.toString().trim().isNotEmpty &&
+                      techDetail.toString().trim() != message.trim()) ...[
+                    SizedBox(height: 8.h),
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.all(8.w),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(6.r),
+                        border: Border.all(color: Colors.red.shade100),
+                      ),
+                      child: Text(
+                        techDetail is String
+                            ? techDetail
+                            : const JsonEncoder.withIndent('  ').convert(techDetail),
+                        maxLines: 6,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.sourceCodePro(
+                          fontSize: 10.sp,
+                          color: const Color(0xFFAB2421),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
             SizedBox(height: 20.h),
@@ -232,24 +272,83 @@ class ToastService {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
+                      final tx = ApiClient.lastFailedTransaction ?? ApiClient.lastTransaction;
+
+                      dynamic resolvedDetail = techDetail;
+                      if (resolvedDetail == null && tx?.responseBody != null) {
+                        if (tx!.responseBody is Map) {
+                          resolvedDetail = tx.responseBody['error'] ?? tx.responseBody['message'];
+                        }
+                      }
+                      if (resolvedDetail == null && tx?.errorMessage != null) {
+                        resolvedDetail = tx!.errorMessage;
+                      }
+
+                      final deviceId = Get.isRegistered<DeviceService>()
+                          ? Get.find<DeviceService>().deviceId
+                          : "Unknown";
+
+                      final storage = Get.isRegistered<StorageService>()
+                          ? Get.find<StorageService>()
+                          : null;
+
+                      final Map<String, dynamic> report = {
+                        "report_type": "Eresto Technical Error Report",
+                        "timestamp": DateTime.now().toIso8601String(),
+                        "app_info": {
+                          "name": "Eresto Digital Menu Standalone",
+                          "package": "in.eresto.eresto_menu",
+                          "app_version": DeviceService.appVersion,
+                          "product_id": DeviceService.productId,
+                          "login_from": DeviceService.loginFrom,
+                        },
+                        "device_info": {
+                          "platform": Platform.operatingSystem,
+                          "os_version": Platform.operatingSystemVersion,
+                          "device_id": deviceId,
+                          "locale": Platform.localeName,
+                        },
+                        "session_info": {
+                          "is_logged_in": storage?.isLoggedIn ?? false,
+                          "user_name": storage?.userName ?? "",
+                          "resto_id": storage?.restoId ?? "",
+                          "resto_name": storage?.restoName ?? "",
+                          "role_id": storage?.roleId ?? "",
+                          "subscription": storage?.subscription ?? "",
+                        },
+                        "error_info": {
+                          "summary": message,
+                          "tech_detail": resolvedDetail ?? "N/A",
+                        },
+                        if (tx != null) "network_transaction": tx.toJson(),
+                      };
+
                       try {
-                        final Map<String, dynamic> report = {
-                          "timestamp": DateTime.now().toIso8601String(),
-                          "app": "Eresto Digital Menu Standalone",
-                          "type": "Technical Error Report",
-                          "error": message,
-                          "tech_detail": techDetail ?? "N/A",
-                        };
+                        const encoder = JsonEncoder.withIndent('  ');
+                        final formattedJson = encoder.convert(report);
+
                         final tempDir = await getTemporaryDirectory();
                         final file = File('${tempDir.path}/eresto_error_report.json');
-                        await file.writeAsString(jsonEncode(report));
+                        await file.writeAsString(formattedJson);
+
                         await Share.shareXFiles(
                           [XFile(file.path)],
                           subject: "Eresto Menu Technical Error Report",
+                          text: "Eresto Technical Error Report: $message",
                         );
                       } catch (e) {
-                        final transcript = techDetail != null ? "ERROR: $message\n\nDETAILS: $techDetail" : message;
-                        await Share.share(transcript, subject: "Eresto Menu Technical Error Report");
+                        final transcript = StringBuffer();
+                        transcript.writeln("=== ERESTO TECHNICAL ERROR REPORT ===");
+                        transcript.writeln("Timestamp: ${DateTime.now().toIso8601String()}");
+                        transcript.writeln("Error: $message");
+                        if (resolvedDetail != null) {
+                          transcript.writeln("Details:\n$resolvedDetail");
+                        }
+                        if (tx != null) {
+                          transcript.writeln("\nAPI: ${tx.method} ${tx.url} (Status: ${tx.statusCode})");
+                          transcript.writeln("Response: ${jsonEncode(tx.responseBody)}");
+                        }
+                        await Share.share(transcript.toString(), subject: "Eresto Menu Technical Error Report");
                       }
                     },
                     style: ElevatedButton.styleFrom(

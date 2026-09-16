@@ -1,11 +1,10 @@
 import 'package:dartz/dartz.dart';
-import '../../../../core/api/api_exception.dart';
-import '../models/auth_model.dart';
+import '../../../../core/errors/failures.dart';
+import '../models/v6_login_request.dart';
+import '../models/v6_login_response.dart';
 
+/// Domain repository contract for Authentication
 abstract class AuthRepository {
-  Future<Either<ApiException, AuthModel>> login({
-    required String email,
-    required String password,
-  });
-  Future<Either<ApiException, void>> logout();
+  Future<Either<Failure, V6LoginResponse>> login(V6LoginRequest request);
+  Future<Either<Failure, void>> logout();
 }

@@ -18,98 +18,113 @@ const MenuItemCollectionSchema = CollectionSchema(
   name: r'MenuItemCollection',
   id: -9162736578015733379,
   properties: {
-    r'allergens': PropertySchema(
+    r'addonsJson': PropertySchema(
       id: 0,
+      name: r'addonsJson',
+      type: IsarType.string,
+    ),
+    r'allergens': PropertySchema(
+      id: 1,
       name: r'allergens',
       type: IsarType.stringList,
     ),
     r'calorificValue': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'calorificValue',
       type: IsarType.long,
     ),
     r'dietaryTags': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'dietaryTags',
       type: IsarType.stringList,
     ),
     r'imageUrl': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'imageUrl',
       type: IsarType.string,
     ),
     r'ingredients': PropertySchema(
-      id: 4,
+      id: 5,
       name: r'ingredients',
       type: IsarType.string,
     ),
     r'isAvailable': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'isAvailable',
       type: IsarType.bool,
     ),
     r'isFrequentlySold': PropertySchema(
-      id: 6,
+      id: 7,
       name: r'isFrequentlySold',
       type: IsarType.bool,
     ),
     r'itemGroup': PropertySchema(
-      id: 7,
+      id: 8,
       name: r'itemGroup',
       type: IsarType.string,
     ),
     r'kitchenCategory': PropertySchema(
-      id: 8,
+      id: 9,
       name: r'kitchenCategory',
       type: IsarType.string,
     ),
     r'name': PropertySchema(
-      id: 9,
+      id: 10,
       name: r'name',
       type: IsarType.string,
     ),
     r'portion': PropertySchema(
-      id: 10,
+      id: 11,
       name: r'portion',
       type: IsarType.string,
     ),
     r'price': PropertySchema(
-      id: 11,
+      id: 12,
       name: r'price',
       type: IsarType.double,
     ),
     r'remoteId': PropertySchema(
-      id: 12,
+      id: 13,
       name: r'remoteId',
       type: IsarType.long,
     ),
     r'salesCategory': PropertySchema(
-      id: 13,
+      id: 14,
       name: r'salesCategory',
       type: IsarType.string,
     ),
     r'serviceTime': PropertySchema(
-      id: 14,
+      id: 15,
       name: r'serviceTime',
       type: IsarType.long,
     ),
     r'shortCode': PropertySchema(
-      id: 15,
+      id: 16,
       name: r'shortCode',
       type: IsarType.string,
     ),
     r'shortDescription': PropertySchema(
-      id: 16,
+      id: 17,
       name: r'shortDescription',
       type: IsarType.string,
     ),
+    r'specialInstructions': PropertySchema(
+      id: 18,
+      name: r'specialInstructions',
+      type: IsarType.stringList,
+    ),
     r'taxTemplate': PropertySchema(
-      id: 17,
+      id: 19,
       name: r'taxTemplate',
       type: IsarType.string,
     ),
+    r'variantsJson': PropertySchema(
+      id: 20,
+      name: r'variantsJson',
+      type: IsarType.string,
+    ),
     r'vegType': PropertySchema(
-      id: 18,
+      id: 21,
       name: r'vegType',
       type: IsarType.string,
     )
@@ -148,6 +163,12 @@ int _menuItemCollectionEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.addonsJson;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   {
     final list = object.allergens;
     if (list != null) {
@@ -211,7 +232,25 @@ int _menuItemCollectionEstimateSize(
       bytesCount += 3 + value.length * 3;
     }
   }
+  {
+    final list = object.specialInstructions;
+    if (list != null) {
+      bytesCount += 3 + list.length * 3;
+      {
+        for (var i = 0; i < list.length; i++) {
+          final value = list[i];
+          bytesCount += value.length * 3;
+        }
+      }
+    }
+  }
   bytesCount += 3 + object.taxTemplate.length * 3;
+  {
+    final value = object.variantsJson;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.vegType.length * 3;
   return bytesCount;
 }
@@ -222,25 +261,28 @@ void _menuItemCollectionSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeStringList(offsets[0], object.allergens);
-  writer.writeLong(offsets[1], object.calorificValue);
-  writer.writeStringList(offsets[2], object.dietaryTags);
-  writer.writeString(offsets[3], object.imageUrl);
-  writer.writeString(offsets[4], object.ingredients);
-  writer.writeBool(offsets[5], object.isAvailable);
-  writer.writeBool(offsets[6], object.isFrequentlySold);
-  writer.writeString(offsets[7], object.itemGroup);
-  writer.writeString(offsets[8], object.kitchenCategory);
-  writer.writeString(offsets[9], object.name);
-  writer.writeString(offsets[10], object.portion);
-  writer.writeDouble(offsets[11], object.price);
-  writer.writeLong(offsets[12], object.remoteId);
-  writer.writeString(offsets[13], object.salesCategory);
-  writer.writeLong(offsets[14], object.serviceTime);
-  writer.writeString(offsets[15], object.shortCode);
-  writer.writeString(offsets[16], object.shortDescription);
-  writer.writeString(offsets[17], object.taxTemplate);
-  writer.writeString(offsets[18], object.vegType);
+  writer.writeString(offsets[0], object.addonsJson);
+  writer.writeStringList(offsets[1], object.allergens);
+  writer.writeLong(offsets[2], object.calorificValue);
+  writer.writeStringList(offsets[3], object.dietaryTags);
+  writer.writeString(offsets[4], object.imageUrl);
+  writer.writeString(offsets[5], object.ingredients);
+  writer.writeBool(offsets[6], object.isAvailable);
+  writer.writeBool(offsets[7], object.isFrequentlySold);
+  writer.writeString(offsets[8], object.itemGroup);
+  writer.writeString(offsets[9], object.kitchenCategory);
+  writer.writeString(offsets[10], object.name);
+  writer.writeString(offsets[11], object.portion);
+  writer.writeDouble(offsets[12], object.price);
+  writer.writeLong(offsets[13], object.remoteId);
+  writer.writeString(offsets[14], object.salesCategory);
+  writer.writeLong(offsets[15], object.serviceTime);
+  writer.writeString(offsets[16], object.shortCode);
+  writer.writeString(offsets[17], object.shortDescription);
+  writer.writeStringList(offsets[18], object.specialInstructions);
+  writer.writeString(offsets[19], object.taxTemplate);
+  writer.writeString(offsets[20], object.variantsJson);
+  writer.writeString(offsets[21], object.vegType);
 }
 
 MenuItemCollection _menuItemCollectionDeserialize(
@@ -250,26 +292,29 @@ MenuItemCollection _menuItemCollectionDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = MenuItemCollection();
-  object.allergens = reader.readStringList(offsets[0]);
-  object.calorificValue = reader.readLongOrNull(offsets[1]);
-  object.dietaryTags = reader.readStringList(offsets[2]);
+  object.addonsJson = reader.readStringOrNull(offsets[0]);
+  object.allergens = reader.readStringList(offsets[1]);
+  object.calorificValue = reader.readLongOrNull(offsets[2]);
+  object.dietaryTags = reader.readStringList(offsets[3]);
   object.id = id;
-  object.imageUrl = reader.readStringOrNull(offsets[3]);
-  object.ingredients = reader.readStringOrNull(offsets[4]);
-  object.isAvailable = reader.readBool(offsets[5]);
-  object.isFrequentlySold = reader.readBool(offsets[6]);
-  object.itemGroup = reader.readString(offsets[7]);
-  object.kitchenCategory = reader.readStringOrNull(offsets[8]);
-  object.name = reader.readString(offsets[9]);
-  object.portion = reader.readStringOrNull(offsets[10]);
-  object.price = reader.readDouble(offsets[11]);
-  object.remoteId = reader.readLong(offsets[12]);
-  object.salesCategory = reader.readStringOrNull(offsets[13]);
-  object.serviceTime = reader.readLongOrNull(offsets[14]);
-  object.shortCode = reader.readString(offsets[15]);
-  object.shortDescription = reader.readStringOrNull(offsets[16]);
-  object.taxTemplate = reader.readString(offsets[17]);
-  object.vegType = reader.readString(offsets[18]);
+  object.imageUrl = reader.readStringOrNull(offsets[4]);
+  object.ingredients = reader.readStringOrNull(offsets[5]);
+  object.isAvailable = reader.readBool(offsets[6]);
+  object.isFrequentlySold = reader.readBool(offsets[7]);
+  object.itemGroup = reader.readString(offsets[8]);
+  object.kitchenCategory = reader.readStringOrNull(offsets[9]);
+  object.name = reader.readString(offsets[10]);
+  object.portion = reader.readStringOrNull(offsets[11]);
+  object.price = reader.readDouble(offsets[12]);
+  object.remoteId = reader.readLong(offsets[13]);
+  object.salesCategory = reader.readStringOrNull(offsets[14]);
+  object.serviceTime = reader.readLongOrNull(offsets[15]);
+  object.shortCode = reader.readString(offsets[16]);
+  object.shortDescription = reader.readStringOrNull(offsets[17]);
+  object.specialInstructions = reader.readStringList(offsets[18]);
+  object.taxTemplate = reader.readString(offsets[19]);
+  object.variantsJson = reader.readStringOrNull(offsets[20]);
+  object.vegType = reader.readString(offsets[21]);
   return object;
 }
 
@@ -281,42 +326,48 @@ P _menuItemCollectionDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readStringList(offset)) as P;
-    case 1:
-      return (reader.readLongOrNull(offset)) as P;
-    case 2:
-      return (reader.readStringList(offset)) as P;
-    case 3:
       return (reader.readStringOrNull(offset)) as P;
+    case 1:
+      return (reader.readStringList(offset)) as P;
+    case 2:
+      return (reader.readLongOrNull(offset)) as P;
+    case 3:
+      return (reader.readStringList(offset)) as P;
     case 4:
       return (reader.readStringOrNull(offset)) as P;
     case 5:
-      return (reader.readBool(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 6:
       return (reader.readBool(offset)) as P;
     case 7:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 8:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 9:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 10:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 11:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 12:
-      return (reader.readLong(offset)) as P;
+      return (reader.readDouble(offset)) as P;
     case 13:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readLong(offset)) as P;
     case 14:
-      return (reader.readLongOrNull(offset)) as P;
-    case 15:
-      return (reader.readString(offset)) as P;
-    case 16:
       return (reader.readStringOrNull(offset)) as P;
-    case 17:
+    case 15:
+      return (reader.readLongOrNull(offset)) as P;
+    case 16:
       return (reader.readString(offset)) as P;
+    case 17:
+      return (reader.readStringOrNull(offset)) as P;
     case 18:
+      return (reader.readStringList(offset)) as P;
+    case 19:
+      return (reader.readString(offset)) as P;
+    case 20:
+      return (reader.readStringOrNull(offset)) as P;
+    case 21:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -576,6 +627,160 @@ extension MenuItemCollectionQueryWhere
 
 extension MenuItemCollectionQueryFilter
     on QueryBuilder<MenuItemCollection, MenuItemCollection, QFilterCondition> {
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'addonsJson',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'addonsJson',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'addonsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'addonsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'addonsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'addonsJson',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'addonsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'addonsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'addonsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'addonsJson',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'addonsJson',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      addonsJsonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'addonsJson',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
       allergensIsNull() {
     return QueryBuilder.apply(this, (query) {
@@ -2741,6 +2946,251 @@ extension MenuItemCollectionQueryFilter
   }
 
   QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'specialInstructions',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'specialInstructions',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'specialInstructions',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'specialInstructions',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'specialInstructions',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'specialInstructions',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'specialInstructions',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'specialInstructions',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'specialInstructions',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'specialInstructions',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'specialInstructions',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsElementIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'specialInstructions',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsLengthEqualTo(int length) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'specialInstructions',
+        length,
+        true,
+        length,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'specialInstructions',
+        0,
+        true,
+        0,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'specialInstructions',
+        0,
+        false,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsLengthLessThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'specialInstructions',
+        0,
+        true,
+        length,
+        include,
+      );
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsLengthGreaterThan(
+    int length, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'specialInstructions',
+        length,
+        include,
+        999999,
+        true,
+      );
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      specialInstructionsLengthBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.listLength(
+        r'specialInstructions',
+        lower,
+        includeLower,
+        upper,
+        includeUpper,
+      );
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
       taxTemplateEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -2871,6 +3321,160 @@ extension MenuItemCollectionQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'taxTemplate',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'variantsJson',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'variantsJson',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'variantsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'variantsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'variantsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'variantsJson',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'variantsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'variantsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'variantsJson',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'variantsJson',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'variantsJson',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterFilterCondition>
+      variantsJsonIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'variantsJson',
         value: '',
       ));
     });
@@ -3021,6 +3625,20 @@ extension MenuItemCollectionQueryLinks
 
 extension MenuItemCollectionQuerySortBy
     on QueryBuilder<MenuItemCollection, MenuItemCollection, QSortBy> {
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
+      sortByAddonsJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'addonsJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
+      sortByAddonsJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'addonsJson', Sort.desc);
+    });
+  }
+
   QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
       sortByCalorificValue() {
     return QueryBuilder.apply(this, (query) {
@@ -3246,6 +3864,20 @@ extension MenuItemCollectionQuerySortBy
   }
 
   QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
+      sortByVariantsJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'variantsJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
+      sortByVariantsJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'variantsJson', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
       sortByVegType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'vegType', Sort.asc);
@@ -3262,6 +3894,20 @@ extension MenuItemCollectionQuerySortBy
 
 extension MenuItemCollectionQuerySortThenBy
     on QueryBuilder<MenuItemCollection, MenuItemCollection, QSortThenBy> {
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
+      thenByAddonsJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'addonsJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
+      thenByAddonsJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'addonsJson', Sort.desc);
+    });
+  }
+
   QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
       thenByCalorificValue() {
     return QueryBuilder.apply(this, (query) {
@@ -3501,6 +4147,20 @@ extension MenuItemCollectionQuerySortThenBy
   }
 
   QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
+      thenByVariantsJson() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'variantsJson', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
+      thenByVariantsJsonDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'variantsJson', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QAfterSortBy>
       thenByVegType() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'vegType', Sort.asc);
@@ -3517,6 +4177,13 @@ extension MenuItemCollectionQuerySortThenBy
 
 extension MenuItemCollectionQueryWhereDistinct
     on QueryBuilder<MenuItemCollection, MenuItemCollection, QDistinct> {
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QDistinct>
+      distinctByAddonsJson({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'addonsJson', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<MenuItemCollection, MenuItemCollection, QDistinct>
       distinctByAllergens() {
     return QueryBuilder.apply(this, (query) {
@@ -3640,9 +4307,23 @@ extension MenuItemCollectionQueryWhereDistinct
   }
 
   QueryBuilder<MenuItemCollection, MenuItemCollection, QDistinct>
+      distinctBySpecialInstructions() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'specialInstructions');
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QDistinct>
       distinctByTaxTemplate({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'taxTemplate', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, MenuItemCollection, QDistinct>
+      distinctByVariantsJson({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'variantsJson', caseSensitive: caseSensitive);
     });
   }
 
@@ -3659,6 +4340,13 @@ extension MenuItemCollectionQueryProperty
   QueryBuilder<MenuItemCollection, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, String?, QQueryOperations>
+      addonsJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'addonsJson');
     });
   }
 
@@ -3778,10 +4466,24 @@ extension MenuItemCollectionQueryProperty
     });
   }
 
+  QueryBuilder<MenuItemCollection, List<String>?, QQueryOperations>
+      specialInstructionsProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'specialInstructions');
+    });
+  }
+
   QueryBuilder<MenuItemCollection, String, QQueryOperations>
       taxTemplateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'taxTemplate');
+    });
+  }
+
+  QueryBuilder<MenuItemCollection, String?, QQueryOperations>
+      variantsJsonProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'variantsJson');
     });
   }
 
