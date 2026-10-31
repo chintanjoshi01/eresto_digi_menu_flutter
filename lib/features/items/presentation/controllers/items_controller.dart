@@ -22,7 +22,7 @@ class ItemsController extends GetxController with StateMixin<List<ItemModel>> {
   final List<ItemModel> _allItemsList = [];
   final isRefreshing = false.obs;
 
-  List<ItemModel> get filteredItems => state ?? [];
+  final RxList<ItemModel> filteredItems = <ItemModel>[].obs;
 
   // Layout View Mode (true = Grid, false = List / Table rows)
   final isGridView = true.obs;
@@ -107,6 +107,7 @@ class ItemsController extends GetxController with StateMixin<List<ItemModel>> {
 
     // 2. If empty or user initiated pull-down refresh:
     if (_allItemsList.isEmpty) {
+      filteredItems.clear();
       change(null, status: RxStatus.loading());
     }
 
@@ -127,16 +128,17 @@ class ItemsController extends GetxController with StateMixin<List<ItemModel>> {
     networkResult.fold(
       (failure) {
         if (_allItemsList.isEmpty) {
+          filteredItems.clear();
           change([], status: RxStatus.error(failure.message));
         }
       },
       (freshItems) {
+        _allItemsList.clear();
         if (freshItems.isNotEmpty) {
-          _allItemsList.clear();
           _allItemsList.addAll(freshItems);
-          _updateCategoriesAndCounts();
-          filterItems();
         }
+        _updateCategoriesAndCounts();
+        filterItems();
       },
     );
   }
@@ -210,13 +212,14 @@ class ItemsController extends GetxController with StateMixin<List<ItemModel>> {
 
     // 7. Sort Ordering
     if (filterSortBy.value == 'PRICE_ASC') {
-      filtered.sort((a, b) => a.price.compareTo(b.price));
+      filtered.sort((a, b) => a.effectivePrice.compareTo(b.effectivePrice));
     } else if (filterSortBy.value == 'PRICE_DESC') {
-      filtered.sort((a, b) => b.price.compareTo(a.price));
+      filtered.sort((a, b) => b.effectivePrice.compareTo(a.effectivePrice));
     } else if (filterSortBy.value == 'NAME_ASC') {
       filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     }
 
+    filteredItems.assignAll(filtered);
     change(filtered, status: RxStatus.success());
   }
 

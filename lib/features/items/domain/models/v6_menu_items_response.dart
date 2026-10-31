@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:get/get.dart';
+import '../../../../core/api/endpoints.dart';
 import '../../../../core/storage/storage_service.dart';
 import '../../../../core/storage/menu_collections.dart';
 import 'item_model.dart';
@@ -28,16 +29,20 @@ class V6MenuItemsResponse {
 
     if (rawData is Map<String, dynamic>) {
       baseUrl = (rawData['img_base'] ??
+              rawData['item_base'] ??
+              rawData['item_base_url'] ??
               rawData['base_url'] ??
               rawData['image_base'] ??
               rawData['image_base_url'] ??
               rawData['img_base_url'] ??
               json['img_base'] ??
+              json['item_base'] ??
+              json['item_base_url'] ??
               json['base_url'])
           ?.toString();
       categoryList = rawData['items'] ?? rawData['categories'] ?? [];
-    } else if (json['img_base'] != null || json['base_url'] != null) {
-      baseUrl = (json['img_base'] ?? json['base_url'])?.toString();
+    } else if (json['img_base'] != null || json['item_base'] != null || json['item_base_url'] != null || json['base_url'] != null) {
+      baseUrl = (json['img_base'] ?? json['item_base'] ?? json['item_base_url'] ?? json['base_url'])?.toString();
     }
 
     if (categoryList is List) {
@@ -178,7 +183,23 @@ class V6ApiMenuItem {
 
   List<String>? get parsedAllergens {
     if (aik != null && aik!.trim().isNotEmpty) {
-      return aik!.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+      return aik!
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .map((e) {
+            final lower = e.toLowerCase();
+            if (lower.contains('crust')) return 'Crustacean';
+            if (lower.contains('gluten') || lower.contains('cereal')) return 'Gluten';
+            if (lower.contains('soya') || lower.contains('soy')) return 'Soyabean';
+            if (lower.contains('peanut') || lower.contains('pean')) return 'Peanuts';
+            if (lower.contains('egg')) return 'Eggs';
+            if (lower.contains('fish')) return 'Fish';
+            if (lower.contains('milk') || lower.contains('dairy')) return 'Milk';
+            if (lower.contains('nut') || lower.contains('tree')) return 'Nuts';
+            return e;
+          })
+          .toList();
     }
     return null;
   }
@@ -216,15 +237,12 @@ class V6ApiMenuItem {
     }
     var cleanPath = itemImage.trim();
 
-    // Prefer assets.eresto.app where all new and legacy item images reside
-    if (cleanPath.contains('assets.eresto.in')) {
-      cleanPath = cleanPath.replaceAll('assets.eresto.in', 'assets.eresto.app');
-    }
-
     final storage = Get.isRegistered<StorageService>() ? Get.find<StorageService>() : null;
     final effectiveRestoId = (restoId != null && restoId > 0) ? restoId : (storage?.restoId ?? 0);
+    final dynamicAssetsBase = Endpoints.activeAssetsBaseUrl;
+    final targetHost = Uri.tryParse(dynamicAssetsBase)?.host ?? 'assets.eresto.in';
 
-    // If already a full URL, check if it needs archive/item_images/
+    // If already a full URL:
     if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
       final uri = Uri.tryParse(cleanPath);
       if (uri != null &&
@@ -233,6 +251,11 @@ class V6ApiMenuItem {
               uri.host.contains('eresto.in') ||
               uri.host.contains('eresto.app')) &&
           uri.path.contains('/public/treasure/')) {
+        // Dynamically align domain with active API base domain
+        if (uri.host.startsWith('assets.') && uri.host != targetHost) {
+          cleanPath = cleanPath.replaceFirst(uri.host, targetHost);
+        }
+
         if (!uri.path.contains('/archive/item_images/')) {
           final parts = cleanPath.split('/public/treasure/');
           if (parts.length == 2) {
@@ -259,12 +282,15 @@ class V6ApiMenuItem {
             ? treasureUrl.trim()
             : (storage?.treasureUrl.trim() ?? ''));
 
-    if (effectiveBase.contains('assets.eresto.in')) {
-      effectiveBase = effectiveBase.replaceAll('assets.eresto.in', 'assets.eresto.app');
+    // Align effectiveBase assets domain with active targetHost if applicable
+    final effUri = Uri.tryParse(effectiveBase);
+    if (effUri != null && effUri.host.startsWith('assets.') && effUri.host != targetHost) {
+      effectiveBase = effectiveBase.replaceFirst(effUri.host, targetHost);
     }
 
+    // Default fallback if base is empty and restaurant ID is known
     if (effectiveBase.isEmpty && effectiveRestoId > 0) {
-      effectiveBase = 'https://assets.eresto.app/public/treasure/$effectiveRestoId/archive/item_images/';
+      effectiveBase = '$dynamicAssetsBase/public/treasure/$effectiveRestoId/archive/item_images/';
     }
 
     if (effectiveBase.isEmpty) {
@@ -274,7 +300,7 @@ class V6ApiMenuItem {
     var base = effectiveBase.endsWith('/') ? effectiveBase : '$effectiveBase/';
     var path = cleanPath.startsWith('/') ? cleanPath.substring(1) : cleanPath;
 
-    // Handle when base is like "https://assets.eresto.app/public/treasure/" without restoId
+    // Handle when base is like "https://assets.eresto.in/public/treasure/" without restoId
     if ((base.endsWith('/public/treasure/') || base.endsWith('/public/treasure')) && effectiveRestoId > 0) {
       base = base.endsWith('/') ? '$base$effectiveRestoId/archive/item_images/' : '$base/$effectiveRestoId/archive/item_images/';
     }
@@ -283,8 +309,8 @@ class V6ApiMenuItem {
     // and it's an Eresto treasure URL, insert archive/item_images/
     if (!base.contains('archive/item_images') && !path.startsWith('archive/item_images')) {
       if (base.contains('treasure') ||
-          base.contains('assets.eresto.app') ||
           base.contains('assets.eresto.in') ||
+          base.contains('assets.eresto.app') ||
           base.contains('eresto.in') ||
           base.contains('eresto.app')) {
         base = base.endsWith('/') ? '${base}archive/item_images/' : '$base/archive/item_images/';
@@ -388,6 +414,8 @@ class V6ApiMenuItem {
       shortDesc: json['short_desc']?.toString(),
       deliveryTime: json['delivery_time']?.toString(),
       baseUrl: (json['img_base'] ??
+              json['item_base'] ??
+              json['item_base_url'] ??
               json['base_url'] ??
               json['image_base'] ??
               json['image_base_url'] ??
@@ -431,7 +459,7 @@ class V6ApiMenuItem {
       isAvailable: isAvailable,
       isFrequentlySold: isFrequentlySold,
       vegType: isVeg ? 'veg' : 'non_veg',
-      portion: (qty != null && qty!.isNotEmpty) ? '$qty portion' : '1 portion',
+      portion: (qty != null && qty!.trim().isNotEmpty) ? qty!.trim() : null,
       calorificValue: cal,
       serviceTime: parsedServiceTime,
       ingredients: ingredients,
@@ -482,7 +510,7 @@ class V6ApiMenuItem {
     record.isAvailable = isAvailable;
     record.isFrequentlySold = isFrequentlySold;
     record.vegType = isVeg ? 'veg' : 'non_veg';
-    record.portion = (qty != null && qty!.isNotEmpty) ? '$qty portion' : '1 portion';
+    record.portion = (qty != null && qty!.trim().isNotEmpty) ? qty!.trim() : null;
     record.calorificValue = cal;
     record.serviceTime = parsedServiceTime;
     record.ingredients = ingredients;

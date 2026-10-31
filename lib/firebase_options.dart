@@ -54,7 +54,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyDpqoSiS9z6SjVfsM40e97uteVWR_NBCKc',
-    appId: '1:989050456812:android:7db34221283745ad5b33c9',
+    appId: '1:989050456812:android:2f495c607aac1d355b33c9',
     messagingSenderId: '989050456812',
     projectId: 'eresto-edge-app-5829',
     storageBucket: 'eresto-edge-app-5829.firebasestorage.app',

@@ -148,9 +148,9 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
     setState(() => _isLoadingGallery = true);
     try {
       final names = await _galleryDataSource.getGalleryImages();
-      if (names.isNotEmpty && mounted) {
-        final currentRestoId = Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 85;
-        final restoId = currentRestoId > 0 ? currentRestoId : 85;
+      if (mounted) {
+        final currentRestoId = Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 0;
+        final restoId = currentRestoId > 0 ? currentRestoId : null;
 
         final fetched = <GalleryItem>[];
         for (final name in names) {
@@ -188,16 +188,15 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
   }
 
   List<GalleryItem> get _filteredItems {
-    final combined = <GalleryItem>[..._liveItems];
+    final currentRestoId = Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 0;
 
-    // Merge fallback items if not already present
-    for (final fb in GallerySelectionSheet.fallbackGalleryItems) {
-      if (!combined.any((item) => item.id == fb.id || item.url == fb.url)) {
-        combined.add(fb);
-      }
+    final items = <GalleryItem>[..._liveItems];
+    // Only inject fallback items if explicitly running in mock/demo mode for restaurant 85 and fetch is empty
+    if (items.isEmpty && currentRestoId == 85) {
+      items.addAll(GallerySelectionSheet.fallbackGalleryItems);
     }
 
-    return combined.where((item) {
+    return items.where((item) {
       if (item.type == 'general') return true;
       return item.type == _activeFilter;
     }).toList();
@@ -254,9 +253,9 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                 ),
                 Text(
                   "Upload Image (${_activeFilter.toUpperCase()})",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 14.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
                   ),
                 ),
@@ -272,11 +271,11 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                   ),
                   title: Text(
                     "Choose from Gallery",
-                    style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 13.sp),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.sp),
                   ),
                   subtitle: Text(
                     "Select a photo from device storage",
-                    style: GoogleFonts.nunito(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
+                    style: GoogleFonts.poppins(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
                   ),
                   onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
                 ),
@@ -291,11 +290,11 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                   ),
                   title: Text(
                     "Take with Camera",
-                    style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 13.sp),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 13.sp),
                   ),
                   subtitle: Text(
                     "Capture a new photo with camera",
-                    style: GoogleFonts.nunito(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
+                    style: GoogleFonts.poppins(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
                   ),
                   onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
                 ),
@@ -444,9 +443,9 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                   children: [
                     Text(
                       title,
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 16.sp,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: const Color(0xFF111827),
                       ),
                     ),
@@ -472,14 +471,18 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
               // 3. Category Filter Chips (Splash, Offer, Slider)
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                child: Row(
-                  children: [
-                    _buildFilterChip("Splash", 'splash'),
-                    SizedBox(width: 8.w),
-                    _buildFilterChip("Offer", 'offer'),
-                    SizedBox(width: 8.w),
-                    _buildFilterChip("Slider", 'slider'),
-                  ],
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  child: Row(
+                    children: [
+                      _buildFilterChip("Splash", 'splash'),
+                      SizedBox(width: 8.w),
+                      _buildFilterChip("Offer", 'offer'),
+                      SizedBox(width: 8.w),
+                      _buildFilterChip("Slider", 'slider'),
+                    ],
+                  ),
                 ),
               ),
 
@@ -500,9 +503,9 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                               "$typeLabel Images",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 fontSize: 12.sp,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w600,
                                 color: const Color(0xFF111827),
                               ),
                             ),
@@ -525,7 +528,7 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                                   )
                                 : Text(
                                     "${_filteredItems.length}",
-                                    style: GoogleFonts.nunito(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 10.sp,
                                       fontWeight: FontWeight.w700,
                                       color: const Color(0xFF4B5563),
@@ -558,9 +561,9 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                             SizedBox(width: 4.w),
                             Text(
                               "Upload & Crop",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 fontSize: 10.5.sp,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w600,
                                 color: const Color(0xFF9A3412),
                               ),
                             ),
@@ -585,10 +588,13 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                     mainAxisSpacing: 8.h,
                     childAspectRatio: 0.72,
                   ),
-                  itemCount: 1 + _filteredItems.length,
+                  itemCount: _filteredItems.isEmpty ? 2 : (1 + _filteredItems.length),
                   itemBuilder: (context, index) {
                     if (index == 0) {
                       return _buildUploadActionCard(typeLabel);
+                    }
+                    if (_filteredItems.isEmpty) {
+                      return _buildEmptyGalleryHintCard(typeLabel);
                     }
 
                     final item = _filteredItems[index - 1];
@@ -622,6 +628,8 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                               CachedNetworkImage(
                                 imageUrl: item.url,
                                 fit: BoxFit.cover,
+                                memCacheWidth: 240,
+                                memCacheHeight: 240,
                                 placeholder: (context, url) => Container(
                                   color: const Color(0xFFF3F4F6),
                                   child: Center(
@@ -649,7 +657,7 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                                           textAlign: TextAlign.center,
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.nunito(
+                                          style: GoogleFonts.poppins(
                                             fontSize: 8.sp,
                                             fontWeight: FontWeight.w700,
                                             color: const Color(0xFF9A3412),
@@ -699,9 +707,14 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
 
               const Divider(height: 1, color: Color(0xFFE5E7EB)),
 
-              // 6. Sticky Bottom Bar
+              // 6. Sticky Bottom Bar with system navigation clearance
               Container(
-                padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 16.h),
+                padding: EdgeInsets.fromLTRB(
+                  16.w,
+                  10.h,
+                  16.w,
+                  12.h + MediaQuery.of(context).padding.bottom,
+                ),
                 color: Colors.white,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -709,19 +722,24 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Maximum ${widget.maxSelection} images can be selected",
-                          style: GoogleFonts.nunito(
-                            fontSize: 10.5.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF6B7280),
+                        Flexible(
+                          child: Text(
+                            "Maximum ${widget.maxSelection} images can be selected",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 10.5.sp,
+                              fontWeight: FontWeight.w400,
+                              color: const Color(0xFF6B7280),
+                            ),
                           ),
                         ),
+                        SizedBox(width: 8.w),
                         Text(
                           "Selected ${_selectedUrls.length} / ${widget.maxSelection}",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 11.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFF111827),
                           ),
                         ),
@@ -738,23 +756,27 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                               setState(() => _selectedUrls.clear());
                             },
                             style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 11.h),
+                              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
                               side: const BorderSide(color: Color(0xFFD1D5DB)),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9.r)),
                             ),
-                            child: Text(
-                              "Clear Selection",
-                              style: GoogleFonts.nunito(
-                                fontSize: 12.5.sp,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF374151),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "Clear Selection",
+                                maxLines: 1,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12.5.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF374151),
+                                ),
                               ),
                             ),
                           ),
                         ),
                         SizedBox(width: 10.w),
                         Expanded(
-                          flex: 2,
+                          flex: 1,
                           child: ElevatedButton(
                             onPressed: () {
                               HapticFeedback.mediumImpact();
@@ -763,15 +785,19 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
                               elevation: 2,
-                              padding: EdgeInsets.symmetric(vertical: 11.h),
+                              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 8.w),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9.r)),
                             ),
-                            child: Text(
-                              "Done",
-                              style: GoogleFonts.nunito(
-                                fontSize: 13.5.sp,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "Done",
+                                maxLines: 1,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 13.5.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
                           ),
@@ -820,9 +846,9 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                         SizedBox(height: 14.h),
                         Text(
                           "Uploading to Gallery",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 14.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFF111827),
                           ),
                         ),
@@ -830,7 +856,7 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                         Text(
                           _uploadStatusText,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 11.5.sp,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF6B7280),
@@ -852,6 +878,46 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyGalleryHintCard(String typeLabel) {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(
+          color: const Color(0xFFE5E7EB),
+          width: 1.w,
+        ),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 12.h),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.collections_outlined, size: 24.sp, color: const Color(0xFF9CA3AF)),
+          SizedBox(height: 6.h),
+          Text(
+            "No $typeLabel\nImages",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 10.5.sp,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF4B5563),
+              height: 1.2,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            "Upload for this resto",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontSize: 9.sp,
+              color: const Color(0xFF9CA3AF),
+            ),
+          ),
         ],
       ),
     );
@@ -888,16 +954,16 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
             SizedBox(height: 8.h),
             Text(
               "+ Upload New",
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 11.sp,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: const Color(0xFF92400E),
               ),
             ),
             SizedBox(height: 2.h),
             Text(
               "Crop & Add",
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 9.sp,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFFB45309),
@@ -938,9 +1004,9 @@ class _GallerySelectionSheetState extends State<GallerySelectionSheet> {
             SizedBox(width: 4.w),
             Text(
               label,
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 11.sp,
-                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
                 color: isActive ? AppColors.primary : const Color(0xFF374151),
               ),
             ),

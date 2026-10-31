@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/services/app_exit_service.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/eresto_top_header.dart';
 import '../../../../core/widgets/keep_alive_wrapper.dart';
+import '../../../dashboard/presentation/controllers/menu_dashboard_controller.dart';
 import '../../../dashboard/presentation/views/dashboard_screen.dart';
 import '../../../items/presentation/views/items_screen.dart';
 import '../../../menu/presentation/views/menu_screen.dart';
@@ -24,7 +26,7 @@ class MainShellScreen extends GetView<MainShellController> {
         if (didPop) return;
         final shouldExit = controller.handleBackPress();
         if (shouldExit) {
-          Get.back();
+          AppExitService.handleDoubleBackExit();
         }
       },
       child: Scaffold(
@@ -40,18 +42,28 @@ class MainShellScreen extends GetView<MainShellController> {
         body: PageView(
           controller: controller.pageController,
           physics: const NeverScrollableScrollPhysics(),
-          children: [
-            const KeepAliveWrapper(child: DashboardScreen(isEmbedded: true)),
-            const KeepAliveWrapper(child: ItemsScreen(isEmbedded: true)),
-            const KeepAliveWrapper(child: MenuScreen(isEmbedded: true)),
+          children: const [
+            KeepAliveWrapper(child: DashboardScreen(isEmbedded: true)),
+            KeepAliveWrapper(child: ItemsScreen(isEmbedded: true)),
+            KeepAliveWrapper(child: MenuScreen(isEmbedded: true)),
             KeepAliveWrapper(child: ShareScreen(isEmbedded: true)),
           ],
         ),
         bottomNavigationBar: Obx(
-          () => AppBottomNav(
-            currentIndex: controller.currentIndex.value,
-            onTabSelected: controller.changeTab,
-          ),
+          () {
+            final dash = Get.isRegistered<MenuDashboardController>()
+                ? Get.find<MenuDashboardController>()
+                : null;
+            final isBlocked = dash != null &&
+                (dash.isForceUpdateRequired.value || dash.isSubscriptionExpired.value);
+            if (isBlocked) {
+              return const SizedBox.shrink();
+            }
+            return AppBottomNav(
+              currentIndex: controller.currentIndex.value,
+              onTabSelected: controller.changeTab,
+            );
+          },
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:uuid/uuid.dart';
 import '../storage/storage_service.dart';
 
@@ -7,7 +8,8 @@ import '../storage/storage_service.dart';
 class DeviceService extends GetxService {
   final StorageService _storageService;
   late String _deviceId;
-  static const String appVersion = "1.0.0";
+  static String appVersion = "1.1.4"; // Default matching pubspec.yaml version
+  static String buildNumber = "10";
   static const int productId = 9; // 9 = Eresto One / DigiMenu
   static const int loginFrom = 1; // 1 = Mobile
 
@@ -19,6 +21,19 @@ class DeviceService extends GetxService {
       _deviceId = const Uuid().v4();
       await _storageService.saveDeviceId(_deviceId);
     }
+
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      if (packageInfo.version.isNotEmpty) {
+        appVersion = packageInfo.version;
+      }
+      if (packageInfo.buildNumber.isNotEmpty) {
+        buildNumber = packageInfo.buildNumber;
+      }
+    } catch (_) {
+      // In tests or headless execution, platform channels may be unavailable
+    }
+
     return this;
   }
 

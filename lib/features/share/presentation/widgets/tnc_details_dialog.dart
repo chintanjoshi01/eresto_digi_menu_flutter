@@ -69,9 +69,9 @@ class TncDetailsDialog extends StatelessWidget {
                       children: [
                         Text(
                           item.tncName,
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 15.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFF111827),
                           ),
                           maxLines: 1,
@@ -82,7 +82,7 @@ class TncDetailsDialog extends StatelessWidget {
                           item.formattedDate.isNotEmpty
                               ? "Created: ${item.formattedDate}"
                               : "${lines.length} condition rules",
-                          style: GoogleFonts.nunito(fontSize: 11.sp, color: const Color(0xFF6B7280)),
+                          style: GoogleFonts.poppins(fontSize: 11.sp, color: const Color(0xFF6B7280)),
                         ),
                       ],
                     ),
@@ -103,7 +103,7 @@ class TncDetailsDialog extends StatelessWidget {
                       padding: EdgeInsets.all(24.w),
                       child: Text(
                         "No terms text configured for this template.",
-                        style: GoogleFonts.nunito(fontSize: 12.5.sp, color: const Color(0xFF9CA3AF)),
+                        style: GoogleFonts.poppins(fontSize: 12.5.sp, color: const Color(0xFF9CA3AF)),
                       ),
                     )
                   : ListView.separated(
@@ -133,9 +133,9 @@ class TncDetailsDialog extends StatelessWidget {
                                 alignment: Alignment.center,
                                 child: Text(
                                   "${index + 1}",
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 10.sp,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w600,
                                     color: const Color(0xFF374151),
                                   ),
                                 ),
@@ -144,7 +144,7 @@ class TncDetailsDialog extends StatelessWidget {
                               Expanded(
                                 child: Text(
                                   lines[index],
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 12.sp,
                                     color: const Color(0xFF1F2937),
                                     height: 1.4,
@@ -179,7 +179,7 @@ class TncDetailsDialog extends StatelessWidget {
                     icon: Icon(Icons.copy_rounded, size: 15.sp, color: const Color(0xFF4B5563)),
                     label: Text(
                       "Copy",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF4B5563),
@@ -204,7 +204,7 @@ class TncDetailsDialog extends StatelessWidget {
                       icon: Icon(Icons.edit_outlined, size: 15.sp),
                       label: Text(
                         "Edit Template",
-                        style: GoogleFonts.nunito(fontSize: 13.sp, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),

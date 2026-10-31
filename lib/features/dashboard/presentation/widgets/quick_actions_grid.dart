@@ -105,7 +105,7 @@ class QuickActionsGrid extends StatelessWidget {
                 SizedBox(height: 6.h),
                 Text(
                   label,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textDark,

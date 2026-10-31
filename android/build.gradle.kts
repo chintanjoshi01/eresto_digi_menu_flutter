@@ -17,7 +17,7 @@ subprojects {
 
 // --- FIX START ---
 subprojects {
-    // 1. Fix Namespace for Isar/Plugins
+    // 1. Fix Namespace & 16 KB Page Size JNI Libs for Isar/Plugins
     plugins.withId("com.android.library") {
         val android = extensions.getByName("android")
         try {
@@ -28,6 +28,25 @@ subprojects {
                 println("Auto-assigned namespace '${project.group}' to ${project.name}")
             }
         } catch (e: Exception) {}
+
+        // Override isar_flutter_libs jniLibs with 16 KB page-aligned libisar.so binaries
+        if (project.name == "isar_flutter_libs") {
+            val isar16kbDir = rootProject.file("isar_16kb_jniLibs")
+            if (isar16kbDir.exists()) {
+                try {
+                    val getSourceSets = android.javaClass.getMethod("getSourceSets")
+                    val sourceSets = getSourceSets.invoke(android) as NamedDomainObjectContainer<*>
+                    val mainSourceSet = sourceSets.getByName("main")
+                    val getJniLibs = mainSourceSet.javaClass.getMethod("getJniLibs")
+                    val jniLibs = getJniLibs.invoke(mainSourceSet)
+                    val setSrcDirs = jniLibs.javaClass.getMethod("setSrcDirs", Iterable::class.java)
+                    setSrcDirs.invoke(jniLibs, listOf(isar16kbDir))
+                    println("Configured 16 KB aligned jniLibs for isar_flutter_libs -> ${isar16kbDir.absolutePath}")
+                } catch (e: Exception) {
+                    println("Warning: could not override isar_flutter_libs jniLibs via reflection: ${e.message}")
+                }
+            }
+        }
     }
 
     // 2. Fix "Different Roots" Error (Drive C vs D)
@@ -46,11 +65,11 @@ subprojects {
                 val compileSdkVersionSetter = methods.find { it.name == "setCompileSdkVersion" && it.parameterTypes.size == 1 && it.parameterTypes[0] == Int::class.javaPrimitiveType }
                 
                 if (compileSdkSetter != null) {
-                    compileSdkSetter.invoke(android, 35)
-                    println("Forced compileSdk 35 for ${project.name}")
+                    compileSdkSetter.invoke(android, 36)
+                    println("Forced compileSdk 36 for ${project.name}")
                 } else if (compileSdkVersionSetter != null) {
-                    compileSdkVersionSetter.invoke(android, 35)
-                    println("Forced compileSdkVersion 35 for ${project.name}")
+                    compileSdkVersionSetter.invoke(android, 36)
+                    println("Forced compileSdkVersion 36 for ${project.name}")
                 } else {
                     println("Could not find compileSdk setter for ${project.name}")
                 }

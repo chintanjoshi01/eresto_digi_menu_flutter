@@ -92,27 +92,34 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(6.w),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFDF1F1),
-                        borderRadius: BorderRadius.circular(8.r),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(6.w),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFDF1F1),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Icon(Icons.tune_rounded, size: 18.sp, color: AppColors.primary),
                       ),
-                      child: Icon(Icons.tune_rounded, size: 18.sp, color: AppColors.primary),
-                    ),
-                    SizedBox(width: 10.w),
-                    Text(
-                      "Filter & Sort Menu",
-                      style: GoogleFonts.nunito(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF111827),
+                      SizedBox(width: 10.w),
+                      Flexible(
+                        child: Text(
+                          "Filter & Sort Menu",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: 16.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                SizedBox(width: 8.w),
                 TextButton(
                   onPressed: _resetLocalFilters,
                   style: TextButton.styleFrom(
@@ -122,9 +129,9 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
                   ),
                   child: Text(
                     "Reset All",
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 12.5.sp,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: AppColors.primary,
                     ),
                   ),
@@ -221,7 +228,7 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
                     runSpacing: 8.h,
                     children: [
                       _buildFilterPill(
-                        label: "⭐ Starred / FSI Only",
+                        label: "⭐ Starred / FSSAI Only",
                         isSelected: _tempFsiOnly,
                         onTap: () => setState(() => _tempFsiOnly = !_tempFsiOnly),
                       ),
@@ -285,9 +292,14 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
 
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
 
-          // 4. Bottom Sticky Action Buttons
+          // 4. Bottom Sticky Action Buttons with system navigation clearance
           Padding(
-            padding: EdgeInsets.fromLTRB(18.w, 12.h, 18.w, 20.h),
+            padding: EdgeInsets.fromLTRB(
+              18.w,
+              12.h,
+              18.w,
+              12.h + MediaQuery.of(context).padding.bottom,
+            ),
             child: Row(
               children: [
                 Expanded(
@@ -301,12 +313,16 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
                         borderRadius: BorderRadius.circular(9.r),
                       ),
                     ),
-                    child: Text(
-                      "Cancel",
-                      style: GoogleFonts.nunito(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF4B5563),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        "Cancel",
+                        maxLines: 1,
+                        style: GoogleFonts.poppins(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF4B5563),
+                        ),
                       ),
                     ),
                   ),
@@ -324,20 +340,24 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
                         borderRadius: BorderRadius.circular(9.r),
                       ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.check_rounded, size: 16.sp, color: Colors.white),
-                        SizedBox(width: 6.w),
-                        Text(
-                          "Apply Filters",
-                          style: GoogleFonts.nunito(
-                            fontSize: 13.5.sp,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_rounded, size: 16.sp, color: Colors.white),
+                          SizedBox(width: 6.w),
+                          Text(
+                            "Apply Filters",
+                            maxLines: 1,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13.5.sp,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -356,9 +376,9 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
         SizedBox(width: 5.w),
         Text(
           title,
-          style: GoogleFonts.nunito(
+          style: GoogleFonts.poppins(
             fontSize: 10.5.sp,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w500,
             color: const Color(0xFF6B7280),
             letterSpacing: 0.5,
           ),
@@ -401,9 +421,9 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
             ],
             Text(
               label,
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 11.5.sp,
-                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected ? AppColors.primary : const Color(0xFF4B5563),
               ),
             ),
@@ -437,9 +457,9 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.nunito(
+          style: GoogleFonts.poppins(
             fontSize: 11.5.sp,
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: isSelected ? AppColors.primary : const Color(0xFF4B5563),
           ),
         ),
@@ -468,9 +488,9 @@ class _ItemFilterSheetState extends State<ItemFilterSheet> {
         ),
         child: Text(
           label,
-          style: GoogleFonts.nunito(
+          style: GoogleFonts.poppins(
             fontSize: 11.5.sp,
-            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: isSelected ? Colors.white : const Color(0xFF4B5563),
           ),
         ),

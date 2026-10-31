@@ -3,6 +3,7 @@ import '../../../../core/api/api_client.dart';
 import '../../../../core/api/endpoints.dart';
 import '../../domain/models/template_model.dart';
 import '../../domain/models/session_model.dart';
+import '../../domain/models/channel_session_group_model.dart';
 
 abstract class MenuRemoteDataSource {
   // --- V6 Menu Builder APIs (Official) ---
@@ -101,12 +102,22 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
     required Map<String, dynamic> sessionJson,
   }) async {
     try {
+      final payloadJson = Map<String, dynamic>.from(sessionJson);
+      if (payloadJson.containsKey('start_time') && payloadJson['start_time'] != null) {
+        payloadJson['start_time'] =
+            SessionCardModel.formatTo24Hour(payloadJson['start_time'].toString());
+      }
+      if (payloadJson.containsKey('end_time') && payloadJson['end_time'] != null) {
+        payloadJson['end_time'] =
+            SessionCardModel.formatTo24Hour(payloadJson['end_time'].toString());
+      }
+
       final response = await _apiClient.dio.post(
         Endpoints.v6UpdateSession,
         data: {
           'session_id': sessionId,
           'op': op,
-          'session_json': sessionJson,
+          'session_json': payloadJson,
         },
       );
       final data = response.data;

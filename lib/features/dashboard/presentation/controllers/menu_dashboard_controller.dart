@@ -1,16 +1,24 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
+import '../../../../core/errors/app_error_type.dart';
+import '../../../../core/services/app_update_service.dart';
+import '../../../../core/services/fcm_service.dart';
 import '../../../../core/services/toast_service.dart';
 import '../../../../core/storage/storage_service.dart';
+import '../../../../core/widgets/app_dialog.dart';
 import '../../domain/menu_service_stat.dart';
 import '../../domain/models/v6_dashboard_response.dart';
 import '../../domain/repositories/dashboard_repository.dart';
+import '../widgets/subscription_renew_sheet.dart';
 
 /// Presentation state entity consumed by DashboardScreen
 class DashboardViewState {
   final V6DashboardData rawData;
   final String restaurantName;
   final String restaurantUrl;
+  final List<String> menuUrls;
   final bool isPublished;
   final int totalItems;
   final int totalCategories;
@@ -28,6 +36,7 @@ class DashboardViewState {
     required this.rawData,
     required this.restaurantName,
     required this.restaurantUrl,
+    this.menuUrls = const [],
     required this.isPublished,
     required this.totalItems,
     required this.totalCategories,
@@ -58,6 +67,12 @@ class MenuDashboardController extends GetxController
   final selectedPeriod = 'today'.obs;
   final selectedMenuFilter = 'all'.obs; // 'all', 'dine-in', 'ird'
   final menuServices = <MenuServiceStat>[].obs;
+  final isForceUpdateRequired = false.obs;
+  final latestAvailableVersion = ''.obs;
+  final forceUpdateMessage = ''.obs;
+  final isSubscriptionExpired = false.obs;
+  final Rxn<V6SubscriptionInfo> subscriptionInfo = Rxn<V6SubscriptionInfo>();
+  bool _hasShownSoftUpdate = false;
 
   V6DashboardData? _rawData;
   V6DashboardData? get rawData => _rawData;
@@ -68,6 +83,20 @@ class MenuDashboardController extends GetxController
   void onInit() {
     super.onInit();
     _loadDashboard();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    _requestNotificationPermission();
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    // Wait briefly so the dashboard transition animation finishes smoothly
+    await Future.delayed(const Duration(milliseconds: 600));
+    if (Get.isRegistered<FcmService>()) {
+      await Get.find<FcmService>().requestNotificationPermissions();
+    }
   }
 
   /// Initial or triggered fetch from the /api/v6/get_dashboard_data endpoint
@@ -87,6 +116,53 @@ class MenuDashboardController extends GetxController
 
     result.fold(
       (failure) {
+        final errorType = AppErrorClassifier.classify(failure, message: failure.message);
+
+        // 1. Mandatory App Update Check (force == 1 or 2)
+        if (errorType == AppErrorType.appUpdate) {
+          _rawData = null;
+          isForceUpdateRequired.value = true;
+          forceUpdateMessage.value = failure.message.isNotEmpty
+              ? failure.message
+              : "Please Upgrade to Latest Version of Eresto Digimenu....";
+          if (failure.details is Map) {
+            final nv = (failure.details as Map)['nv']?.toString();
+            if (nv != null && nv.isNotEmpty) {
+              latestAvailableVersion.value = nv;
+            }
+          }
+          change(null, status: RxStatus.error(forceUpdateMessage.value));
+          _triggerForceUpdatePrompt(
+            message: forceUpdateMessage.value,
+            latestVersion: latestAvailableVersion.value,
+          );
+          return;
+        }
+
+        // 2. Mandatory Subscription Expired Check (Flag 0 or 4)
+        if (errorType == AppErrorType.subscriptionExpired) {
+          _rawData = null;
+          isSubscriptionExpired.value = true;
+          if (failure.details is Map) {
+            final details = failure.details as Map;
+            subscriptionInfo.value = V6SubscriptionInfo(
+              flag: details['flag'] is int
+                  ? details['flag'] as int
+                  : int.tryParse(details['flag']?.toString() ?? '4') ?? 4,
+              message: failure.message,
+              validity: details['validity']?.toString() ?? '',
+              daysLeft: details['days_left'] is int ? details['days_left'] as int : 0,
+              extDays: details['ext_days'] is int ? details['ext_days'] as int : 0,
+              extValidity: '',
+            );
+          }
+          final msg = failure.message.isNotEmpty
+              ? failure.message
+              : "Subscription has expired. Please renew your subscription to continue using services.";
+          change(null, status: RxStatus.error(msg));
+          return;
+        }
+
         if (_rawData != null) {
           // If we already have cached data, don't wipe the screen on pull-to-refresh
           ToastService.showError(
@@ -104,11 +180,141 @@ class MenuDashboardController extends GetxController
         }
       },
       (data) {
+        // 1. Mandatory App Update Check (defense-in-depth on data payload)
+        if (data.version != null && data.version!.isForceUpgrade) {
+          _rawData = null;
+          isForceUpdateRequired.value = true;
+          latestAvailableVersion.value = data.version!.nv;
+          final msg = data.version!.msg.isNotEmpty
+              ? data.version!.msg
+              : "Please Upgrade to Latest Version of Eresto Digimenu....";
+          forceUpdateMessage.value = msg;
+          change(null, status: RxStatus.error(msg));
+          _triggerForceUpdatePrompt(
+            message: msg,
+            latestVersion: data.version!.nv,
+          );
+          return;
+        }
+
+        // 2. Subscription Status Handling
+        if (data.subscription != null) {
+          subscriptionInfo.value = data.subscription;
+
+          // Flag 0: Expired (Validity and grace period both elapsed) -> Blocks app
+          if (data.subscription!.isExpired) {
+            _rawData = null;
+            isSubscriptionExpired.value = true;
+            final msg = data.subscription!.displayMessage;
+            change(null, status: RxStatus.error(msg));
+            return;
+          }
+        }
+        isSubscriptionExpired.value = false;
+
+        // 3. Soft update notification if optional (force == 0)
+        if (data.version != null && data.version!.hasUpdate && !data.version!.isForceUpgrade) {
+          _handleSoftUpdateNotice(data.version!);
+        }
+
+        isForceUpdateRequired.value = false;
         _rawData = data;
+        _persistRestoHeaderFromDashboard(data);
         _populateMenuServices(data);
         _recalculateView();
       },
     );
+  }
+
+  void _persistRestoHeaderFromDashboard(V6DashboardData data) {
+    if (!Get.isRegistered<StorageService>()) return;
+    final storage = Get.find<StorageService>();
+    V6RestoInfo? info;
+    for (final container in data.menuSessions) {
+      if (container.restoInfo != null) {
+        info = container.restoInfo;
+        break;
+      }
+    }
+    final name = (info?.title.trim().isNotEmpty == true)
+        ? info!.title.trim()
+        : data.hero.restoName.trim();
+    storage.saveRestoHeaderDetails(
+      name: name.isNotEmpty ? name : null,
+      address: info?.address.trim(),
+      city: info?.city.trim(),
+      pinCode: info?.pinCode.trim(),
+      contact: info?.contactNo.trim(),
+    );
+  }
+
+  void _triggerForceUpdatePrompt({required String message, String? latestVersion}) {
+    HapticFeedback.heavyImpact();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.isDialogOpen != true) {
+        AppDialog.showUpdate(
+          title: "App Update Required",
+          message: message,
+          versionTag: latestVersion != null && latestVersion.isNotEmpty
+              ? "v$latestVersion"
+              : "Latest Version",
+          buttonText: "Update Now",
+          isForceUpgrade: true,
+          onUpdate: () => AppUpdateService.openPlayStore(),
+        );
+      }
+    });
+  }
+
+
+  /// Opens the enterprise renewal and support modal sheet
+  void handleSubscriptionRenewal() {
+    if (Get.context != null) {
+      final effectiveSub = subscriptionInfo.value ??
+          (isSubscriptionExpired.value
+              ? const V6SubscriptionInfo(
+                  flag: 4,
+                  message:
+                      "Subscription has expired. Please renew your subscription to continue using services.",
+                  validity: "",
+                  daysLeft: 0,
+                  extDays: 0,
+                  extValidity: "",
+                )
+              : const V6SubscriptionInfo.empty());
+
+      SubscriptionRenewSheet.show(
+        Get.context!,
+        subscription: effectiveSub,
+        onCheckStatus: () => fetchAnalytics(forceRefresh: true),
+      );
+    }
+  }
+
+  /// Re-triggers update prompt if user attempts unauthorized action
+  void promptUpdateAgain() {
+    _triggerForceUpdatePrompt(
+      message: forceUpdateMessage.value.isNotEmpty
+          ? forceUpdateMessage.value
+          : "Please Upgrade to Latest Version of Eresto Digimenu....",
+      latestVersion: latestAvailableVersion.value,
+    );
+  }
+
+  void _handleSoftUpdateNotice(V6AppVersionInfo version) {
+    if (_hasShownSoftUpdate) return;
+    _hasShownSoftUpdate = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.context != null) {
+        AppUpdateService.showUpdateBottomSheet(
+          context: Get.context!,
+          latestVersion: version.nv,
+          message: version.msg.isNotEmpty
+              ? version.msg
+              : "A new version of Eresto Digimenu is available with new features and improvements.",
+        );
+      }
+    });
   }
 
   /// Pull-to-refresh handler invoked by RefreshIndicator
@@ -117,7 +323,44 @@ class MenuDashboardController extends GetxController
   }
 
   /// Retry action invoked on error view
-  void fetchAnalytics({bool forceRefresh = true}) => _loadDashboard(isRefresh: forceRefresh);
+  Future<void> fetchAnalytics({bool forceRefresh = true}) async {
+    await _loadDashboard(isRefresh: forceRefresh);
+  }
+
+  /// Switch to offline mode using cached or sample operational data
+  void loadOfflineMode() {
+    if (isForceUpdateRequired.value) {
+      ToastService.showError("Cannot use offline mode. Please update the app to continue.");
+      promptUpdateAgain();
+      return;
+    }
+    if (isSubscriptionExpired.value) {
+      ToastService.showError("Cannot use offline mode. Please renew your subscription to continue.");
+      handleSubscriptionRenewal();
+      return;
+    }
+    _loadFallbackData();
+    ToastService.showInfo("Running in Offline Preview Mode");
+  }
+
+  /// Simulate dummy error for UI testing and demonstration
+  void simulateError([String? message]) {
+    change(
+      null,
+      status: RxStatus.error(
+        message ?? "Please update the app to the latest version.",
+      ),
+    );
+  }
+
+  /// Simulate specific enterprise scenario (appUpdate, network, maintenance, unauthorized, serverError)
+  void simulateScenario(AppErrorType type, [String? customMessage]) {
+    final visuals = AppErrorClassifier.getVisuals(type, customMessage: customMessage);
+    change(
+      null,
+      status: RxStatus.error(visuals.defaultMessage),
+    );
+  }
 
   /// Change active trend period (Today / Week / Month) - Zero network latency
   void changePeriod(String period) {
@@ -339,6 +582,7 @@ class MenuDashboardController extends GetxController
         rawData: data,
         restaurantName: data.restaurantName,
         restaurantUrl: data.restaurantUrl,
+        menuUrls: data.menuUrls,
         isPublished: data.isPublished,
         totalItems: data.totalItems,
         totalCategories: data.totalCategories,
@@ -362,6 +606,7 @@ class MenuDashboardController extends GetxController
           rawData: data,
           restaurantName: data.restaurantName,
           restaurantUrl: data.restaurantUrl,
+          menuUrls: data.menuUrls,
           isPublished: data.isPublished,
           totalItems: data.totalItems,
           totalCategories: data.totalCategories,
@@ -381,79 +626,120 @@ class MenuDashboardController extends GetxController
   }
 
   /// High-fidelity fallback dataset for instant prototype demonstration
+  /// High-fidelity fallback dataset matching latest live response
   void _loadFallbackData() {
-    final restoName = (Get.isRegistered<StorageService>() && Get.find<StorageService>().restoName.isNotEmpty)
-        ? Get.find<StorageService>().restoName
-        : 'Trulyy Tadkaaz';
-    final restoSlug = restoName.toLowerCase().replaceAll(' ', '-');
-
-    final sampleData = V6DashboardData(
+    const sampleData = V6DashboardData(
       hero: V6DashboardHero(
-        restoId: 10,
-        restoName: restoName,
-        restoSub: 'menu.eresto.in/$restoSlug',
-        menuUrl: 'https://menu.eresto.in/$restoSlug',
+        restoId: 85,
+        restoName: 'VRG Resorts',
+        restoSub: 'pmenu.eresto.app/vrg',
+        menuUrl: 'https://pmenu.eresto.app/vrg/dine-in',
+        menuUrls: [
+          'https://pmenu.eresto.app/vrg/dine-in',
+          'https://pmenu.eresto.app/vrg/ird',
+          'https://pmenu.eresto.app/vrg/cat2',
+          'https://pmenu.eresto.app/vrg/cat3',
+          'https://pmenu.eresto.app/vrg/cat4',
+          'https://pmenu.eresto.app/vrg/cat5',
+          'https://pmenu.eresto.app/vrg/cat6',
+        ],
         isPublished: true,
-        totalItems: 247,
-        totalCategories: 10,
-        scansToday: 247,
-        scansYesterday: 209,
-        breakdown: const [
+        totalItems: 548,
+        totalCategories: 52,
+        scansToday: 0,
+        scansYesterday: 6,
+        breakdown: [
           V6HeroBreakdown(
             sessionFor: 'dine-in',
-            name: 'Dine-In',
-            scansToday: 156,
-            scansYesterday: 132,
-            sessionsCount: 3,
-            menuUrl: 'https://menu.eresto.in/trulyy-tadkaaz/dine-in',
+            name: 'Dine-IN',
+            scansToday: 0,
+            scansYesterday: 6,
+            sessionsCount: 1,
+            menuUrl: 'https://pmenu.eresto.app/vrg/dine-in',
           ),
           V6HeroBreakdown(
             sessionFor: 'ird',
             name: 'IRD',
-            scansToday: 91,
-            scansYesterday: 77,
-            sessionsCount: 5,
-            menuUrl: 'https://menu.eresto.in/trulyy-tadkaaz/ird',
+            scansToday: 0,
+            scansYesterday: 0,
+            sessionsCount: 1,
+            menuUrl: 'https://pmenu.eresto.app/vrg/ird',
+          ),
+          V6HeroBreakdown(
+            sessionFor: 'cat2',
+            name: 'Cat2',
+            scansToday: 0,
+            scansYesterday: 0,
+            sessionsCount: 2,
+            menuUrl: 'https://pmenu.eresto.app/vrg/cat2',
+          ),
+          V6HeroBreakdown(
+            sessionFor: 'cat3',
+            name: 'Cat3',
+            scansToday: 0,
+            scansYesterday: 0,
+            sessionsCount: 1,
+            menuUrl: 'https://pmenu.eresto.app/vrg/cat3',
+          ),
+          V6HeroBreakdown(
+            sessionFor: 'cat4',
+            name: 'Cat4',
+            scansToday: 0,
+            scansYesterday: 0,
+            sessionsCount: 2,
+            menuUrl: 'https://pmenu.eresto.app/vrg/cat4',
+          ),
+          V6HeroBreakdown(
+            sessionFor: 'cat5',
+            name: 'Cat5',
+            scansToday: 0,
+            scansYesterday: 0,
+            sessionsCount: 1,
+            menuUrl: 'https://pmenu.eresto.app/vrg/cat5',
+          ),
+          V6HeroBreakdown(
+            sessionFor: 'cat6',
+            name: 'Cat6',
+            scansToday: 0,
+            scansYesterday: 0,
+            sessionsCount: 1,
+            menuUrl: 'https://pmenu.eresto.app/vrg/cat6',
           ),
         ],
       ),
-      menuSessions: const [
+      menuSessions: [
         V6MenuSessionContainer(
           id: 1,
           sessionFor: 'dine-in',
-          name: 'Dine-In',
-          menuUrl: 'https://menu.eresto.in/trulyy-tadkaaz/dine-in',
+          name: 'Dine-IN',
+          menuUrl: 'https://pmenu.eresto.app/vrg/dine-in',
+          restoInfo: V6RestoInfo(
+            title: 'VRG Resorts',
+            subtitle: '',
+            logo: '',
+            address: '36, Lallubhai Park Road, Andheri (West)',
+            city: 'Ahmedabad',
+            pinCode: '380059',
+            contactNo: '9898014195',
+            whatsappNo: '',
+            location: '21.7561° N, 72.9988° E',
+            website: 'https://vgr.com',
+            restoCurrency: '₹',
+          ),
           sessions: [
             V6SessionItem(
-              id: 1,
-              sessionName: 'Lunch',
+              id: 2,
+              sessionName: 'Breakfast',
               sessionFor: 'dine-in',
-              menuType: 'Dine-In',
-              menuTemplateId: 2,
-              menuTemplateName: 'Main Menu',
-              startTime: '10:30',
-              endTime: '18:30',
+              menuType: 'Dine-IN',
+              menuTemplateId: 8,
+              menuTemplateName: 'Parsi New Year',
+              startTime: '07:30',
+              endTime: '10:30',
               dayFlag: 0,
-              enCustOrder: 1,
-              categoriesCount: 10,
-              itemsCount: 140,
-              todayScans: 156,
-              hasSplash: 1,
-              offerId: 0,
-            ),
-            V6SessionItem(
-              id: 4,
-              sessionName: 'Dinner',
-              sessionFor: 'dine-in',
-              menuType: 'Dine-In',
-              menuTemplateId: 2,
-              menuTemplateName: 'Main Menu',
-              startTime: '18:30',
-              endTime: '23:59',
-              dayFlag: 0,
-              enCustOrder: 1,
-              categoriesCount: 10,
-              itemsCount: 140,
+              enCustOrder: 0,
+              categoriesCount: 49,
+              itemsCount: 501,
               todayScans: 0,
               hasSplash: 1,
               offerId: 0,
@@ -464,58 +750,204 @@ class MenuDashboardController extends GetxController
           id: 2,
           sessionFor: 'ird',
           name: 'IRD',
-          menuUrl: 'https://menu.eresto.in/trulyy-tadkaaz/ird',
+          menuUrl: 'https://pmenu.eresto.app/vrg/ird',
           sessions: [
             V6SessionItem(
-              id: 2,
-              sessionName: 'Dinner',
+              id: 1,
+              sessionName: '24*7',
               sessionFor: 'ird',
               menuType: 'IRD',
-              menuTemplateId: 2,
-              menuTemplateName: 'Main Menu',
-              startTime: '18:30',
-              endTime: '23:59',
+              menuTemplateId: 8,
+              menuTemplateName: 'Parsi New Year',
+              startTime: '00:00',
+              endTime: '22:00',
+              dayFlag: 0,
+              enCustOrder: 0,
+              categoriesCount: 49,
+              itemsCount: 501,
+              todayScans: 0,
+              hasSplash: 1,
+              offerId: 0,
+            ),
+          ],
+        ),
+        V6MenuSessionContainer(
+          id: 3,
+          sessionFor: 'cat2',
+          name: 'Cat2',
+          menuUrl: 'https://pmenu.eresto.app/vrg/cat2',
+          sessions: [
+            V6SessionItem(
+              id: 1,
+              sessionName: 'ONE',
+              sessionFor: 'cat2',
+              menuType: 'Cat2',
+              menuTemplateId: 8,
+              menuTemplateName: 'Parsi New Year',
+              startTime: '12:00',
+              endTime: '22:00',
               dayFlag: 0,
               enCustOrder: 1,
-              categoriesCount: 10,
-              itemsCount: 140,
-              todayScans: 91,
-              hasSplash: 0,
+              categoriesCount: 49,
+              itemsCount: 501,
+              todayScans: 0,
+              hasSplash: 1,
               offerId: 0,
             ),
             V6SessionItem(
-              id: 3,
-              sessionName: 'HI-TEA',
-              sessionFor: 'ird',
-              menuType: 'IRD',
-              menuTemplateId: 4,
-              menuTemplateName: 'HI-TEA Special',
-              startTime: '15:00',
-              endTime: '18:00',
+              id: 2,
+              sessionName: 'two ',
+              sessionFor: 'cat2',
+              menuType: 'Cat2',
+              menuTemplateId: 8,
+              menuTemplateName: 'Parsi New Year',
+              startTime: '10:25',
+              endTime: '11:25',
+              dayFlag: 0,
+              enCustOrder: 1,
+              categoriesCount: 49,
+              itemsCount: 501,
+              todayScans: 0,
+              hasSplash: 1,
+              offerId: 0,
+            ),
+          ],
+        ),
+        V6MenuSessionContainer(
+          id: 4,
+          sessionFor: 'cat3',
+          name: 'Cat3',
+          menuUrl: 'https://pmenu.eresto.app/vrg/cat3',
+          sessions: [
+            V6SessionItem(
+              id: 1,
+              sessionName: 'One',
+              sessionFor: 'cat3',
+              menuType: 'Cat3',
+              menuTemplateId: 15,
+              menuTemplateName: 'Multi Cat 3',
+              startTime: '00:00',
+              endTime: '22:00',
               dayFlag: 0,
               enCustOrder: 0,
-              categoriesCount: 3,
-              itemsCount: 22,
+              categoriesCount: 14,
+              itemsCount: 195,
               todayScans: 0,
-              hasSplash: 0,
+              hasSplash: 1,
+              offerId: 0,
+            ),
+          ],
+        ),
+        V6MenuSessionContainer(
+          id: 5,
+          sessionFor: 'cat4',
+          name: 'Cat4',
+          menuUrl: 'https://pmenu.eresto.app/vrg/cat4',
+          sessions: [
+            V6SessionItem(
+              id: 1,
+              sessionName: 'ONE',
+              sessionFor: 'cat4',
+              menuType: 'Cat4',
+              menuTemplateId: 16,
+              menuTemplateName: 'Multi Cat 4',
+              startTime: '00:00',
+              endTime: '08:00',
+              dayFlag: 0,
+              enCustOrder: 0,
+              categoriesCount: 16,
+              itemsCount: 248,
+              todayScans: 0,
+              hasSplash: 1,
+              offerId: 0,
+            ),
+            V6SessionItem(
+              id: 2,
+              sessionName: 'Cat 3',
+              sessionFor: 'cat4',
+              menuType: 'Cat4',
+              menuTemplateId: 15,
+              menuTemplateName: 'Multi Cat 3',
+              startTime: '09:00',
+              endTime: '10:00',
+              dayFlag: 0,
+              enCustOrder: 0,
+              categoriesCount: 14,
+              itemsCount: 195,
+              todayScans: 0,
+              hasSplash: 1,
+              offerId: 0,
+            ),
+          ],
+        ),
+        V6MenuSessionContainer(
+          id: 6,
+          sessionFor: 'cat5',
+          name: 'Cat5',
+          menuUrl: 'https://pmenu.eresto.app/vrg/cat5',
+          sessions: [
+            V6SessionItem(
+              id: 1,
+              sessionName: 'ONE',
+              sessionFor: 'cat5',
+              menuType: 'Cat5',
+              menuTemplateId: 11,
+              menuTemplateName: 'SMC18-7',
+              startTime: '00:00',
+              endTime: '22:00',
+              dayFlag: 0,
+              enCustOrder: 0,
+              categoriesCount: 5,
+              itemsCount: 28,
+              todayScans: 0,
+              hasSplash: 1,
+              offerId: 0,
+            ),
+          ],
+        ),
+        V6MenuSessionContainer(
+          id: 7,
+          sessionFor: 'cat6',
+          name: 'Cat6',
+          menuUrl: 'https://pmenu.eresto.app/vrg/cat6',
+          sessions: [
+            V6SessionItem(
+              id: 1,
+              sessionName: 'ONE',
+              sessionFor: 'cat6',
+              menuType: 'Cat6',
+              menuTemplateId: 18,
+              menuTemplateName: 'Multi Cat 6',
+              startTime: '00:00',
+              endTime: '22:00',
+              dayFlag: 0,
+              enCustOrder: 0,
+              categoriesCount: 25,
+              itemsCount: 335,
+              todayScans: 0,
+              hasSplash: 1,
               offerId: 0,
             ),
           ],
         ),
       ],
-      scanData: const V6ScanData(
-        fromDate: '2026-08-12',
-        toDate: '2026-09-11',
-        scansToday: 247,
-        scansYesterday: 209,
+      scanData: V6ScanData(
+        fromDate: '2026-08-19',
+        toDate: '2026-09-18',
+        scansToday: 0,
+        scansYesterday: 6,
         dailyScans: [
-          V6DailyScan(date: '2026-09-05', totalScans: 180, byMenu: {'dine-in': 110, 'ird': 70}),
-          V6DailyScan(date: '2026-09-06', totalScans: 210, byMenu: {'dine-in': 135, 'ird': 75}),
-          V6DailyScan(date: '2026-09-07', totalScans: 195, byMenu: {'dine-in': 125, 'ird': 70}),
-          V6DailyScan(date: '2026-09-08', totalScans: 230, byMenu: {'dine-in': 150, 'ird': 80}),
-          V6DailyScan(date: '2026-09-09', totalScans: 260, byMenu: {'dine-in': 170, 'ird': 90}),
-          V6DailyScan(date: '2026-09-10', totalScans: 209, byMenu: {'dine-in': 132, 'ird': 77}),
-          V6DailyScan(date: '2026-09-11', totalScans: 247, byMenu: {'dine-in': 156, 'ird': 91}),
+          V6DailyScan(date: '2026-08-30', totalScans: 4, byMenu: {'dine-in': 4}),
+          V6DailyScan(date: '2026-09-07', totalScans: 2, byMenu: {'dine-in': 2}),
+          V6DailyScan(date: '2026-09-11', totalScans: 5, byMenu: {'dine-in': 5}),
+          V6DailyScan(date: '2026-09-13', totalScans: 1, byMenu: {'dine-in': 1}),
+          V6DailyScan(
+            date: '2026-09-15',
+            totalScans: 28,
+            byMenu: {'cat2': 1, 'cat3': 1, 'dine-in': 25, 'ird': 1},
+          ),
+          V6DailyScan(date: '2026-09-16', totalScans: 4, byMenu: {'cat4': 4}),
+          V6DailyScan(date: '2026-09-17', totalScans: 6, byMenu: {'dine-in': 6}),
         ],
       ),
     );

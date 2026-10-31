@@ -102,7 +102,9 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
     return Container(
-      height: MediaQuery.of(context).size.height * 0.86,
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
@@ -116,6 +118,7 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
       ),
       padding: EdgeInsets.only(bottom: bottomInset),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Drag Handle
           Container(
@@ -133,7 +136,7 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
 
           // Body Content
-          Expanded(
+          Flexible(
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 250),
               child: isEditing ? _buildEditBody() : _buildViewBody(),
@@ -189,9 +192,9 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
                   isEditing
                       ? (widget.initialItem != null ? "Edit Template" : "New Template")
                       : (currentItem?.tncName ?? "Terms & Conditions"),
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 15.5.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
                   ),
                   maxLines: 1,
@@ -200,12 +203,12 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
                 SizedBox(height: 1.h),
                 Text(
                   isEditing
-                      ? "Configure template name & clauses"
+                      ? "Configure template & clauses"
                       : "${currentItem?.formattedDate.isNotEmpty == true ? '${currentItem!.formattedDate} • ' : ''}${currentItem?.lines.length ?? 0} rules",
-                  style: GoogleFonts.nunito(
-                    fontSize: 11.5.sp,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.sp,
                     color: const Color(0xFF6B7280),
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -229,128 +232,136 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
   Widget _buildViewBody() {
     final lines = currentItem?.lines ?? [];
 
-    return Column(
+    return SingleChildScrollView(
       key: const ValueKey("view_mode"),
-      children: [
-        // Quick Action Bar
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _copyAllRules,
+      physics: const BouncingScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Quick Action Bar
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+            child: Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _copyAllRules,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF374151),
+                      side: const BorderSide(color: Color(0xFFD1D5DB)),
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                    ),
+                    icon: const Icon(Icons.copy_rounded, size: 15),
+                    label: Text(
+                      "Copy All Rules",
+                      style: GoogleFonts.poppins(fontSize: 12.sp, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10.w),
+                OutlinedButton.icon(
+                  onPressed: () => _confirmDelete(),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: const Color(0xFF374151),
-                    side: const BorderSide(color: Color(0xFFD1D5DB)),
-                    padding: EdgeInsets.symmetric(vertical: 8.h),
+                    foregroundColor: const Color(0xFFEF4444),
+                    side: const BorderSide(color: Color(0xFFFCA5A5)),
+                    padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
                   ),
-                  icon: const Icon(Icons.copy_rounded, size: 15),
+                  icon: const Icon(Icons.delete_outline_rounded, size: 16),
                   label: Text(
-                    "Copy All Rules",
-                    style: GoogleFonts.nunito(fontSize: 12.sp, fontWeight: FontWeight.w700),
+                    "Delete",
+                    style: GoogleFonts.poppins(fontSize: 12.sp, fontWeight: FontWeight.w600),
                   ),
                 ),
-              ),
-              SizedBox(width: 10.w),
-              OutlinedButton.icon(
-                onPressed: () => _confirmDelete(),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: const Color(0xFFEF4444),
-                  side: const BorderSide(color: Color(0xFFFCA5A5)),
-                  padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-                ),
-                icon: const Icon(Icons.delete_outline_rounded, size: 16),
-                label: Text(
-                  "Delete",
-                  style: GoogleFonts.nunito(fontSize: 12.sp, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
 
-        // Rules List
-        Expanded(
-          child: lines.isEmpty
-              ? Center(
-                  child: Text(
-                    "No rule clauses added yet.",
-                    style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF9CA3AF)),
-                  ),
-                )
-              : ListView.separated(
-                  padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.h),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: lines.length,
-                  separatorBuilder: (_, __) => SizedBox(height: 8.h),
-                  itemBuilder: (context, index) {
-                    final line = lines[index];
-                    return Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF9FAFB),
-                        borderRadius: BorderRadius.circular(10.r),
-                        border: Border.all(color: const Color(0xFFF3F4F6)),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 22.w,
-                            height: 22.w,
-                            margin: EdgeInsets.only(top: 1.h),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFEF2F2),
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              "${index + 1}",
-                              style: GoogleFonts.nunito(
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 10.w),
-                          Expanded(
-                            child: SelectableText(
-                              line,
-                              style: GoogleFonts.nunito(
-                                fontSize: 13.sp,
-                                color: const Color(0xFF374151),
-                                fontWeight: FontWeight.w600,
-                                height: 1.35,
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 6.w),
-                          InkWell(
-                            onTap: () {
-                              Clipboard.setData(ClipboardData(text: line));
-                              ToastService.showSuccess("Clause copied!");
-                            },
-                            borderRadius: BorderRadius.circular(6.r),
-                            child: Padding(
-                              padding: EdgeInsets.all(4.w),
-                              child: Icon(
-                                Icons.copy_rounded,
-                                size: 14.sp,
-                                color: const Color(0xFF9CA3AF),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+          // Rules List
+          if (lines.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 24.h),
+              child: Center(
+                child: Text(
+                  "No rule clauses added yet.",
+                  style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF9CA3AF)),
                 ),
-        ),
-      ],
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 16.h),
+              itemCount: lines.length,
+              separatorBuilder: (_, __) => SizedBox(height: 8.h),
+              itemBuilder: (context, index) {
+                final line = lines[index];
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(color: const Color(0xFFF3F4F6)),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 22.w,
+                        height: 22.w,
+                        margin: EdgeInsets.only(top: 1.h),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFFEF2F2),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          "${index + 1}",
+                          style: GoogleFonts.poppins(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 10.w),
+                      Expanded(
+                        child: SelectableText(
+                          line,
+                          style: GoogleFonts.poppins(
+                            fontSize: 13.sp,
+                            color: const Color(0xFF374151),
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 6.w),
+                      InkWell(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: line));
+                          ToastService.showSuccess("Clause copied!");
+                        },
+                        borderRadius: BorderRadius.circular(6.r),
+                        child: Padding(
+                          padding: EdgeInsets.all(4.w),
+                          child: Icon(
+                            Icons.copy_rounded,
+                            size: 14.sp,
+                            color: const Color(0xFF9CA3AF),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
     );
   }
 
@@ -360,31 +371,32 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
   Widget _buildEditBody() {
     return SingleChildScrollView(
       key: const ValueKey("edit_mode"),
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       physics: const BouncingScrollPhysics(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Template Name Label
           Text(
             "Template Name *",
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 12.5.sp,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF374151),
             ),
           ),
           SizedBox(height: 6.h),
           TextFormField(
             controller: controller.tncNameCtrl,
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 13.5.sp,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF1F2937),
             ),
             decoration: InputDecoration(
               hintText: "Enter template name (e.g. Dine-In Rules)",
-              hintStyle: GoogleFonts.nunito(fontSize: 12.5.sp, color: const Color(0xFF9CA3AF)),
+              hintStyle: GoogleFonts.poppins(fontSize: 12.5.sp, color: const Color(0xFF9CA3AF)),
               contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 11.h),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10.r),
@@ -402,7 +414,7 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
               fillColor: const Color(0xFFF9FAFB),
             ),
           ),
-          SizedBox(height: 18.h),
+          SizedBox(height: 14.h),
 
           // Terms & Condition Rules Label & "+ Add Line" Button
           Row(
@@ -411,9 +423,9 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
             children: [
               Text(
                 "Condition Clauses *",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 12.5.sp,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: const Color(0xFF374151),
                 ),
               ),
@@ -434,9 +446,9 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
                       SizedBox(width: 4.w),
                       Text(
                         "Add Line",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 11.5.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.primary,
                         ),
                       ),
@@ -470,7 +482,7 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
                       alignment: Alignment.center,
                       child: Text(
                         "${index + 1}",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF6B7280),
@@ -482,13 +494,13 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
                       child: TextFormField(
                         controller: ctrl,
                         maxLines: null,
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 12.5.sp,
                           color: const Color(0xFF1F2937),
                         ),
                         decoration: InputDecoration(
                           hintText: "Enter rule or clause text...",
-                          hintStyle: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
+                          hintStyle: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
                           contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8.r),
@@ -532,7 +544,7 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
               },
             ),
           ),
-          SizedBox(height: 16.h),
+          SizedBox(height: 10.h),
         ],
       ),
     );
@@ -543,7 +555,12 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
   // --------------------------------------------------------------------------
   Widget _buildBottomBar() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.fromLTRB(
+        16.w,
+        12.h,
+        16.w,
+        12.h + MediaQuery.of(context).padding.bottom,
+      ),
       child: isEditing ? _buildEditFooter() : _buildViewFooter(),
     );
   }
@@ -563,7 +580,7 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
         icon: const Icon(Icons.edit_rounded, size: 17),
         label: Text(
           "Edit Template",
-          style: GoogleFonts.nunito(fontSize: 14.sp, fontWeight: FontWeight.w800),
+          style: GoogleFonts.poppins(fontSize: 14.sp, fontWeight: FontWeight.w600),
         ),
       ),
     );
@@ -585,7 +602,7 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
               ),
               child: Text(
                 "Cancel",
-                style: GoogleFonts.nunito(fontSize: 13.sp, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -615,7 +632,7 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
                     )
                   : Text(
                       widget.initialItem != null ? "Save Changes" : "Create Template",
-                      style: GoogleFonts.nunito(fontSize: 13.5.sp, fontWeight: FontWeight.w800),
+                      style: GoogleFonts.poppins(fontSize: 13.5.sp, fontWeight: FontWeight.w600),
                     ),
             ),
           ),
@@ -647,18 +664,18 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
         title: Text(
           "Delete Template",
-          style: GoogleFonts.nunito(fontWeight: FontWeight.w800, fontSize: 16.sp),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 16.sp),
         ),
         content: Text(
           "Are you sure you want to delete '${item.tncName}'? This action cannot be undone.",
-          style: GoogleFonts.nunito(fontSize: 12.5.sp, color: const Color(0xFF4B5563)),
+          style: GoogleFonts.poppins(fontSize: 12.5.sp, color: const Color(0xFF4B5563)),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
             child: Text(
               "Cancel",
-              style: GoogleFonts.nunito(color: const Color(0xFF6B7280), fontWeight: FontWeight.w700),
+              style: GoogleFonts.poppins(color: const Color(0xFF6B7280), fontWeight: FontWeight.w700),
             ),
           ),
           ElevatedButton(
@@ -674,7 +691,7 @@ class _TncBottomSheetState extends State<TncBottomSheet> {
             ),
             child: Text(
               "Delete",
-              style: GoogleFonts.nunito(color: Colors.white, fontWeight: FontWeight.w700),
+              style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w700),
             ),
           ),
         ],

@@ -34,7 +34,7 @@ void main() {
       expect(tmpl.isActive, true);
       expect(tmpl.extraPills, isEmpty);
       expect(tmpl.themeColor, const Color(0xFFC1272D)); // Red for Basic
-      expect(tmpl.details, 'Basic · T1 · Used in 1 session · 28 items');
+      expect(tmpl.details, 'BASIC · T1 · Used in 1 session · 28 items');
       expect(tmpl.menuType, 'Single Menu');
     });
 
@@ -68,7 +68,7 @@ void main() {
       expect(tmpl.isActive, true);
       expect(tmpl.extraPills, isEmpty); // No fake Food/Beverages pills
       expect(tmpl.themeColor, const Color(0xFFC1272D)); // Real theme: Basic - 1 (Red), NOT overridden to purple!
-      expect(tmpl.details, 'Basic · T1 · 3 menu cats · 114 items · 1 session');
+      expect(tmpl.details, 'BASIC · T1 · 3 menu cats · 114 items · 1 session');
       expect(tmpl.menuType, 'Multi Category Menu');
     });
 

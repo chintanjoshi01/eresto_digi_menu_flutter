@@ -36,9 +36,9 @@ class TermsConditionMasterScreen extends StatelessWidget {
         ),
         title: Text(
           "Terms & Conditions Master",
-          style: GoogleFonts.nunito(
+          style: GoogleFonts.poppins(
             fontSize: 16.sp,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             color: const Color(0xFF111827),
           ),
         ),
@@ -61,57 +61,27 @@ class TermsConditionMasterScreen extends StatelessWidget {
             padding: EdgeInsets.all(14.w),
             physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
             children: [
-              // Header Row: Count & "+ New Template" Button
+              // Header Section: Count & Subtitle
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 6.h),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Configured Templates (${controller.tncList.length})",
-                            style: GoogleFonts.nunito(
-                              fontSize: 13.5.sp,
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF374151),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            "Tap any template to view or edit",
-                            style: GoogleFonts.nunito(
-                              fontSize: 11.sp,
-                              color: const Color(0xFF9CA3AF),
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
+                    Text(
+                      "Configured Templates (${controller.tncList.length})",
+                      style: GoogleFonts.poppins(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF374151),
                       ),
                     ),
-                    SizedBox(width: 8.w),
-                    ElevatedButton.icon(
-                      onPressed: () => TncBottomSheet.show(context, startInEditMode: true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.r)),
-                        elevation: 0,
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      icon: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
-                      label: Text(
-                        "New Template",
-                        style: GoogleFonts.nunito(
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      "Tap any template to view or edit",
+                      style: GoogleFonts.poppins(
+                        fontSize: 11.5.sp,
+                        color: const Color(0xFF9CA3AF),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -145,7 +115,7 @@ class TermsConditionMasterScreen extends StatelessWidget {
           icon: const Icon(Icons.add_rounded, size: 20),
           label: Text(
             "New Template",
-            style: GoogleFonts.nunito(fontSize: 13.sp, fontWeight: FontWeight.w800),
+            style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w600),
           ),
         );
       }),
@@ -205,9 +175,9 @@ class TermsConditionMasterScreen extends StatelessWidget {
                   children: [
                     Text(
                       item.tncName,
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 14.sp,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: const Color(0xFF111827),
                       ),
                       maxLines: 1,
@@ -216,7 +186,7 @@ class TermsConditionMasterScreen extends StatelessWidget {
                     SizedBox(height: 3.h),
                     Text(
                       "${dateStr.isNotEmpty ? '$dateStr • ' : ''}$linesCount ${linesCount == 1 ? 'rule' : 'rules'}",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 11.5.sp,
                         color: const Color(0xFF6B7280),
                         fontWeight: FontWeight.w600,
@@ -274,13 +244,13 @@ class TermsConditionMasterScreen extends StatelessWidget {
             SizedBox(height: 16.h),
             Text(
               "No Terms & Conditions Found",
-              style: GoogleFonts.nunito(fontSize: 16.sp, fontWeight: FontWeight.w800),
+              style: GoogleFonts.poppins(fontSize: 16.sp, fontWeight: FontWeight.w600),
             ),
             SizedBox(height: 6.h),
             Text(
               "Create custom dining policies and house rules for your customers to see on your digital menu.",
               textAlign: TextAlign.center,
-              style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF6B7280)),
+              style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF6B7280)),
             ),
             SizedBox(height: 20.h),
             ElevatedButton.icon(
@@ -295,7 +265,7 @@ class TermsConditionMasterScreen extends StatelessWidget {
               icon: const Icon(Icons.add_rounded, size: 18),
               label: Text(
                 "Create First Template",
-                style: GoogleFonts.nunito(fontSize: 13.sp, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w700),
               ),
             ),
           ],

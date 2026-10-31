@@ -11,6 +11,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../api/api_client.dart';
 import '../services/device_service.dart';
 import '../storage/storage_service.dart';
+import 'encryption_service.dart';
 
 class ToastService {
   // Shadow matching Edge app style
@@ -30,7 +31,7 @@ class ToastService {
       title: Text(
         message,
         maxLines: 3,
-        style: GoogleFonts.nunito(fontWeight: FontWeight.w700, color: Colors.black87),
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.black87),
       ),
       alignment: Alignment.topRight,
       autoCloseDuration: const Duration(seconds: 2),
@@ -58,7 +59,7 @@ class ToastService {
       title: Text(
         message,
         maxLines: 3,
-        style: GoogleFonts.nunito(fontWeight: FontWeight.w700, color: Colors.black87),
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: Colors.black87),
       ),
       alignment: Alignment.topRight,
       autoCloseDuration: const Duration(seconds: 3),
@@ -86,7 +87,7 @@ class ToastService {
       title: Text(
         message,
         maxLines: 3,
-        style: GoogleFonts.nunito(fontWeight: FontWeight.w700, color: Colors.black87),
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: Colors.black87),
       ),
       alignment: Alignment.topRight,
       autoCloseDuration: const Duration(seconds: 2),
@@ -106,28 +107,81 @@ class ToastService {
     );
   }
 
-  // Smart Error Handler (aligned with Edge)
+  // Smart Error Handler (aligned with Edge & Clean Architecture)
   static void showError(String message, {dynamic techDetail}) {
-    final lowerMsg = message.toLowerCase();
-    final hasExplicitTechDetail = techDetail != null && techDetail.toString().trim().isNotEmpty;
-    final isTechnical = hasExplicitTechDetail ||
-                        lowerMsg.contains("sql") || 
-                        lowerMsg.contains("exception") || 
-                        lowerMsg.contains("unknown column") || 
-                        lowerMsg.contains("dio") || 
-                        lowerMsg.contains("json") ||
-                        lowerMsg.contains("connection") || 
-                        lowerMsg.contains("something went wrong") || 
-                        lowerMsg.contains("internal server error") || 
-                        lowerMsg.contains("undefined variable") || 
-                        lowerMsg.contains("500") || 
-                        message.length > 200;
+    final cleanMessage = _sanitizeErrorMessage(message);
+
+    // If techDetail is a standard JSON response wrapper without technical stack trace, strip it
+    dynamic cleanTechDetail = techDetail;
+    if (cleanTechDetail is String && cleanTechDetail.trim().startsWith('{')) {
+      try {
+        final decoded = jsonDecode(cleanTechDetail);
+        if (decoded is Map && decoded.containsKey('status') && decoded.containsKey('message')) {
+          if (!decoded.containsKey('error_detail') && !decoded.containsKey('stack') && !decoded.containsKey('trace')) {
+            cleanTechDetail = null;
+          }
+        }
+      } catch (_) {}
+    }
+
+    final isTechnical = _isTechnicalError(cleanMessage, cleanTechDetail);
 
     if (isTechnical) {
-      _showActionableErrorDialog(message, techDetail: techDetail);
+      _showActionableErrorDialog(cleanMessage, techDetail: cleanTechDetail);
     } else {
-      _showToast(message);
+      _showToast(cleanMessage);
     }
+  }
+
+  static String _sanitizeErrorMessage(String msg) {
+    final trimmed = msg.trim();
+    if (trimmed.startsWith('{')) {
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is Map && decoded.containsKey('message') && decoded['message'] != null) {
+          return decoded['message'].toString();
+        }
+      } catch (_) {}
+    }
+    return msg;
+  }
+
+  static bool _isTechnicalError(String message, dynamic techDetail) {
+    final lowerMsg = message.toLowerCase();
+    final techStr = techDetail?.toString().toLowerCase() ?? '';
+
+    // Standard business/user errors are NOT technical anomalies
+    final isBusinessError = lowerMsg.contains("invalid login credentials") ||
+        lowerMsg.contains("invalid credentials") ||
+        lowerMsg.contains("invalid username or password") ||
+        lowerMsg.contains("please enter your") ||
+        lowerMsg.contains("validation error") ||
+        lowerMsg.contains("permission") ||
+        lowerMsg.contains("unauthorized") ||
+        lowerMsg.contains("session expired");
+
+    if (isBusinessError &&
+        !techStr.contains("stack details:") &&
+        !techStr.contains("at package:") &&
+        !techStr.contains("at file:")) {
+      return false;
+    }
+
+    // Genuine technical error indicators
+    return lowerMsg.contains("sql") ||
+        lowerMsg.contains("unknown column") ||
+        lowerMsg.contains("dioexception") ||
+        lowerMsg.contains("connection refused") ||
+        lowerMsg.contains("socketexception") ||
+        lowerMsg.contains("handshakeexception") ||
+        lowerMsg.contains("internal server error") ||
+        lowerMsg.contains("undefined variable") ||
+        lowerMsg.contains("500") ||
+        techStr.contains("stack details:") ||
+        techStr.contains("at package:") ||
+        techStr.contains("at file:") ||
+        techStr.contains("dioexception") ||
+        techStr.contains("sql");
   }
 
   // Standard Error Toast
@@ -138,7 +192,7 @@ class ToastService {
       title: Text(
         message,
         maxLines: 3,
-        style: GoogleFonts.nunito(fontWeight: FontWeight.w700, color: Colors.black87),
+        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, color: Colors.black87),
       ),
       alignment: Alignment.topRight,
       autoCloseDuration: const Duration(seconds: 4),
@@ -184,8 +238,8 @@ class ToastService {
                 SizedBox(width: 10.w),
                 Text(
                   "Technical Error Detected",
-                  style: GoogleFonts.nunito(
-                    fontWeight: FontWeight.w800,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
                     fontSize: 18.sp,
                     color: const Color(0xFFAB2421),
                   ),
@@ -195,7 +249,7 @@ class ToastService {
             SizedBox(height: 12.h),
             Text(
               "An internal technical anomaly has occurred. If this persists, please share this report with support.",
-              style: GoogleFonts.nunito(fontWeight: FontWeight.w600, color: Colors.grey.shade700, fontSize: 13.sp),
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.grey.shade700, fontSize: 13.sp),
             ),
             SizedBox(height: 12.h),
             Container(
@@ -261,8 +315,8 @@ class ToastService {
                     ),
                     child: Text(
                       "Close",
-                      style: GoogleFonts.nunito(
-                        fontWeight: FontWeight.w800,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w500,
                         color: Colors.grey.shade700,
                       ),
                     ),
@@ -297,7 +351,7 @@ class ToastService {
                         "timestamp": DateTime.now().toIso8601String(),
                         "app_info": {
                           "name": "Eresto Digital Menu Standalone",
-                          "package": "in.eresto.eresto_menu",
+                          "package": "in.eresto.digimenu",
                           "app_version": DeviceService.appVersion,
                           "product_id": DeviceService.productId,
                           "login_from": DeviceService.loginFrom,
@@ -324,31 +378,36 @@ class ToastService {
                       };
 
                       try {
+                        // Encrypt report payload with AES-256 to protect backend stack and session details
+                        final encryptedPayload = EncryptionService.encryptJson(report);
+
+                        final Map<String, dynamic> encryptedEnvelope = {
+                          "report_type": "Eresto Technical Error Report (Encrypted)",
+                          "encrypted_data": encryptedPayload,
+                          "version": "1.0",
+                          "timestamp": DateTime.now().toIso8601String(),
+                        };
+
                         const encoder = JsonEncoder.withIndent('  ');
-                        final formattedJson = encoder.convert(report);
+                        final formattedJson = encoder.convert(encryptedEnvelope);
 
                         final tempDir = await getTemporaryDirectory();
-                        final file = File('${tempDir.path}/eresto_error_report.json');
+                        final file = File('${tempDir.path}/eresto_error_report.enc');
                         await file.writeAsString(formattedJson);
 
                         await Share.shareXFiles(
                           [XFile(file.path)],
-                          subject: "Eresto Menu Technical Error Report",
-                          text: "Eresto Technical Error Report: $message",
+                          subject: "Digi Menu Technical Error Report (Encrypted)",
+                          text: "Digi Menu Technical Error Report (Encrypted payload enclosed): $message",
                         );
                       } catch (e) {
-                        final transcript = StringBuffer();
-                        transcript.writeln("=== ERESTO TECHNICAL ERROR REPORT ===");
-                        transcript.writeln("Timestamp: ${DateTime.now().toIso8601String()}");
-                        transcript.writeln("Error: $message");
-                        if (resolvedDetail != null) {
-                          transcript.writeln("Details:\n$resolvedDetail");
-                        }
-                        if (tx != null) {
-                          transcript.writeln("\nAPI: ${tx.method} ${tx.url} (Status: ${tx.statusCode})");
-                          transcript.writeln("Response: ${jsonEncode(tx.responseBody)}");
-                        }
-                        await Share.share(transcript.toString(), subject: "Eresto Menu Technical Error Report");
+                        final encryptedText = EncryptionService.encryptText(
+                          "Timestamp: ${DateTime.now().toIso8601String()}\nError: $message\nDetails: $resolvedDetail\nAPI: ${tx?.url}",
+                        );
+                        await Share.share(
+                          "=== DIGI MENU TECHNICAL ERROR REPORT (ENCRYPTED) ===\n$encryptedText",
+                          subject: "Digi Menu Technical Error Report (Encrypted)",
+                        );
                       }
                     },
                     style: ElevatedButton.styleFrom(
@@ -365,7 +424,7 @@ class ToastService {
                         SizedBox(width: 6.w),
                         Text(
                           "Share to Tech",
-                          style: GoogleFonts.nunito(fontWeight: FontWeight.w800),
+                          style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
                         ),
                       ],
                     ),

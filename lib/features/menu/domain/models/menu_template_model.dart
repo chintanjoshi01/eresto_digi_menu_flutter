@@ -69,23 +69,134 @@ class MenuTemplateModel {
     final isMulti = rawIsMulti == 1 || rawIsMulti == '1' || rawIsMulti == true || json['menu_type'] == 2;
     final themeId = json['theme_id'] is int ? json['theme_id'] as int : int.tryParse(json['theme_id']?.toString() ?? '1') ?? 1;
 
-    // Theme info
+    // Resolve theme metadata via canonical theme catalog (by themeId, then name/group)
     String tName = (json['theme_name'] ?? '').toString().trim();
     String tGroup = (json['theme_group'] ?? '').toString().trim();
     String tShort = (json['theme_short_name'] ?? '').toString().trim();
 
-    if (tGroup.isEmpty) {
-      tGroup = 'Basic';
-    } else {
-      // Capitalize nicely, e.g. "BASIC" -> "Basic"
-      tGroup = tGroup[0].toUpperCase() + tGroup.substring(1).toLowerCase();
-    }
+    Color themeColor;
+    Color iconBg;
+    Color iconFg;
 
-    if (tName.isEmpty) {
-      tName = '$tGroup - $themeId';
-    }
-    if (tShort.isEmpty) {
-      tShort = tName.contains('-') ? tName.split('-').last.trim() : '$themeId';
+    if (themeId == 13 || tName.toLowerCase().contains('trendy - 6') || (tGroup.toUpperCase() == 'TRENDY' && tName.contains('6'))) {
+      // Trendy - 6 (Pink / Berry)
+      themeColor = const Color(0xFFBE185D);
+      iconBg = const Color(0xFFFDF2F8);
+      iconFg = const Color(0xFFBE185D);
+      tGroup = 'Trendy';
+      tName = 'Trendy - 6';
+      tShort = '6';
+    } else if (themeId == 8 || tName.toLowerCase().contains('neo - 1') || (tGroup.toUpperCase() == 'NEO' && tName.contains('1'))) {
+      // Neo - 1 (Sky Blue)
+      themeColor = const Color(0xFF0EA5E9);
+      iconBg = const Color(0xFFF0F9FF);
+      iconFg = const Color(0xFF0EA5E9);
+      tGroup = 'Neo';
+      tName = 'Neo - 1';
+      tShort = '1';
+    } else if (themeId == 12 || tName.toLowerCase().contains('neo - 2') || (tGroup.toUpperCase() == 'NEO' && tName.contains('2')) || tGroup.toUpperCase() == 'NEO') {
+      // Neo - 2 (Purple)
+      themeColor = const Color(0xFF7C3AED);
+      iconBg = const Color(0xFFEDE9FE);
+      iconFg = const Color(0xFF7C3AED);
+      tGroup = 'Neo';
+      tName = 'Neo - 2';
+      tShort = '2';
+    } else if (themeId == 4 || (tGroup.toUpperCase() == 'TRENDY' && (tName.contains('1') || tName.toLowerCase().contains('trendy - 1')))) {
+      // Trendy - 1 (Dark Slate)
+      themeColor = const Color(0xFF1E293B);
+      iconBg = const Color(0xFFF1F5F9);
+      iconFg = const Color(0xFF1E293B);
+      tGroup = 'Trendy';
+      tName = 'Trendy - 1';
+      tShort = '1';
+    } else if (themeId == 6 || (tGroup.toUpperCase() == 'TRENDY' && tName.contains('2'))) {
+      // Trendy - 2 (Indigo)
+      themeColor = const Color(0xFF4F46E5);
+      iconBg = const Color(0xFFEEF2FF);
+      iconFg = const Color(0xFF4F46E5);
+      tGroup = 'Trendy';
+      tName = 'Trendy - 2';
+      tShort = '2';
+    } else if (themeId == 9 || (tGroup.toUpperCase() == 'TRENDY' && tName.contains('3'))) {
+      // Trendy - 3 (Emerald Green)
+      themeColor = const Color(0xFF16A34A);
+      iconBg = const Color(0xFFF0FDF4);
+      iconFg = const Color(0xFF16A34A);
+      tGroup = 'Trendy';
+      tName = 'Trendy - 3';
+      tShort = '3';
+    } else if (themeId == 10 || (tGroup.toUpperCase() == 'TRENDY' && tName.contains('4'))) {
+      // Trendy - 4 (Amber)
+      themeColor = const Color(0xFFD97706);
+      iconBg = const Color(0xFFFFFBEB);
+      iconFg = const Color(0xFFD97706);
+      tGroup = 'Trendy';
+      tName = 'Trendy - 4';
+      tShort = '4';
+    } else if (themeId == 11 || (tGroup.toUpperCase() == 'TRENDY' && tName.contains('5'))) {
+      // Trendy - 5 (Purple)
+      themeColor = const Color(0xFF9333EA);
+      iconBg = const Color(0xFFFAF5FF);
+      iconFg = const Color(0xFF9333EA);
+      tGroup = 'Trendy';
+      tName = 'Trendy - 5';
+      tShort = '5';
+    } else if (tGroup.toUpperCase() == 'TRENDY') {
+      themeColor = const Color(0xFF1E293B);
+      iconBg = const Color(0xFFF1F5F9);
+      iconFg = const Color(0xFF1E293B);
+      tGroup = 'Trendy';
+      if (tName.isEmpty) tName = 'Trendy - $themeId';
+      if (tShort.isEmpty) tShort = '$themeId';
+    } else if (themeId == 3 || (tGroup.toUpperCase() == 'CLASSIC' && tName.contains('1'))) {
+      // Classic - 1 (Teal)
+      themeColor = const Color(0xFF0F766E);
+      iconBg = const Color(0xFFF0FDFA);
+      iconFg = const Color(0xFF0F766E);
+      tGroup = 'Classic';
+      tName = 'Classic - 1';
+      tShort = '1';
+    } else if (themeId == 5 || (tGroup.toUpperCase() == 'CLASSIC' && tName.contains('2'))) {
+      // Classic - 2 (Sky Blue)
+      themeColor = const Color(0xFF0284C7);
+      iconBg = const Color(0xFFF0F9FF);
+      iconFg = const Color(0xFF0284C7);
+      tGroup = 'Classic';
+      tName = 'Classic - 2';
+      tShort = '2';
+    } else if (themeId == 7 || (tGroup.toUpperCase() == 'CLASSIC' && tName.contains('3')) || tGroup.toUpperCase() == 'CLASSIC') {
+      // Classic - 3 (Slate)
+      themeColor = const Color(0xFF334155);
+      iconBg = const Color(0xFFF8FAFC);
+      iconFg = const Color(0xFF334155);
+      tGroup = 'Classic';
+      tName = 'Classic - 3';
+      tShort = '3';
+    } else if (themeId == 15 || (tGroup.toUpperCase() == 'BASIC' && tName.contains('4'))) {
+      // Basic - 4 (Amber)
+      themeColor = const Color(0xFFF59E0B);
+      iconBg = const Color(0xFFFFFBEB);
+      iconFg = const Color(0xFFD97706);
+      tGroup = 'Basic';
+      tName = 'Basic - 4';
+      tShort = '4';
+    } else if (themeId == 16 || (tGroup.toUpperCase() == 'BASIC' && tName.contains('5'))) {
+      // Basic - 5 (Orange)
+      themeColor = const Color(0xFFEA580C);
+      iconBg = const Color(0xFFFFF7ED);
+      iconFg = const Color(0xFFEA580C);
+      tGroup = 'Basic';
+      tName = 'Basic - 5';
+      tShort = '5';
+    } else {
+      // Default: Basic - 1 (Red)
+      themeColor = const Color(0xFFC1272D);
+      iconBg = const Color(0xFFFEF2F2);
+      iconFg = const Color(0xFFC1272D);
+      if (tGroup.isEmpty) tGroup = 'Basic';
+      if (tName.isEmpty) tName = '$tGroup - $themeId';
+      if (tShort.isEmpty) tShort = tName.contains('-') ? tName.split('-').last.trim() : '$themeId';
     }
 
     final itemsTotal = json['items_total'] is int
@@ -129,75 +240,6 @@ class MenuTemplateModel {
       if (ds.containsKey('allergens')) displayMap['Allergens'] = ds['allergens'] == true || ds['allergens'] == 1;
       if (ds.containsKey('calories')) displayMap['Calories'] = ds['calories'] == true || ds['calories'] == 1;
       if (ds.containsKey('pure_veg_badge')) displayMap['Pure Veg badge'] = ds['pure_veg_badge'] == true || ds['pure_veg_badge'] == 1;
-    }
-
-    // Determine colors and icon styles based on actual theme group & theme name
-    Color themeColor = const Color(0xFFC1272D);
-    Color iconBg = const Color(0xFFFEF2F2);
-    Color iconFg = const Color(0xFFC1272D);
-
-    final upperGroup = tGroup.toUpperCase();
-    final lowerName = tName.toLowerCase();
-
-    if (upperGroup == 'NEO') {
-      themeColor = const Color(0xFF7C3AED);
-      iconBg = const Color(0xFFEDE9FE);
-      iconFg = const Color(0xFF7C3AED);
-    } else if (upperGroup == 'TRENDY') {
-      if (lowerName.contains('1')) {
-        themeColor = const Color(0xFF1E293B);
-        iconBg = const Color(0xFFF1F5F9);
-        iconFg = const Color(0xFF1E293B);
-      } else if (lowerName.contains('2')) {
-        themeColor = const Color(0xFF4F46E5);
-        iconBg = const Color(0xFFEEF2FF);
-        iconFg = const Color(0xFF4F46E5);
-      } else if (lowerName.contains('3')) {
-        themeColor = const Color(0xFF16A34A);
-        iconBg = const Color(0xFFF0FDF4);
-        iconFg = const Color(0xFF16A34A);
-      } else if (lowerName.contains('4')) {
-        themeColor = const Color(0xFFD97706);
-        iconBg = const Color(0xFFFFFBEB);
-        iconFg = const Color(0xFFD97706);
-      } else if (lowerName.contains('5')) {
-        themeColor = const Color(0xFF9333EA);
-        iconBg = const Color(0xFFFAF5FF);
-        iconFg = const Color(0xFF9333EA);
-      } else {
-        themeColor = const Color(0xFF1E293B);
-        iconBg = const Color(0xFFF1F5F9);
-        iconFg = const Color(0xFF1E293B);
-      }
-    } else if (upperGroup == 'CLASSIC') {
-      if (lowerName.contains('1')) {
-        themeColor = const Color(0xFF0F766E);
-        iconBg = const Color(0xFFF0FDFA);
-        iconFg = const Color(0xFF0F766E);
-      } else if (lowerName.contains('2')) {
-        themeColor = const Color(0xFF0284C7);
-        iconBg = const Color(0xFFF0F9FF);
-        iconFg = const Color(0xFF0284C7);
-      } else {
-        themeColor = const Color(0xFF334155);
-        iconBg = const Color(0xFFF8FAFC);
-        iconFg = const Color(0xFF334155);
-      }
-    } else {
-      // BASIC group
-      if (lowerName.contains('4')) {
-        themeColor = const Color(0xFFF59E0B);
-        iconBg = const Color(0xFFFFFBEB);
-        iconFg = const Color(0xFFD97706);
-      } else if (lowerName.contains('5')) {
-        themeColor = const Color(0xFFEA580C);
-        iconBg = const Color(0xFFFFF7ED);
-        iconFg = const Color(0xFFEA580C);
-      } else {
-        themeColor = const Color(0xFFC1272D);
-        iconBg = const Color(0xFFFEF2F2);
-        iconFg = const Color(0xFFC1272D);
-      }
     }
 
     // Compose high-fidelity detail subtitle matching V6 API specification

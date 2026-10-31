@@ -50,6 +50,8 @@ class PdfDownloadRequest {
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{
       'template_id': templateId,
+      'menu_tmpl_id': templateId,
+      'id': templateId,
       'pdf_style': pdfStyle,
       'card_style': pdfStyle == 'compact' ? 'double' : cardStyle,
       'header_align': headerAlign,

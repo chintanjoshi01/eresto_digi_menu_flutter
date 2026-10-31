@@ -76,15 +76,15 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                     children: [
                       Text(
                         "Download Menu as PDF",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 16.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: const Color(0xFF111827),
                         ),
                       ),
                       Text(
                         "A4 portrait print-ready layout & styles",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 11.sp,
                           color: const Color(0xFF6B7280),
                         ),
@@ -115,7 +115,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
           Expanded(
             child: Obx(() {
               if (controller.generatedPdfResponse.value != null) {
-                return _buildSuccessView(controller);
+                return _buildSuccessView(context, controller);
               }
 
               return SingleChildScrollView(
@@ -134,7 +134,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
             if (controller.generatedPdfResponse.value != null) {
               return const SizedBox.shrink();
             }
-            return _buildBottomActionBar(controller);
+            return _buildBottomActionBar(context, controller);
           }),
         ],
       ),
@@ -184,7 +184,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
               ? Icon(Icons.check_rounded, color: Colors.white, size: 14.sp)
               : Text(
                   "${index + 1}",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w700,
                     color: isActive ? Colors.white : const Color(0xFF6B7280),
@@ -194,9 +194,9 @@ class DownloadMenuPdfSheet extends StatelessWidget {
         SizedBox(width: 6.w),
         Text(
           title,
-          style: GoogleFonts.nunito(
+          style: GoogleFonts.poppins(
             fontSize: 11.sp,
-            fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
             color: isActive ? AppColors.primary : const Color(0xFF4B5563),
           ),
         ),
@@ -242,52 +242,106 @@ class DownloadMenuPdfSheet extends StatelessWidget {
       key: const ValueKey("step1"),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionTitle("1. Select Menu Template"),
+        _buildSectionTitle("1. Select Menu Template *"),
         SizedBox(height: 6.h),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<int>(
-              isExpanded: true,
-              value: controller.selectedTemplateId.value,
-              icon: Icon(Icons.arrow_drop_down_rounded, color: AppColors.primary, size: 24.sp),
-              items: templates.map<DropdownMenuItem<int>>((t) {
-                int id = 1;
-                String name = 'Template';
-                if (t is Map) {
-                  id = t['id'] ?? 1;
-                  name = t['name'] ?? 'Template';
-                } else {
-                  try {
-                    id = (t as dynamic).id ?? 1;
-                    name = (t as dynamic).name ?? 'Template';
-                  } catch (_) {}
-                }
-                return DropdownMenuItem<int>(
+        Obx(() {
+          final selectedId = controller.selectedTemplateId.value;
+          final hasError = controller.showTemplateValidationError.value;
+
+          final validIds = <int>{};
+          final dropdownItems = <DropdownMenuItem<int>>[];
+          for (final t in templates) {
+            int id = 1;
+            String name = 'Template';
+            if (t is Map) {
+              id = t['id'] is int ? t['id'] as int : int.tryParse(t['id']?.toString() ?? '1') ?? 1;
+              name = (t['name'] ?? 'Template').toString();
+            } else {
+              try {
+                id = (t as dynamic).id ?? 1;
+                name = ((t as dynamic).name ?? 'Template').toString();
+              } catch (_) {}
+            }
+            if (validIds.add(id)) {
+              dropdownItems.add(
+                DropdownMenuItem<int>(
                   value: id,
                   child: Text(
                     name,
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 13.sp,
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                       color: const Color(0xFF111827),
                     ),
                   ),
-                );
-              }).toList(),
-              onChanged: (newId) {
-                if (newId != null) {
-                  controller.selectedTemplateId.value = newId;
-                }
-              },
-            ),
-          ),
-        ),
+                ),
+              );
+            }
+          }
+
+          final effectiveValue = (selectedId > 0 && validIds.contains(selectedId)) ? selectedId : null;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(
+                    color: hasError ? const Color(0xFFEF4444) : const Color(0xFFE5E7EB),
+                    width: hasError ? 1.5.w : 1.w,
+                  ),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    isExpanded: true,
+                    value: effectiveValue,
+                    hint: Text(
+                      "Select Menu Template",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: hasError ? const Color(0xFFEF4444) : const Color(0xFF9CA3AF),
+                      ),
+                    ),
+                    icon: Icon(
+                      Icons.arrow_drop_down_rounded,
+                      color: hasError ? const Color(0xFFEF4444) : AppColors.primary,
+                      size: 24.sp,
+                    ),
+                    items: dropdownItems,
+                    onChanged: (newId) {
+                      if (newId != null) {
+                        controller.selectTemplateForPdf(newId);
+                      }
+                    },
+                  ),
+                ),
+              ),
+              if (hasError) ...[
+                SizedBox(height: 5.h),
+                Row(
+                  children: [
+                    Icon(Icons.error_outline_rounded, size: 13.sp, color: const Color(0xFFEF4444)),
+                    SizedBox(width: 4.w),
+                    Expanded(
+                      child: Text(
+                        "Please select a Menu Template before proceeding",
+                        style: GoogleFonts.poppins(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFFEF4444),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          );
+        }),
         SizedBox(height: 16.h),
 
         _buildSectionTitle("2. Restaurant Info for Header"),
@@ -355,116 +409,183 @@ class DownloadMenuPdfSheet extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   Widget _buildStep2Layout(ShareController controller) {
-    return Column(
-      key: const ValueKey("step2"),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSectionTitle("1. Choose Layout Style"),
-        SizedBox(height: 8.h),
-        Row(
-          children: [
-            Expanded(
-              child: _buildLayoutStyleCard(
-                controller: controller,
-                styleId: 'classic',
-                title: 'Classic',
-                subtitle: 'Single / dual traditional',
-                icon: Icons.menu_book_rounded,
+    return Obx(
+      () => Column(
+        key: const ValueKey("step2"),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle("1. Choose Layout Style"),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              Expanded(
+                child: _buildLayoutStyleCard(
+                  controller: controller,
+                  styleId: 'classic',
+                  title: 'Classic',
+                  subtitle: 'Single / dual traditional',
+                  icon: Icons.menu_book_rounded,
+                ),
               ),
-            ),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: _buildLayoutStyleCard(
-                controller: controller,
-                styleId: 'card',
-                title: 'Card',
-                subtitle: 'Structured item boxes',
-                icon: Icons.view_agenda_rounded,
+              SizedBox(width: 8.w),
+              Expanded(
+                child: _buildLayoutStyleCard(
+                  controller: controller,
+                  styleId: 'card',
+                  title: 'Card',
+                  subtitle: 'Structured item boxes',
+                  icon: Icons.view_agenda_rounded,
+                ),
               ),
-            ),
-            SizedBox(width: 8.w),
-            Expanded(
-              child: _buildLayoutStyleCard(
-                controller: controller,
-                styleId: 'compact',
-                title: 'Compact',
-                subtitle: 'Dense 2-column menu',
-                icon: Icons.view_compact_rounded,
+              SizedBox(width: 8.w),
+              Expanded(
+                child: _buildLayoutStyleCard(
+                  controller: controller,
+                  styleId: 'compact',
+                  title: 'Compact',
+                  subtitle: 'Dense 2-column menu',
+                  icon: Icons.view_compact_rounded,
+                ),
               ),
+            ],
+          ),
+          if (controller.selectedPdfStyle.value != 'compact') ...[
+            SizedBox(height: 14.h),
+            _buildSectionTitle("Column Arrangement"),
+            SizedBox(height: 8.h),
+            Row(
+              children: [
+                _buildSelectionChip(
+                  label: "Single Column",
+                  icon: Icons.view_stream_rounded,
+                  isSelected: controller.selectedCardStyle.value == 'single',
+                  onTap: () => controller.selectedCardStyle.value = 'single',
+                ),
+                SizedBox(width: 8.w),
+                _buildSelectionChip(
+                  label: "Two Columns",
+                  icon: Icons.grid_view_rounded,
+                  isSelected: controller.selectedCardStyle.value == 'double',
+                  onTap: () => controller.selectedCardStyle.value = 'double',
+                ),
+              ],
             ),
           ],
-        ),
-        SizedBox(height: 18.h),
+          SizedBox(height: 18.h),
 
-        _buildSectionTitle("2. Header Alignment"),
-        SizedBox(height: 8.h),
-        Row(
-          children: [
-            _buildSelectionChip(
-              label: "Left",
-              icon: Icons.format_align_left_rounded,
-              isSelected: controller.headerAlign.value == 'left',
-              onTap: () => controller.headerAlign.value = 'left',
-            ),
-            SizedBox(width: 8.w),
-            _buildSelectionChip(
-              label: "Center",
-              icon: Icons.format_align_center_rounded,
-              isSelected: controller.headerAlign.value == 'center',
-              onTap: () => controller.headerAlign.value = 'center',
-            ),
-            SizedBox(width: 8.w),
-            _buildSelectionChip(
-              label: "Right",
-              icon: Icons.format_align_right_rounded,
-              isSelected: controller.headerAlign.value == 'right',
-              onTap: () => controller.headerAlign.value = 'right',
-            ),
-          ],
-        ),
-        SizedBox(height: 18.h),
+          _buildSectionTitle("2. Header Alignment"),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              _buildSelectionChip(
+                label: "Left",
+                icon: Icons.format_align_left_rounded,
+                isSelected: controller.headerAlign.value == 'left',
+                onTap: () => controller.headerAlign.value = 'left',
+              ),
+              SizedBox(width: 8.w),
+              _buildSelectionChip(
+                label: "Center",
+                icon: Icons.format_align_center_rounded,
+                isSelected: controller.headerAlign.value == 'center',
+                onTap: () => controller.headerAlign.value = 'center',
+              ),
+              SizedBox(width: 8.w),
+              _buildSelectionChip(
+                label: "Right",
+                icon: Icons.format_align_right_rounded,
+                isSelected: controller.headerAlign.value == 'right',
+                onTap: () => controller.headerAlign.value = 'right',
+              ),
+            ],
+          ),
+          SizedBox(height: 18.h),
 
-        _buildSectionTitle("3. Category Heading Banner Style"),
-        SizedBox(height: 8.h),
-        Row(
-          children: [
-            _buildSelectionChip(
-              label: "Plain",
-              isSelected: controller.catStyle.value == 'plain',
-              onTap: () => controller.catStyle.value = 'plain',
-            ),
-            SizedBox(width: 8.w),
-            _buildSelectionChip(
-              label: "Solid",
-              isSelected: controller.catStyle.value == 'solid',
-              onTap: () => controller.catStyle.value = 'solid',
-            ),
-            SizedBox(width: 8.w),
-            _buildSelectionChip(
-              label: "Gradient",
-              isSelected: controller.catStyle.value == 'gradient',
-              onTap: () => controller.catStyle.value = 'gradient',
-            ),
-          ],
-        ),
-        SizedBox(height: 18.h),
+          _buildSectionTitle("3. Category Heading Banner Style"),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              _buildSelectionChip(
+                label: "Plain",
+                isSelected: controller.catStyle.value == 'plain',
+                onTap: () => controller.catStyle.value = 'plain',
+              ),
+              SizedBox(width: 8.w),
+              _buildSelectionChip(
+                label: "Solid",
+                isSelected: controller.catStyle.value == 'solid',
+                onTap: () => controller.catStyle.value = 'solid',
+              ),
+              SizedBox(width: 8.w),
+              _buildSelectionChip(
+                label: "Gradient",
+                isSelected: controller.catStyle.value == 'gradient',
+                onTap: () => controller.catStyle.value = 'gradient',
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            children: [
+              _buildSelectionChip(
+                label: "Left Heading",
+                icon: Icons.align_horizontal_left_rounded,
+                isSelected: controller.catAlign.value == 'left',
+                onTap: () => controller.catAlign.value = 'left',
+              ),
+              SizedBox(width: 8.w),
+              _buildSelectionChip(
+                label: "Center Heading",
+                icon: Icons.align_horizontal_center_rounded,
+                isSelected: controller.catAlign.value == 'center',
+                onTap: () => controller.catAlign.value = 'center',
+              ),
+            ],
+          ),
+          SizedBox(height: 18.h),
 
-        _buildSectionTitle("4. Background Palette Theme"),
-        SizedBox(height: 8.h),
-        Row(
-          children: [
-            _buildColorPaletteSwatch(controller, id: 'white', name: 'White', color: const Color(0xFFFFFFFF)),
-            SizedBox(width: 10.w),
-            _buildColorPaletteSwatch(controller, id: 'cream', name: 'Cream', color: const Color(0xFFFFFDF0)),
-            SizedBox(width: 10.w),
-            _buildColorPaletteSwatch(controller, id: 'beige', name: 'Beige', color: const Color(0xFFF5F5DC)),
-            SizedBox(width: 10.w),
-            _buildColorPaletteSwatch(controller, id: 'blush', name: 'Blush', color: const Color(0xFFFFF0F5)),
-            SizedBox(width: 10.w),
-            _buildColorPaletteSwatch(controller, id: 'grey', name: 'Grey', color: const Color(0xFFF3F4F6)),
-          ],
-        ),
-      ],
+          _buildSectionTitle("4. Background Palette Theme"),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              _buildColorPaletteSwatch(controller, id: 'white', name: 'White', color: const Color(0xFFFFFFFF)),
+              SizedBox(width: 10.w),
+              _buildColorPaletteSwatch(controller, id: 'cream', name: 'Cream', color: const Color(0xFFFFFDF0)),
+              SizedBox(width: 10.w),
+              _buildColorPaletteSwatch(controller, id: 'beige', name: 'Beige', color: const Color(0xFFF5F5DC)),
+              SizedBox(width: 10.w),
+              _buildColorPaletteSwatch(controller, id: 'blush', name: 'Blush', color: const Color(0xFFFFF0F5)),
+              SizedBox(width: 10.w),
+              _buildColorPaletteSwatch(controller, id: 'grey', name: 'Grey', color: const Color(0xFFF3F4F6)),
+            ],
+          ),
+          SizedBox(height: 18.h),
+
+          _buildSectionTitle("5. Typography Case"),
+          SizedBox(height: 8.h),
+          Row(
+            children: [
+              _buildSelectionChip(
+                label: "Normal",
+                isSelected: controller.fontStyle.value == 0,
+                onTap: () => controller.fontStyle.value = 0,
+              ),
+              SizedBox(width: 8.w),
+              _buildSelectionChip(
+                label: "UPPERCASE",
+                isSelected: controller.fontStyle.value == 1,
+                onTap: () => controller.fontStyle.value = 1,
+              ),
+              SizedBox(width: 8.w),
+              _buildSelectionChip(
+                label: "Capitalize",
+                isSelected: controller.fontStyle.value == 2,
+                onTap: () => controller.fontStyle.value = 2,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -516,9 +637,9 @@ class DownloadMenuPdfSheet extends StatelessWidget {
             SizedBox(height: 8.h),
             Text(
               title,
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 12.sp,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w600,
                 color: isSelected ? AppColors.primary : const Color(0xFF111827),
               ),
             ),
@@ -526,7 +647,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 9.sp,
                 color: const Color(0xFF9CA3AF),
               ),
@@ -575,7 +696,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
           SizedBox(height: 4.h),
           Text(
             name,
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 10.sp,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
               color: isSelected ? AppColors.primary : const Color(0xFF6B7280),
@@ -599,7 +720,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
         SizedBox(height: 6.h),
         Text(
           "Choose what additional item metadata to print in the PDF menu.",
-          style: GoogleFonts.nunito(fontSize: 11.sp, color: const Color(0xFF6B7280)),
+          style: GoogleFonts.poppins(fontSize: 11.sp, color: const Color(0xFF6B7280)),
         ),
         SizedBox(height: 12.h),
 
@@ -665,7 +786,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
               Expanded(
                 child: Text(
                   "High-resolution vector PDF generated on server with automatic page breaks and table of contents.",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 10.5.sp,
                     color: const Color(0xFF166534),
                     fontWeight: FontWeight.w600,
@@ -683,12 +804,17 @@ class DownloadMenuPdfSheet extends StatelessWidget {
   // Generated PDF Success View
   // --------------------------------------------------------------------------
 
-  Widget _buildSuccessView(ShareController controller) {
+  Widget _buildSuccessView(BuildContext context, ShareController controller) {
     final response = controller.generatedPdfResponse.value;
     if (response == null) return const SizedBox.shrink();
 
     return Padding(
-      padding: EdgeInsets.all(20.w),
+      padding: EdgeInsets.fromLTRB(
+        20.w,
+        20.w,
+        20.w,
+        20.w + MediaQuery.of(context).padding.bottom,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -705,9 +831,9 @@ class DownloadMenuPdfSheet extends StatelessWidget {
           SizedBox(height: 16.h),
           Text(
             "PDF Generated Successfully!",
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 18.sp,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w600,
               color: const Color(0xFF111827),
             ),
           ),
@@ -715,7 +841,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
           Text(
             response.fileName,
             textAlign: TextAlign.center,
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 12.sp,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF6B7280),
@@ -737,13 +863,16 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                   SizedBox(width: 8.w),
                   Text(
                     "Downloading PDF file to device...",
-                    style: GoogleFonts.nunito(fontSize: 11.5.sp, color: const Color(0xFF6B7280)),
+                    style: GoogleFonts.poppins(fontSize: 11.5.sp, color: const Color(0xFF6B7280)),
                   ),
                 ],
               );
             }
             if (controller.downloadedLocalPdfFile.value != null) {
-              final fileSizeKb = controller.downloadedLocalPdfFile.value!.lengthSync() ~/ 1024;
+              final bytesCount = controller.downloadedLocalPdfFile.value!.lengthSync();
+              final sizeStr = bytesCount >= 1024 * 1024
+                  ? "${(bytesCount / (1024 * 1024)).toStringAsFixed(1)} MB"
+                  : "${(bytesCount / 1024).toStringAsFixed(1)} KB";
               return Container(
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                 decoration: BoxDecoration(
@@ -757,8 +886,8 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                     Icon(Icons.download_done_rounded, size: 14.sp, color: const Color(0xFF16A34A)),
                     SizedBox(width: 6.w),
                     Text(
-                      "Downloaded locally ($fileSizeKb KB) • Ready to open & share",
-                      style: GoogleFonts.nunito(
+                      "Downloaded ($sizeStr) • Saved in Downloads folder",
+                      style: GoogleFonts.poppins(
                         fontSize: 10.5.sp,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF166534),
@@ -780,7 +909,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
               icon: Icon(Icons.picture_as_pdf_rounded, size: 17.sp),
               label: Text(
                 "Open PDF File",
-                style: GoogleFonts.nunito(fontSize: 13.5.sp, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(fontSize: 13.5.sp, fontWeight: FontWeight.w700),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
@@ -788,6 +917,30 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                 padding: EdgeInsets.symmetric(vertical: 13.h),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
                 elevation: 0,
+              ),
+            ),
+          ),
+          SizedBox(height: 10.h),
+
+          // Save to Phone Downloads Folder button
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => controller.savePdfToDownloadsFolder(),
+              icon: Icon(Icons.download_for_offline_rounded, size: 16.sp, color: const Color(0xFF0F766E)),
+              label: Text(
+                "Save to Downloads Folder",
+                style: GoogleFonts.poppins(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF0F766E),
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF99F6E4)),
+                backgroundColor: const Color(0xFFF0FDFA),
+                padding: EdgeInsets.symmetric(vertical: 13.h),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
               ),
             ),
           ),
@@ -801,7 +954,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
               icon: Icon(Icons.share_rounded, size: 16.sp, color: const Color(0xFF374151)),
               label: Text(
                 "Share PDF Document",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w700,
                   color: const Color(0xFF374151),
@@ -820,7 +973,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
             onPressed: () => controller.resetPdfWizard(),
             child: Text(
               "Generate Another PDF",
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w700,
                 color: AppColors.primary,
@@ -836,13 +989,18 @@ class DownloadMenuPdfSheet extends StatelessWidget {
   // Sticky Bottom Action Bar
   // --------------------------------------------------------------------------
 
-  Widget _buildBottomActionBar(ShareController controller) {
+  Widget _buildBottomActionBar(BuildContext context, ShareController controller) {
     final step = controller.pdfCurrentStep.value;
     final isLast = step == 2;
     final isLoading = controller.isGeneratingPdf.value;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      padding: EdgeInsets.fromLTRB(
+        16.w,
+        12.h,
+        16.w,
+        12.h + MediaQuery.of(context).padding.bottom,
+      ),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: const Color(0xFFE5E7EB), width: 1.h)),
@@ -868,7 +1026,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                 ),
                 child: Text(
                   "Back",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF4B5563),
@@ -900,7 +1058,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                     )
                   : Text(
                       isLast ? "Generate Menu PDF" : "Next: Layout Options",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w700,
                       ),
@@ -919,9 +1077,9 @@ class DownloadMenuPdfSheet extends StatelessWidget {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: GoogleFonts.nunito(
+      style: GoogleFonts.poppins(
         fontSize: 12.5.sp,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w600,
         color: const Color(0xFF1F2937),
       ),
     );
@@ -942,10 +1100,10 @@ class DownloadMenuPdfSheet extends StatelessWidget {
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
+        style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: GoogleFonts.nunito(fontSize: 11.sp, color: const Color(0xFF6B7280)),
+          labelStyle: GoogleFonts.poppins(fontSize: 11.sp, color: const Color(0xFF6B7280)),
           prefixIcon: Icon(icon, color: const Color(0xFF9CA3AF), size: 18.sp),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
@@ -976,7 +1134,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF4B5563),
@@ -1019,9 +1177,9 @@ class DownloadMenuPdfSheet extends StatelessWidget {
               ],
               Text(
                 label,
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 11.5.sp,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected ? AppColors.primary : const Color(0xFF4B5563),
                 ),
               ),
@@ -1063,7 +1221,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 12.5.sp,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF111827),
@@ -1072,7 +1230,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                   SizedBox(height: 1.h),
                   Text(
                     subtitle,
-                    style: GoogleFonts.nunito(fontSize: 10.sp, color: const Color(0xFF6B7280)),
+                    style: GoogleFonts.poppins(fontSize: 10.sp, color: const Color(0xFF6B7280)),
                   ),
                 ],
               ),

@@ -487,7 +487,7 @@ class _ImageCropperModalState extends State<ImageCropperModal> {
                                 SizedBox(width: 4.w),
                                 Text(
                                   dimsText,
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 10.sp,
                                     fontWeight: FontWeight.w700,
                                     color: Colors.white,
@@ -586,9 +586,9 @@ class _ImageCropperModalState extends State<ImageCropperModal> {
                                 "Crop $tagName Image",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 14.sp,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w600,
                                   color: Colors.white,
                                 ),
                               ),
@@ -596,7 +596,7 @@ class _ImageCropperModalState extends State<ImageCropperModal> {
                                 "Drag box to move · Pinch corners to resize",
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 9.5.sp,
                                   fontWeight: FontWeight.w600,
                                   color: const Color(0xFF94A3B8),
@@ -663,16 +663,16 @@ class _ImageCropperModalState extends State<ImageCropperModal> {
                                       children: [
                                         Text(
                                           item["label"] as String,
-                                          style: GoogleFonts.nunito(
+                                          style: GoogleFonts.poppins(
                                             fontSize: 10.5.sp,
-                                            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                                             color: Colors.white,
                                           ),
                                         ),
                                         SizedBox(width: 4.w),
                                         Text(
                                           "(${item["dims"]})",
-                                          style: GoogleFonts.nunito(
+                                          style: GoogleFonts.poppins(
                                             fontSize: 9.sp,
                                             color: Colors.white70,
                                           ),
@@ -703,7 +703,7 @@ class _ImageCropperModalState extends State<ImageCropperModal> {
                                       SizedBox(width: 4.w),
                                       Text(
                                         "90°",
-                                        style: GoogleFonts.nunito(
+                                        style: GoogleFonts.poppins(
                                           fontSize: 11.sp,
                                           fontWeight: FontWeight.w700,
                                           color: Colors.white,
@@ -746,7 +746,7 @@ class _ImageCropperModalState extends State<ImageCropperModal> {
                                               _processingStatus,
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
-                                              style: GoogleFonts.nunito(
+                                              style: GoogleFonts.poppins(
                                                 fontSize: 11.5.sp,
                                                 fontWeight: FontWeight.w700,
                                                 color: Colors.white,
@@ -762,9 +762,9 @@ class _ImageCropperModalState extends State<ImageCropperModal> {
                                           SizedBox(width: 6.w),
                                           Text(
                                             "Crop & Upload",
-                                            style: GoogleFonts.nunito(
+                                            style: GoogleFonts.poppins(
                                               fontSize: 13.sp,
-                                              fontWeight: FontWeight.w800,
+                                              fontWeight: FontWeight.w600,
                                               letterSpacing: 0.2,
                                             ),
                                           ),

@@ -101,9 +101,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                     children: [
                       Text(
                         controller.templateName,
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 17.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
                           letterSpacing: -0.3,
                           height: 1.1,
@@ -112,7 +112,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                       SizedBox(height: 2.h),
                       Text(
                         "Manage Items",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 10.sp,
                           fontWeight: FontWeight.w500,
                           color: Colors.white.withOpacity(0.6),
@@ -137,9 +137,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                   icon: Icon(Icons.check_rounded, size: 14.sp, color: const Color(0xFFC1272D)),
                   label: Text(
                     "Save Changes",
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 12.sp,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: const Color(0xFFC1272D),
                     ),
                   ),
@@ -162,25 +162,32 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 children: [
                   Text(
                     "$catCount categories",
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 10.sp,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: Colors.white.withOpacity(0.6),
                     ),
                   ),
-                  Text(
-                    controller.isMultiMenu ? "${mc.name} $sel/$tot items" : "$sel / $tot items in menu",
-                    style: GoogleFonts.nunito(
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
+                  SizedBox(width: 6.w),
+                  Expanded(
+                    child: Text(
+                      controller.isMultiMenu ? "${mc.name} $sel/$tot items" : "$sel / $tot items in menu",
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
+                  SizedBox(width: 6.w),
                   Text(
                     controller.isMultiMenu ? "Multi Menu" : "Single Menu",
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 10.sp,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                       color: Colors.white.withOpacity(0.6),
                     ),
                   ),
@@ -204,9 +211,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                     children: [
                       Text(
                         "MENU CATEGORIES",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 8.5.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w500,
                           color: Colors.white.withOpacity(0.55),
                           letterSpacing: 0.6,
                         ),
@@ -233,7 +240,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                               SizedBox(width: 4.w),
                               Text(
                                 "Manage",
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 9.sp,
                                   fontWeight: FontWeight.w700,
                                   color: Colors.white,
@@ -296,15 +303,15 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                                       children: [
                                         Text(
                                           mc.name,
-                                          style: GoogleFonts.nunito(
+                                          style: GoogleFonts.poppins(
                                             fontSize: 11.sp,
-                                            fontWeight: FontWeight.w800,
+                                            fontWeight: FontWeight.w600,
                                             color: isActive ? mc.color : Colors.white,
                                           ),
                                         ),
                                         Text(
                                           "$sel/$tot items",
-                                          style: GoogleFonts.nunito(
+                                          style: GoogleFonts.poppins(
                                             fontSize: 9.sp,
                                             fontWeight: FontWeight.w600,
                                             color: isActive ? const Color(0xFF9CA3AF) : Colors.white.withOpacity(0.6),
@@ -353,9 +360,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                               SizedBox(width: 5.w),
                               Text(
                                 "Select Items",
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 12.sp,
-                                  fontWeight: isSelect ? FontWeight.w800 : FontWeight.w600,
+                                  fontWeight: isSelect ? FontWeight.w500 : FontWeight.w600,
                                   color: isSelect ? const Color(0xFFC1272D) : Colors.white.withOpacity(0.85),
                                 ),
                               ),
@@ -383,9 +390,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                               SizedBox(width: 4.w),
                               Text(
                                 "Order Items",
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 12.sp,
-                                  fontWeight: !isSelect ? FontWeight.w800 : FontWeight.w600,
+                                  fontWeight: !isSelect ? FontWeight.w500 : FontWeight.w600,
                                   color: !isSelect ? const Color(0xFFC1272D) : Colors.white.withOpacity(0.85),
                                 ),
                               ),
@@ -438,10 +445,10 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 Expanded(
                   child: TextField(
                     onChanged: (val) => controller.categorySearchQuery.value = val,
-                    style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
+                    style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
                     decoration: InputDecoration(
                       hintText: "Search categories…",
-                      hintStyle: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF9CA3AF)),
+                      hintStyle: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF9CA3AF)),
                       border: InputBorder.none,
                       isDense: true,
                       contentPadding: EdgeInsets.symmetric(vertical: 7.h),
@@ -490,7 +497,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                           child: Text(
                             "${pos + 1}",
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 10.sp,
                               fontWeight: FontWeight.w700,
                               color: const Color(0xFF9CA3AF),
@@ -511,9 +518,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                                       cat.name,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.nunito(
+                                      style: GoogleFonts.poppins(
                                         fontSize: 12.sp,
-                                        fontWeight: FontWeight.w800,
+                                        fontWeight: FontWeight.w600,
                                         color: const Color(0xFF111827),
                                       ),
                                     ),
@@ -538,9 +545,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                                               SizedBox(width: 2.w),
                                               Text(
                                                 "All",
-                                                style: GoogleFonts.nunito(
+                                                style: GoogleFonts.poppins(
                                                   fontSize: 8.5.sp,
-                                                  fontWeight: FontWeight.w800,
+                                                  fontWeight: FontWeight.w500,
                                                   color: const Color(0xFF16A34A),
                                                 ),
                                               ),
@@ -548,9 +555,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                                           )
                                         : Text(
                                             noneSelected ? "None" : "$sel/$tot",
-                                            style: GoogleFonts.nunito(
+                                            style: GoogleFonts.poppins(
                                               fontSize: 8.5.sp,
-                                              fontWeight: FontWeight.w800,
+                                              fontWeight: FontWeight.w500,
                                               color: noneSelected
                                                   ? const Color(0xFF9CA3AF)
                                                   : const Color(0xFFC1272D),
@@ -609,9 +616,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                                 SizedBox(width: 3.w),
                                 Text(
                                   "All",
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 10.sp,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w500,
                                     color: allSelected ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
                                   ),
                                 ),
@@ -682,15 +689,15 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                       children: [
                         Text(
                           "${controller.templateName} template",
-                          style: GoogleFonts.nunito(fontSize: 10.sp, color: const Color(0xFF9CA3AF)),
+                          style: GoogleFonts.poppins(fontSize: 10.sp, color: const Color(0xFF9CA3AF)),
                         ),
                         Text(
                           cat.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 14.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFF111827),
                           ),
                         ),
@@ -709,9 +716,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                       ),
                       child: Text(
                         "All",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 10.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w500,
                           color: const Color(0xFFC1272D),
                         ),
                       ),
@@ -729,9 +736,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                       ),
                       child: Text(
                         "None",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 10.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w500,
                           color: const Color(0xFF6B7280),
                         ),
                       ),
@@ -761,9 +768,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                   SizedBox(width: 8.w),
                   Text(
                     "$sel / $tot",
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 11.sp,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w600,
                       color: const Color(0xFFC1272D),
                     ),
                   ),
@@ -813,7 +820,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                       Expanded(
                         child: Text(
                           itemName,
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 13.sp,
                             fontWeight: isChecked ? FontWeight.w700 : FontWeight.w500,
                             color: isChecked ? const Color(0xFF111827) : const Color(0xFF6B7280),
@@ -861,7 +868,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                   icon: Icon(Icons.chevron_left_rounded, size: 14.sp),
                   label: Text(
                     hasPrev ? controller.categories[indices[posInOrder - 1]].name.split(' ').first : "Prev",
-                    style: GoogleFonts.nunito(fontSize: 11.sp, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.poppins(fontSize: 11.sp, fontWeight: FontWeight.w700),
                   ),
                 ),
               ),
@@ -870,7 +877,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 child: Text(
                   "${posInOrder + 1} / ${indices.length}",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 10.sp,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF9CA3AF),
@@ -894,7 +901,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                     children: [
                       Text(
                         hasNext ? controller.categories[indices[posInOrder + 1]].name.split(' ').first : "Done",
-                        style: GoogleFonts.nunito(fontSize: 11.sp, fontWeight: FontWeight.w800),
+                        style: GoogleFonts.poppins(fontSize: 11.sp, fontWeight: FontWeight.w600),
                       ),
                       if (hasNext) Icon(Icons.chevron_right_rounded, size: 14.sp),
                     ],
@@ -938,9 +945,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 controller.isMultiMenu
                     ? "CATEGORY ORDER · ${mc.name.toUpperCase()}"
                     : "CATEGORY ORDER",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 10.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF374151),
                   letterSpacing: 0.4,
                 ),
@@ -950,7 +957,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 controller.isMultiMenu
                     ? "Reorder categories shown in this menu section"
                     : "Tap ↑↓ to reorder. Tap row to arrange items inside.",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 10.sp,
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF9CA3AF),
@@ -1009,9 +1016,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                         child: Center(
                           child: Text(
                             "${pos + 1}",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 10.sp,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: Colors.white,
                             ),
                           ),
@@ -1030,16 +1037,16 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                                 cat.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 12.sp,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w600,
                                   color: const Color(0xFF111827),
                                 ),
                               ),
                               SizedBox(height: 1.h),
                               Text(
                                 "$cnt item${cnt != 1 ? 's' : ''}",
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 10.sp,
                                   color: const Color(0xFF9CA3AF),
                                 ),
@@ -1147,15 +1154,15 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                       children: [
                         Text(
                           "Item order in customer menu",
-                          style: GoogleFonts.nunito(fontSize: 10.sp, color: const Color(0xFF9CA3AF)),
+                          style: GoogleFonts.poppins(fontSize: 10.sp, color: const Color(0xFF9CA3AF)),
                         ),
                         Text(
                           cat.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 14.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFF111827),
                           ),
                         ),
@@ -1170,9 +1177,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                     ),
                     child: Text(
                       "${cat.orderedSelected.length} items",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 10.sp,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w500,
                         color: const Color(0xFFC1272D),
                       ),
                     ),
@@ -1184,7 +1191,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 padding: EdgeInsets.only(left: 37.w),
                 child: Text(
                   "↑↓ to reorder · item 1 shows first to customers",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 10.sp,
                     color: const Color(0xFF9CA3AF),
                   ),
@@ -1206,7 +1213,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                 child: Text(
                   "No items selected for this category.\nSelect items first in the Select tab.",
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
+                  style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
                 ),
               );
             }
@@ -1252,9 +1259,9 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                         child: Center(
                           child: Text(
                             "${pos + 1}",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 10.sp,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: const Color(0xFFC1272D),
                             ),
                           ),
@@ -1266,7 +1273,7 @@ class _ManageItemsScreenState extends State<ManageItemsScreen> {
                       Expanded(
                         child: Text(
                           itemName,
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 12.sp,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF111827),

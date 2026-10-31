@@ -48,16 +48,16 @@ class MenuCategoriesSheet extends StatelessWidget {
                       children: [
                         Text(
                           "Menu Categories",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 15.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFF111827),
                           ),
                         ),
                         SizedBox(height: 2.h),
                         Text(
                           "Drag ≡ to reorder · Tap + to add new",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w500,
                             color: const Color(0xFF9CA3AF),
@@ -79,7 +79,7 @@ class MenuCategoriesSheet extends StatelessWidget {
                     onPressed: () => Get.back(),
                     child: Text(
                       "Done",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w700,
                       ),
@@ -159,7 +159,7 @@ class MenuCategoriesSheet extends StatelessWidget {
                               children: [
                                 Text(
                                   mc.name,
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF111827),
@@ -168,7 +168,7 @@ class MenuCategoriesSheet extends StatelessWidget {
                                 SizedBox(height: 1.h),
                                 Text(
                                   "${mc.catIndices.length} categories · $selectedCount/$totalCount items",
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 10.sp,
                                     fontWeight: FontWeight.w500,
                                     color: const Color(0xFF9CA3AF),
@@ -229,9 +229,14 @@ class MenuCategoriesSheet extends StatelessWidget {
               }),
             ),
 
-            // Add Menu Category action
+            // Add Menu Category action with system navigation clearance
             Padding(
-              padding: EdgeInsets.fromLTRB(14.w, 4.h, 14.w, 14.h),
+              padding: EdgeInsets.fromLTRB(
+                14.w,
+                4.h,
+                14.w,
+                14.h + MediaQuery.of(context).padding.bottom,
+              ),
               child: OutlinedButton.icon(
                 style: OutlinedButton.styleFrom(
                   foregroundColor: const Color(0xFFC1272D),
@@ -243,7 +248,7 @@ class MenuCategoriesSheet extends StatelessWidget {
                 icon: const Icon(Icons.add_rounded, size: 16),
                 label: Text(
                   "Add Category Section",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w700,
                   ),

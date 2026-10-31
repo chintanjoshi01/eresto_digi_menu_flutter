@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+
 class BrandProgressIndicator extends StatefulWidget {
   final double size;
   final double? strokeWidth;
@@ -38,7 +40,7 @@ class _BrandProgressIndicatorState extends State<BrandProgressIndicator>
 
   @override
   Widget build(BuildContext context) {
-    final themeColor = widget.color ?? const Color(0xFFAB2421);
+    final themeColor = widget.color ?? AppColors.erestoRed;
 
     return SizedBox(
       width: widget.size,

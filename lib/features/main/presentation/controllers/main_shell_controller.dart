@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../../core/storage/storage_service.dart';
 import '../../../auth/data/datasources/login_sync_datasource.dart';
 import '../../../dashboard/presentation/controllers/menu_dashboard_controller.dart';
+import '../../../items/presentation/controllers/items_controller.dart';
 
 /// Enterprise Main Shell Controller managing tab state, smooth page transitions, and persistent navigation.
 class MainShellController extends GetxController {
@@ -23,6 +24,10 @@ class MainShellController extends GetxController {
     // Cache-first background sync of master metadata (kitchen/sales cats, rate lists)
     if (Get.isRegistered<LoginSyncRepository>()) {
       Get.find<LoginSyncRepository>().syncIfNeeded(force: false);
+    }
+    // Eagerly warm up ItemsController so items are fetched/cached before user taps Items tab
+    if (Get.isRegistered<ItemsController>()) {
+      Get.find<ItemsController>();
     }
   }
 
@@ -56,6 +61,18 @@ class MainShellController extends GetxController {
   }
 
   void changeTab(int index) {
+    if (Get.isRegistered<MenuDashboardController>()) {
+      final dash = Get.find<MenuDashboardController>();
+      if (dash.isForceUpdateRequired.value) {
+        dash.promptUpdateAgain();
+        return;
+      }
+      if (dash.isSubscriptionExpired.value) {
+        dash.handleSubscriptionRenewal();
+        return;
+      }
+    }
+
     if (index >= 0 && index <= 3) {
       if (currentIndex.value != index) {
         currentIndex.value = index;

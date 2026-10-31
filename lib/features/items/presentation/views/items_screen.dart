@@ -7,6 +7,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
+import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/eresto_top_header.dart';
 import '../controllers/items_controller.dart';
 import '../widgets/item_card.dart';
@@ -56,13 +57,13 @@ class _ItemsScreenState extends State<ItemsScreen> {
                 Expanded(
                   child: TextField(
                     onChanged: (val) => controller.searchItems(val),
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 13.sp,
                       color: const Color(0xFF111827),
                     ),
                     decoration: InputDecoration(
                       hintText: "Search items, short codes, description",
-                      hintStyle: GoogleFonts.nunito(
+                      hintStyle: GoogleFonts.poppins(
                         fontSize: 13.sp,
                         color: const Color(0xFF9CA3AF),
                       ),
@@ -112,15 +113,15 @@ class _ItemsScreenState extends State<ItemsScreen> {
                               ),
                               constraints: BoxConstraints(minWidth: 14.w, minHeight: 14.w),
                               child: Center(
-                                child: Text(
-                                  filterCount.toString(),
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 8.5.sp,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                    height: 1,
+                                  child: Text(
+                                    filterCount.toString(),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 8.5.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      height: 1,
+                                    ),
                                   ),
-                                ),
                               ),
                             ),
                           ),
@@ -167,8 +168,13 @@ class _ItemsScreenState extends State<ItemsScreen> {
           final cat = controller.selectedCategory.value;
           final displayCat = cat.isEmpty ? 'ALL ITEMS' : cat.toUpperCase();
           final count = controller.filteredItems.length;
+          final isLoading = controller.status.isLoading;
           final filterCount = controller.activeFiltersCount;
           final isGrid = controller.isGridView.value;
+
+          final countText = isLoading && count == 0
+              ? "$displayCat · Loading..."
+              : "$displayCat · $count ${count == 1 ? 'ITEM' : 'ITEMS'}";
 
           return Padding(
             padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
@@ -181,10 +187,10 @@ class _ItemsScreenState extends State<ItemsScreen> {
                     children: [
                       Flexible(
                         child: Text(
-                          "$displayCat · $count ${count == 1 ? 'ITEM' : 'ITEMS'}",
-                          style: GoogleFonts.nunito(
+                          countText,
+                          style: GoogleFonts.poppins(
                             fontSize: 11.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFF374151),
                             letterSpacing: 0.3,
                           ),
@@ -209,7 +215,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
                               children: [
                                 Text(
                                   "Filtered ($filterCount)",
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 9.sp,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.primary,
@@ -326,7 +332,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
                             SizedBox(height: 12.h),
                             Text(
                               "No Items Found",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 fontSize: 15.sp,
                                 fontWeight: FontWeight.w700,
                                 color: const Color(0xFF111827),
@@ -335,7 +341,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
                             SizedBox(height: 4.h),
                             Text(
                               "Try modifying search filters or pull down to refresh",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 fontSize: 12.sp,
                                 color: const Color(0xFF6B7280),
                               ),
@@ -347,7 +353,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
                                 icon: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.primary),
                                 label: Text(
                                   "Reset All Filters",
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.primary,
                                   ),
@@ -435,6 +441,11 @@ class _ItemsScreenState extends State<ItemsScreen> {
             onLoading: Obx(() => controller.isGridView.value
                 ? _buildShimmerGrid(isTablet)
                 : _buildShimmerList()),
+            onError: (err) => AppErrorView(
+              errorMessage: err,
+              onRetry: () => controller.refreshItems(),
+              onRefresh: () => controller.refreshItems(),
+            ),
           ),
         ),
       ],
@@ -531,7 +542,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
           children: [
             Text(
               name,
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 11.sp,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
                 color: isSelected ? Colors.white : const Color(0xFF4B5563),
@@ -547,7 +558,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
               ),
               child: Text(
                 count,
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 10.sp,
                   fontWeight: FontWeight.w700,
                   color: isSelected ? Colors.white : const Color(0xFF6B7280),

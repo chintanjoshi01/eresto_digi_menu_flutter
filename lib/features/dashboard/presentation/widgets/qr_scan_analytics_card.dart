@@ -96,18 +96,18 @@ class QrScanAnalyticsCard extends StatelessWidget {
                         children: [
                           Text(
                             service.name,
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 11.sp,
-                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                               color: isSelected ? const Color(0xFFC1272D) : const Color(0xFF9CA3AF),
                             ),
                           ),
                           SizedBox(width: 4.w),
                           Text(
                             service.scansCount.toString(),
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 12.sp,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: isSelected ? const Color(0xFFC1272D) : const Color(0xFF374151),
                             ),
                           ),
@@ -137,7 +137,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         "${_getPeriodLabel(activePeriod)} scan trend",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF6B7280),
@@ -176,9 +176,9 @@ class QrScanAnalyticsCard extends StatelessWidget {
                 children: [
                   Text(
                     totalScans.toString(),
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 24.sp,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                       color: const Color(0xFF111827),
                       height: 1.0,
                     ),
@@ -190,9 +190,9 @@ class QrScanAnalyticsCard extends StatelessWidget {
                       SizedBox(width: 2.w),
                       Text(
                         "${deltaPercent.abs().toInt()}% vs yesterday",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 10.5.sp,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w500,
                           color: deltaColor,
                         ),
                       ),
@@ -230,10 +230,10 @@ class QrScanAnalyticsCard extends StatelessWidget {
                                 padding: EdgeInsets.only(top: 4.h),
                                 child: Text(
                                   chartLabels[idx],
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 8.5.sp,
                                     color: isNow ? AppColors.primary : const Color(0xFF9CA3AF),
-                                    fontWeight: isNow ? FontWeight.w900 : FontWeight.w500,
+                                    fontWeight: isNow ? FontWeight.w600 : FontWeight.w400,
                                   ),
                                 ),
                               );
@@ -321,28 +321,14 @@ class QrScanAnalyticsCard extends StatelessWidget {
                     ),
                     child: Text(
                       "Peak · $peakScans",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         color: Colors.white,
                         fontSize: 8.5.sp,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
                 ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          const Divider(height: 1, color: Color(0xFFF3F4F6)),
-          SizedBox(height: 10.h),
-
-          // 5. Bottom Stats Row (Peak Hour, Peak Scans, Yesterday)
-          Row(
-            children: [
-              Expanded(child: Center(child: _buildFooterMetric("Peak Hour", peakHour))),
-              Container(width: 1.w, height: 26.h, color: const Color(0xFFF3F4F6)),
-              Expanded(child: Center(child: _buildFooterMetric("Peak Scans", peakScans.toString()))),
-              Container(width: 1.w, height: 26.h, color: const Color(0xFFF3F4F6)),
-              Expanded(child: Center(child: _buildFooterMetric("Yesterday", yesterdayScans.toString()))),
             ],
           ),
         ],
@@ -373,37 +359,13 @@ class QrScanAnalyticsCard extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.nunito(
+          style: GoogleFonts.poppins(
             fontSize: 9.5.sp,
             color: isSelected ? Colors.white : const Color(0xFF6B7280),
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildFooterMetric(String label, String value) {
-    return Column(
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.nunito(
-            fontSize: 9.sp,
-            color: const Color(0xFF9CA3AF),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        SizedBox(height: 2.h),
-        Text(
-          value,
-          style: GoogleFonts.nunito(
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w800,
-            color: const Color(0xFF111827),
-          ),
-        ),
-      ],
     );
   }
 }

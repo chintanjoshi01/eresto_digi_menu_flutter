@@ -32,11 +32,7 @@ class DashboardShimmerSkeleton extends StatelessWidget {
             _buildSectionHeaderSkeleton(width: 80.w, actionWidth: 100.w),
             _buildActiveSessionsGridSkeleton(),
 
-            // 4. Quick Actions Section Skeleton
-            _buildSectionHeaderSkeleton(width: 100.w),
-            _buildQuickActionsGridSkeleton(),
-
-            SizedBox(height: 24.h),
+            SizedBox(height: 28.h),
           ],
         ),
       ),
@@ -288,36 +284,6 @@ class DashboardShimmerSkeleton extends StatelessWidget {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionsGridSkeleton() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
-      child: Row(
-        children: List.generate(
-          4,
-          (index) => Expanded(
-            child: Container(
-              margin: EdgeInsets.symmetric(horizontal: index == 0 || index == 3 ? 0 : 4.w),
-              padding: EdgeInsets.symmetric(vertical: 12.h),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(AppDimensions.radius12),
-                border: Border.all(color: const Color(0xFFF3F4F6)),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _shimmerBox(width: 32.w, height: 32.h, radius: 8.r),
-                  SizedBox(height: 6.h),
-                  _shimmerBox(width: 40.w, height: 10.h, radius: 2.r),
-                ],
-              ),
-            ),
-          ),
         ),
       ),
     );

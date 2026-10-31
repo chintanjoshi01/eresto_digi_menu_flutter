@@ -162,147 +162,216 @@ class _ItemCardState extends State<ItemCard> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.item.name,
-                            style: GoogleFonts.nunito(
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF111827),
-                              height: 1.2,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          SizedBox(height: 3.h),
-                          // Portion label (icard-portion)
                           Row(
                             children: [
-                              Icon(
-                                Icons.grid_view_rounded,
-                                size: 10.sp,
-                                color: const Color(0xFF9CA3AF),
-                              ),
-                              SizedBox(width: 3.w),
                               Expanded(
                                 child: Text(
-                                  widget.item.portion ?? "1 portion",
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 10.sp,
-                                    color: const Color(0xFF9CA3AF),
-                                    fontWeight: FontWeight.w500,
+                                  widget.item.name,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF111827),
+                                    height: 1.2,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
+                              if (widget.item.hasVariants) ...[
+                                SizedBox(width: 4.w),
+                                Container(
+                                  padding: EdgeInsets.all(2.5.w),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF3C7),
+                                    borderRadius: BorderRadius.circular(4.r),
+                                    border: Border.all(color: const Color(0xFFFDE68A), width: 0.8),
+                                  ),
+                                  child: Icon(
+                                    Icons.tune_rounded,
+                                    size: 10.5.sp,
+                                    color: const Color(0xFFD97706),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
+                          SizedBox(height: 3.h),
+                          if ((widget.item.dietaryTags != null && widget.item.dietaryTags!.isNotEmpty) ||
+                              (widget.item.portion != null && widget.item.portion!.trim().isNotEmpty)) ...[
+                            Wrap(
+                              spacing: 4.w,
+                              runSpacing: 2.h,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                if (widget.item.dietaryTags != null && widget.item.dietaryTags!.isNotEmpty)
+                                  ...widget.item.dietaryTags!.map((tag) {
+                                    final lower = tag.trim().toLowerCase();
+                                    final isSpicy = lower.contains('spicy') || lower == 's';
+                                    final isJain = lower.contains('jain') || lower == 'j';
+                                    final isVegan = lower.contains('vegan') || lower == 'v';
+                                    final bg = isSpicy
+                                        ? const Color(0xFFFEF2F2)
+                                        : (isJain ? const Color(0xFFEEF2FF) : const Color(0xFFF0FDF4));
+                                    final fg = isSpicy
+                                        ? const Color(0xFFEF4444)
+                                        : (isJain ? const Color(0xFF6366F1) : const Color(0xFF16A34A));
+                                    final label = isSpicy
+                                        ? 'SPICY'
+                                        : (isJain ? 'JAIN' : (isVegan ? 'VEGAN' : tag.toUpperCase()));
+                                    return Container(
+                                      padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.h),
+                                      decoration: BoxDecoration(
+                                        color: bg,
+                                        borderRadius: BorderRadius.circular(3.r),
+                                      ),
+                                      child: Text(
+                                        label,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 7.5.sp,
+                                          fontWeight: FontWeight.w700,
+                                          color: fg,
+                                          letterSpacing: 0.3,
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                if (widget.item.portion != null && widget.item.portion!.trim().isNotEmpty)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.grid_view_rounded,
+                                        size: 9.5.sp,
+                                        color: const Color(0xFF9CA3AF),
+                                      ),
+                                      SizedBox(width: 2.5.w),
+                                      ConstrainedBox(
+                                        constraints: BoxConstraints(maxWidth: 95.w),
+                                        child: Text(
+                                          widget.item.portion!.trim(),
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 9.5.sp,
+                                            color: const Color(0xFF6B7280),
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
 
                       // Card Footer (icard-foot)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Price column
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          const Divider(height: 1, thickness: 1, color: Color(0xFFF3F4F6)),
+                          SizedBox(height: 5.h),
+                          // Row with PRICE label on left and AVAILABLE switch on right
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Text(
                                 "PRICE (₹)",
-                                style: GoogleFonts.nunito(
-                                  fontSize: 9.sp,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 8.5.sp,
                                   color: const Color(0xFF9CA3AF),
                                   fontWeight: FontWeight.w500,
                                   letterSpacing: 0.3,
                                 ),
                               ),
-                              Text(
-                                widget.item.price.toStringAsFixed(2),
-                                style: GoogleFonts.nunito(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF111827),
+                              // Availability toggle switch with label
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  widget.onAvailabilityChanged(!widget.item.isAvailable);
+                                },
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    AnimatedSwitcher(
+                                      duration: const Duration(milliseconds: 180),
+                                      child: Text(
+                                        widget.item.isAvailable ? "AVAILABLE" : "HIDDEN",
+                                        key: ValueKey('status_${widget.item.isAvailable}'),
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 7.5.sp,
+                                          color: widget.item.isAvailable
+                                              ? const Color(0xFF16A34A)
+                                              : const Color(0xFF9CA3AF),
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.2,
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      curve: Curves.easeInOut,
+                                      width: 28.w,
+                                      height: 16.h,
+                                      padding: EdgeInsets.all(1.5.w),
+                                      decoration: BoxDecoration(
+                                        color: widget.item.isAvailable
+                                            ? const Color(0xFF16A34A)
+                                            : const Color(0xFFD1D5DB),
+                                        borderRadius: BorderRadius.circular(10.r),
+                                        boxShadow: [
+                                          if (widget.item.isAvailable)
+                                            BoxShadow(
+                                              color: const Color(0xFF16A34A).withOpacity(0.3),
+                                              blurRadius: 3,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                        ],
+                                      ),
+                                      child: AnimatedAlign(
+                                        duration: const Duration(milliseconds: 200),
+                                        curve: Curves.easeOutBack,
+                                        alignment: widget.item.isAvailable
+                                            ? Alignment.centerRight
+                                            : Alignment.centerLeft,
+                                        child: Container(
+                                          width: 13.w,
+                                          height: 13.h,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black12,
+                                                blurRadius: 2,
+                                                offset: Offset(0, 1),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-
-                          // Availability Status + Fluid iOS Spring Toggle Switch
-                          GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () {
-                              HapticFeedback.lightImpact();
-                              widget.onAvailabilityChanged(!widget.item.isAvailable);
-                            },
-                            child: Padding(
-                              padding: EdgeInsets.fromLTRB(10.w, 4.h, 0, 4.h),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 180),
-                                    child: Text(
-                                      widget.item.isAvailable ? "AVAILABLE" : "HIDDEN",
-                                      key: ValueKey('status_${widget.item.isAvailable}'),
-                                      style: GoogleFonts.nunito(
-                                        fontSize: 8.5.sp,
-                                        color: widget.item.isAvailable
-                                            ? const Color(0xFF16A34A)
-                                            : const Color(0xFF9CA3AF),
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.2,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 3.h),
-                                  // Fluid Animated Toggle Switch
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 220),
-                                    curve: Curves.easeInOut,
-                                    width: 38.w,
-                                    height: 20.h,
-                                    padding: EdgeInsets.all(2.w),
-                                    decoration: BoxDecoration(
-                                      color: widget.item.isAvailable
-                                          ? const Color(0xFF16A34A)
-                                          : const Color(0xFFD1D5DB),
-                                      borderRadius: BorderRadius.circular(12.r),
-                                      boxShadow: [
-                                        if (widget.item.isAvailable)
-                                          BoxShadow(
-                                            color: const Color(0xFF16A34A).withOpacity(0.35),
-                                            blurRadius: 5,
-                                            offset: const Offset(0, 1.5),
-                                          ),
-                                      ],
-                                    ),
-                                    child: AnimatedAlign(
-                                      duration: const Duration(milliseconds: 220),
-                                      curve: Curves.easeOutBack,
-                                      alignment: widget.item.isAvailable
-                                          ? Alignment.centerRight
-                                          : Alignment.centerLeft,
-                                      child: Container(
-                                        width: 16.w,
-                                        height: 16.h,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black26,
-                                              blurRadius: 3,
-                                              offset: Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                          SizedBox(height: 2.h),
+                          // Price or Price Range with full width and scale down protection
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              widget.item.formattedPriceRange,
+                              style: GoogleFonts.poppins(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF111827),
                               ),
                             ),
                           ),

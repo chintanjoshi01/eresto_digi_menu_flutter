@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_dimensions.dart';
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
+import '../../../../core/widgets/app_error_view.dart';
 import '../../../../core/widgets/eresto_top_header.dart';
 import '../../../main/presentation/controllers/main_shell_controller.dart';
+import '../../../menu/presentation/controllers/menu_theme_controller.dart';
 import '../controllers/menu_dashboard_controller.dart';
 import '../widgets/active_session_grid.dart';
 import '../widgets/dashboard_hero_card.dart';
 import '../widgets/dashboard_shimmer_skeleton.dart';
 import '../widgets/qr_scan_analytics_card.dart';
-import '../widgets/quick_actions_grid.dart';
+import '../widgets/subscription_banner.dart';
 
 /// Enterprise Dashboard View matching eresto_menu_mobile_v41.html prototype specs.
 class DashboardScreen extends GetView<MenuDashboardController> {
@@ -25,6 +26,32 @@ class DashboardScreen extends GetView<MenuDashboardController> {
   Widget build(BuildContext context) {
     final content = controller.obx(
       (state) {
+        // Defense-in-depth: if subscription is expired, display AppErrorView immediately
+        if (controller.isSubscriptionExpired.value) {
+          final sub = controller.subscriptionInfo.value;
+          return AppErrorView(
+            errorMessage: sub?.displayMessage ??
+                "Subscription has expired. Please renew your subscription to continue using services.",
+            onRetry: () => controller.fetchAnalytics(forceRefresh: true),
+            onOfflineMode: () => controller.loadOfflineMode(),
+            onRefresh: () => controller.refreshDashboard(),
+            onRenew: () => controller.handleSubscriptionRenewal(),
+          );
+        }
+
+        // Defense-in-depth: if force update is required, display AppErrorView immediately
+        if (controller.isForceUpdateRequired.value) {
+          return AppErrorView(
+            errorMessage: controller.forceUpdateMessage.value,
+            latestVersion: controller.latestAvailableVersion.value.isNotEmpty
+                ? controller.latestAvailableVersion.value
+                : null,
+            onRetry: () => controller.fetchAnalytics(forceRefresh: true),
+            onOfflineMode: () => controller.loadOfflineMode(),
+            onRefresh: () => controller.refreshDashboard(),
+          );
+        }
+
         if (state == null) return const DashboardShimmerSkeleton();
 
         return RefreshIndicator(
@@ -37,10 +64,23 @@ class DashboardScreen extends GetView<MenuDashboardController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Subscription Status Alert Banner (Flag 2: Expiring Soon, Flag 3: Grace Period)
+                Obx(() {
+                  final sub = controller.subscriptionInfo.value;
+                  if (sub != null && sub.shouldShowWarningBanner) {
+                    return SubscriptionBanner(
+                      subscription: sub,
+                      onRenew: () => controller.handleSubscriptionRenewal(),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                }),
+
                 // Hero Header Banner (Solid Red)
                 DashboardHeroCard(
                   restaurantName: state.restaurantName,
                   restaurantUrl: state.restaurantUrl,
+                  menuUrls: state.menuUrls,
                   isPublished: state.isPublished,
                   totalItems: state.totalItems,
                   totalCategories: state.totalCategories,
@@ -75,92 +115,62 @@ class DashboardScreen extends GetView<MenuDashboardController> {
                   ),
                 ),
 
-                // Active Sessions 2x2 Grid with real LIVE / UPCOMING tags
+                // Active Sessions Grid (Only LIVE sessions, capped to 4 with 'View More' bottom sheet & instant session editor)
                 _buildSectionHeader(
                   "Active Now",
                   actionText: state.sessionSummaryText,
+                  onActionTap: () {
+                    if (Get.isRegistered<MainShellController>()) {
+                      Get.find<MainShellController>().changeTab(2);
+                    } else {
+                      Get.toNamed('/menu');
+                    }
+                  },
                 ),
                 ActiveSessionGrid(
                   sessions: state.activeSessions,
-                  onSessionTapped: () {
+                  onViewMoreTapped: () {
                     if (Get.isRegistered<MainShellController>()) {
                       Get.find<MainShellController>().changeTab(2);
                     } else {
                       Get.toNamed('/menu');
                     }
                   },
-                ),
-
-                // Quick Actions Grid
-                _buildSectionHeader("Quick Actions"),
-                QuickActionsGrid(
-                  onAllItemsPressed: () {
-                    if (Get.isRegistered<MainShellController>()) {
-                      Get.find<MainShellController>().changeTab(1);
-                    } else {
-                      Get.toNamed('/items');
-                    }
-                  },
-                  onPublishPressed: () {
+                  onSessionTapped: (item) {
+                    // 1. Switch to Menu Tab
                     if (Get.isRegistered<MainShellController>()) {
                       Get.find<MainShellController>().changeTab(2);
                     } else {
                       Get.toNamed('/menu');
                     }
-                  },
-                  onQrSharePressed: () {
-                    if (Get.isRegistered<MainShellController>()) {
-                      Get.find<MainShellController>().changeTab(3);
-                    } else {
-                      Get.toNamed('/share');
-                    }
-                  },
-                  onAddItemPressed: () {
-                    if (Get.isRegistered<MainShellController>()) {
-                      Get.find<MainShellController>().changeTab(1);
-                    } else {
-                      Get.toNamed('/items');
+                    // 2. Smartly focus & open that exact session in Menu
+                    if (Get.isRegistered<MenuThemeController>()) {
+                      Get.find<MenuThemeController>().focusAndOpenSession(
+                        sessionId: item.id,
+                        sessionName: item.title,
+                        channel: item.channel,
+                      );
                     }
                   },
                 ),
 
-                SizedBox(height: 24.h),
+                SizedBox(height: 28.h),
               ],
             ),
           ),
         );
       },
       onLoading: const DashboardShimmerSkeleton(),
-      onError: (err) => Center(
-        child: Padding(
-          padding: EdgeInsets.all(24.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline_rounded, size: 48.sp, color: AppColors.primary),
-              SizedBox(height: 12.h),
-              Text(
-                err ?? "Failed to load dashboard data",
-                style: GoogleFonts.nunito(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textDark,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 16.h),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppDimensions.radius8),
-                  ),
-                ),
-                onPressed: () => controller.fetchAnalytics(forceRefresh: true),
-                child: const Text("Retry"),
-              ),
-            ],
-          ),
+      onError: (err) => Obx(
+        () => AppErrorView(
+          errorMessage: err,
+          latestVersion: controller.latestAvailableVersion.value.isNotEmpty
+              ? controller.latestAvailableVersion.value
+              : null,
+          onRetry: () => controller.fetchAnalytics(forceRefresh: true),
+          onOfflineMode: () => controller.loadOfflineMode(),
+          onRefresh: () => controller.refreshDashboard(),
+          onRenew: () => controller.handleSubscriptionRenewal(),
         ),
       ),
     );
@@ -182,7 +192,7 @@ class DashboardScreen extends GetView<MenuDashboardController> {
     );
   }
 
-  Widget _buildSectionHeader(String title, {String? actionText}) {
+  Widget _buildSectionHeader(String title, {String? actionText, VoidCallback? onActionTap}) {
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 6.h),
       child: Row(
@@ -190,19 +200,22 @@ class DashboardScreen extends GetView<MenuDashboardController> {
         children: [
           Text(
             title,
-            style: GoogleFonts.nunito(
+            style: AppTypography.sectionHeader.copyWith(
               fontSize: 14.sp,
-              fontWeight: FontWeight.w800,
               color: const Color(0xFF111827),
             ),
           ),
           if (actionText != null)
-            Text(
-              actionText,
-              style: GoogleFonts.nunito(
-                fontSize: 11.sp,
-                color: AppColors.textMuted,
-                fontWeight: FontWeight.w600,
+            GestureDetector(
+              onTap: onActionTap,
+              behavior: HitTestBehavior.opaque,
+              child: Text(
+                actionText,
+                style: AppTypography.bodySmall.copyWith(
+                  fontSize: 11.sp,
+                  color: AppColors.textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
         ],

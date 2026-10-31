@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
+import '../services/app_update_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';
 import '../theme/app_typography.dart';
@@ -71,10 +71,41 @@ class AppDialog extends StatelessWidget {
           if (!isForceUpgrade) {
             Get.back();
           }
-          onUpdate?.call();
+          if (onUpdate != null) {
+            onUpdate();
+          } else {
+            // Default action opens the Play Store directly
+            AppUpdateService.openPlayStore();
+          }
         },
       ),
       barrierDismissible: !isForceUpgrade,
+    );
+  }
+
+  /// Displays a Blocking Subscription Expired Dialog
+  static Future<T?> showSubscriptionExpired<T>({
+    required String message,
+    String title = "Subscription Expired",
+    VoidCallback? onRenew,
+  }) {
+    return show<T>(
+      dialog: AppDialog(
+        title: title,
+        message: message,
+        badgeText: "LICENSE EXPIRED",
+        badgeColor: const Color(0xFFD97706),
+        icon: Icons.hourglass_disabled_rounded,
+        iconColor: const Color(0xFFD97706),
+        primaryButtonText: "Renew Subscription",
+        primaryButtonColor: const Color(0xFFD97706),
+        isForceAction: true,
+        onPrimaryPressed: () {
+          Get.back();
+          onRenew?.call();
+        },
+      ),
+      barrierDismissible: false,
     );
   }
 
@@ -234,9 +265,9 @@ class AppDialog extends StatelessWidget {
                                 ),
                                 child: Text(
                                   badgeText!.toUpperCase(),
-                                  style: GoogleFonts.nunito(
+                                  style: AppTypography.labelSmall.copyWith(
                                     fontSize: 10.sp,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w600,
                                     letterSpacing: 0.8,
                                     color: badgeColor ?? effectivePrimaryColor,
                                   ),
@@ -249,9 +280,8 @@ class AppDialog extends StatelessWidget {
                             Text(
                               title,
                               textAlign: TextAlign.center,
-                              style: AppTypography.h2.copyWith(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.w800,
+                              style: AppTypography.titleLarge.copyWith(
+                                fontSize: 17.sp,
                                 color: AppColors.textDark,
                                 height: 1.25,
                               ),
@@ -321,7 +351,6 @@ class AppDialog extends StatelessWidget {
                                         primaryButtonText!,
                                         style: AppTypography.button.copyWith(
                                           fontSize: 14.sp,
-                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
                               ),
@@ -347,9 +376,8 @@ class AppDialog extends StatelessWidget {
                                 onPressed: onSecondaryPressed,
                                 child: Text(
                                   secondaryButtonText!,
-                                  style: AppTypography.bodyLarge.copyWith(
+                                  style: AppTypography.button.copyWith(
                                     fontSize: 13.sp,
-                                    fontWeight: FontWeight.w700,
                                     color: AppColors.textSecondary,
                                   ),
                                 ),

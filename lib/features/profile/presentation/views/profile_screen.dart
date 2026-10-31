@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/services/toast_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -31,9 +32,9 @@ class ProfileScreen extends GetView<ProfileController> {
         ),
         title: Text(
           "Account Profile",
-          style: GoogleFonts.nunito(
+          style: GoogleFonts.poppins(
             fontSize: 16.sp,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w600,
             color: const Color(0xFF111827),
           ),
         ),
@@ -58,9 +59,13 @@ class ProfileScreen extends GetView<ProfileController> {
 
                   // 3. Master Catalog Sync Card
                   _buildSyncCard(context),
+                  SizedBox(height: 14.h),
+
+                  // 4. Legal & Data Protection Card
+                  _buildLegalAndSupportCard(context),
                   SizedBox(height: 24.h),
 
-                  // 4. Logout Action
+                  // 5. Logout Action
                   _buildLogoutSection(context),
                   SizedBox(height: 20.h),
                 ],
@@ -117,9 +122,9 @@ class ProfileScreen extends GetView<ProfileController> {
                     child: Obx(
                       () => Text(
                         controller.initials,
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 20.sp,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                       ),
@@ -157,9 +162,9 @@ class ProfileScreen extends GetView<ProfileController> {
                     Obx(
                       () => Text(
                         controller.userName.value,
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 16.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: const Color(0xFF111827),
                         ),
                         maxLines: 1,
@@ -177,9 +182,9 @@ class ProfileScreen extends GetView<ProfileController> {
                         ),
                         child: Text(
                           controller.userRole.value,
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 11.sp,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w500,
                             color: AppColors.primary,
                           ),
                           maxLines: 1,
@@ -233,14 +238,14 @@ class ProfileScreen extends GetView<ProfileController> {
           SizedBox(height: 12.h),
 
           // Status Row
-          Row(
+        /*  Row(
             children: [
               Icon(Icons.shield_outlined, size: 17.sp, color: const Color(0xFF6B7280)),
               SizedBox(width: 10.w),
               Expanded(
                 child: Text(
                   "Session Status",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 12.5.sp,
                     color: const Color(0xFF6B7280),
                     fontWeight: FontWeight.w600,
@@ -267,9 +272,9 @@ class ProfileScreen extends GetView<ProfileController> {
                     SizedBox(width: 5.w),
                     Text(
                       "Active & Connected",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 11.sp,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
                         color: const Color(0xFF16A34A),
                       ),
                     ),
@@ -277,7 +282,7 @@ class ProfileScreen extends GetView<ProfileController> {
                 ),
               ),
             ],
-          ),
+          ),*/
         ],
       ),
     );
@@ -320,9 +325,9 @@ class ProfileScreen extends GetView<ProfileController> {
               SizedBox(width: 10.w),
               Text(
                 "Restaurant & Outlet",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 14.5.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: const Color(0xFF111827),
                 ),
               ),
@@ -347,9 +352,15 @@ class ProfileScreen extends GetView<ProfileController> {
             () => _buildInfoRow(
               icon: Icons.location_on_outlined,
               label: "Outlet Location",
-              value: controller.restoLocation.value.isNotEmpty
-                  ? controller.restoLocation.value
-                  : "Main Branch",
+              value: controller.formattedLocation,
+              onCopy: controller.restoLocation.value.isNotEmpty &&
+                      controller.restoLocation.value != '0,0' &&
+                      controller.restoLocation.value != '0.0,0.0'
+                  ? () {
+                      Clipboard.setData(ClipboardData(text: controller.restoLocation.value));
+                      ToastService.showSuccess("Location coordinates copied");
+                    }
+                  : null,
             ),
           ),
           SizedBox(height: 12.h),
@@ -377,6 +388,16 @@ class ProfileScreen extends GetView<ProfileController> {
               ),
             );
           }),
+
+          // App Version
+          Padding(
+            padding: EdgeInsets.only(top: 12.h),
+            child: _buildInfoRow(
+              icon: Icons.info_outline_rounded,
+              label: "App Version",
+              value: "v${controller.appVersion} (${controller.buildNumber})",
+            ),
+          ),
         ],
       ),
     );
@@ -420,9 +441,9 @@ class ProfileScreen extends GetView<ProfileController> {
               Expanded(
                 child: Text(
                   "Data Synchronization",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 14.5.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
                   ),
                 ),
@@ -432,7 +453,7 @@ class ProfileScreen extends GetView<ProfileController> {
           SizedBox(height: 10.h),
           Text(
             "Sync your categories, tax templates, price templates, and kitchen settings directly from the cloud server.",
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 12.sp,
               color: const Color(0xFF6B7280),
               height: 1.4,
@@ -451,7 +472,7 @@ class ProfileScreen extends GetView<ProfileController> {
                   SizedBox(width: 6.w),
                   Text(
                     "Last synchronized: ${controller.lastSyncTime.value}",
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 11.5.sp,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF6B7280),
@@ -487,9 +508,9 @@ class ProfileScreen extends GetView<ProfileController> {
                     : const Icon(Icons.sync_rounded, size: 18),
                 label: Text(
                   controller.isSyncingData.value ? "Synchronizing..." : "Sync Master Data Now",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 13.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
@@ -531,71 +552,246 @@ class ProfileScreen extends GetView<ProfileController> {
                     )
                   : const Icon(Icons.logout_rounded, size: 18),
               label: Text(
-                controller.isLoggingOut.value ? "Signing Out..." : "Sign Out of Station",
-                style: GoogleFonts.nunito(
+                controller.isLoggingOut.value ? "Signing Out..." : "Sign Out",
+                style: GoogleFonts.poppins(
                   fontSize: 14.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
           ),
         ),
         SizedBox(height: 12.h),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.lock_outline_rounded, size: 13.sp, color: const Color(0xFF9CA3AF)),
-            SizedBox(width: 4.w),
-            Text(
-              "Session secured with eResto Cloud Authentication",
-              style: GoogleFonts.nunito(
-                fontSize: 11.sp,
-                color: const Color(0xFF9CA3AF),
-                fontWeight: FontWeight.w600,
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.lock_outline_rounded, size: 13.sp, color: const Color(0xFF9CA3AF)),
+                  SizedBox(width: 5.w),
+                  Flexible(
+                    child: Text(
+                      "Session secured with eResto Cloud Authentication",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 10.5.sp,
+                        color: const Color(0xFF9CA3AF),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              SizedBox(height: 6.h),
+             /* Text(
+                "eResto DigiMenu v${controller.appVersion} (Build ${controller.buildNumber})",
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 11.sp,
+                  color: const Color(0xFF9CA3AF),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),*/
+            ],
+          ),
         ),
       ],
     );
   }
 
   // --------------------------------------------------------------------------
-  // Reusable Info Row
+  // 5. Legal, Privacy & Data Safety Card (Google Play Policy Compliance)
+  // --------------------------------------------------------------------------
+  Widget _buildLegalAndSupportCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Section Title
+          Row(
+            children: [
+              Container(
+                width: 32.w,
+                height: 32.w,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+                alignment: Alignment.center,
+                child: Icon(Icons.shield_outlined, size: 17.sp, color: const Color(0xFF4B5563)),
+              ),
+              SizedBox(width: 10.w),
+              Text(
+                "Legal & Data Safety",
+                style: GoogleFonts.poppins(
+                  fontSize: 14.5.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF111827),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 14.h),
+          const Divider(height: 1, color: Color(0xFFF3F4F6)),
+          SizedBox(height: 6.h),
+
+          // Privacy Policy Row
+          _buildActionRow(
+            icon: Icons.privacy_tip_outlined,
+            iconColor: const Color(0xFF0284C7),
+            iconBg: const Color(0xFFF0F9FF),
+            title: "Privacy Policy",
+            subtitle: "Learn how we handle and protect your restaurant data",
+            onTap: () => _launchWebUrl("https://eresto.in/privacy"),
+          ),
+
+          // Terms of Service Row
+          _buildActionRow(
+            icon: Icons.description_outlined,
+            iconColor: const Color(0xFF4F46E5),
+            iconBg: const Color(0xFFEEF2FF),
+            title: "Terms of Service",
+            subtitle: "Usage conditions, agreements, and policies",
+            onTap: () => _launchWebUrl("https://eresto.in/terms"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionRow({
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10.r),
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 4.w),
+        child: Row(
+          children: [
+            Container(
+              width: 34.w,
+              height: 34.w,
+              decoration: BoxDecoration(
+                color: iconBg,
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+              child: Icon(icon, size: 18.sp, color: iconColor),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11.sp,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 20.sp,
+              color: const Color(0xFF9CA3AF),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchWebUrl(String url) async {
+    final uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        Clipboard.setData(ClipboardData(text: url));
+        ToastService.showInfo("Link copied: $url");
+      }
+    } catch (_) {
+      Clipboard.setData(ClipboardData(text: url));
+      ToastService.showInfo("Link copied: $url");
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Reusable Info Row (Responsive on all screen widths & font sizes)
   // --------------------------------------------------------------------------
   Widget _buildInfoRow({
     required IconData icon,
     required String label,
     required String value,
     VoidCallback? onCopy,
+    bool allowMultiline = true,
   }) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 17.sp, color: const Color(0xFF6B7280)),
+        Padding(
+          padding: EdgeInsets.only(top: 2.h),
+          child: Icon(icon, size: 16.sp, color: const Color(0xFF6B7280)),
+        ),
         SizedBox(width: 10.w),
         Expanded(
           flex: 4,
           child: Text(
             label,
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 12.5.sp,
               color: const Color(0xFF6B7280),
               fontWeight: FontWeight.w600,
+              height: 1.3,
             ),
           ),
         ),
         SizedBox(width: 8.w),
         Expanded(
-          flex: 5,
+          flex: 6,
           child: Text(
             value,
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 13.sp,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w500,
               color: const Color(0xFF111827),
+              height: 1.3,
             ),
-            textAlign: TextAlign.right,
-            maxLines: 1,
+            textAlign: TextAlign.end,
+            softWrap: true,
+            maxLines: allowMultiline ? 3 : 1,
             overflow: TextOverflow.ellipsis,
           ),
         ),

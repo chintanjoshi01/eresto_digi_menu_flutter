@@ -1,8 +1,13 @@
 import 'package:dartz/dartz.dart';
+import 'package:flutter/painting.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:get/get.dart';
 import '../../../../core/api/api_client.dart';
 import '../../../../core/api/api_exception.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/storage/database_service.dart';
 import '../../../../core/storage/storage_service.dart';
+import '../../../items/data/repositories/items_repository_impl.dart';
 import '../../domain/models/v6_login_request.dart';
 import '../../domain/models/v6_login_response.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -62,16 +67,32 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Either<Failure, void>> logout() async {
+    // 1. Attempt remote logout on server
     try {
       await _remoteDataSource.logout();
-      await _storageService.clearSession();
-      return const Right(null);
-    } on ApiException catch (e) {
-      await _storageService.clearSession();
-      return Left(ServerFailure(e.message, statusCode: e.statusCode));
-    } catch (e) {
-      await _storageService.clearSession();
-      return Left(_apiClient.mapExceptionToFailure(e));
+    } catch (_) {
+      // Ignore remote errors (e.g. offline, timeout, expired token)
+      // to ensure local data wiping is NEVER blocked.
     }
+
+    // 2. Clear Session & Storage (Preserves device_id)
+    await _storageService.clearSession();
+
+    // 3. Clear Local Offline NoSQL Database (Isar: items, templates, sessions, analytics)
+    if (Get.isRegistered<DatabaseService>()) {
+      await Get.find<DatabaseService>().clearAll();
+    }
+
+    // 4. Clear static in-memory lookup cache
+    ItemsRepositoryImpl.clearCache();
+
+    // 5. Clear In-Memory and Disk Image Cache
+    try {
+      PaintingBinding.instance.imageCache.clear();
+      PaintingBinding.instance.imageCache.clearLiveImages();
+      await DefaultCacheManager().emptyCache();
+    } catch (_) {}
+
+    return const Right(null);
   }
 }

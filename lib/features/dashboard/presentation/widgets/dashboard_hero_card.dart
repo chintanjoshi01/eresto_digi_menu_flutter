@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+
+import 'menu_urls_bottom_sheet.dart';
 
 /// Red Hero Component displaying Restaurant info, Published badge, and No. of Items / Categories split.
 /// Matches eresto_menu_mobile_v41.html prototype specs 100%.
 class DashboardHeroCard extends StatelessWidget {
   final String restaurantName;
   final String restaurantUrl;
+  final List<String> menuUrls;
   final bool isPublished;
   final int totalItems;
   final int totalCategories;
@@ -17,6 +21,7 @@ class DashboardHeroCard extends StatelessWidget {
     super.key,
     required this.restaurantName,
     required this.restaurantUrl,
+    this.menuUrls = const [],
     required this.isPublished,
     this.totalItems = 247,
     this.totalCategories = 10,
@@ -34,39 +39,23 @@ class DashboardHeroCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row 1: Restaurant Name, URL & Published Badge
+          // Row 1: Restaurant Name & Published Badge
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      restaurantName,
-                      style: GoogleFonts.nunito(
-                        color: Colors.white,
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.3,
-                        height: 1.2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 2.h),
-                    Text(
-                      restaurantUrl,
-                      style: GoogleFonts.nunito(
-                        color: Colors.white.withOpacity(0.75),
-                        fontSize: 11.sp,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+                child: Text(
+                  restaurantName,
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.3,
+                    height: 1.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               SizedBox(width: 8.w),
@@ -76,6 +65,10 @@ class DashboardHeroCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(20.r),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 0.8.w,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -91,16 +84,81 @@ class DashboardHeroCard extends StatelessWidget {
                     SizedBox(width: 5.w),
                     Text(
                       isPublished ? "Published" : "Draft",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         color: const Color(0xFFDCFCE7),
                         fontSize: 10.5.sp,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
             ],
+          ),
+          SizedBox(height: 10.h),
+
+          // Menu Link Pill - Full Width across the card
+          Builder(
+            builder: (context) {
+              final allUrls = menuUrls.isNotEmpty
+                  ? menuUrls
+                  : (restaurantUrl.isNotEmpty ? [restaurantUrl] : const <String>[]);
+              final primaryRawUrl = allUrls.isNotEmpty ? allUrls.first : restaurantUrl;
+              final cleanDisplayUrl = primaryRawUrl
+                  .replaceAll(RegExp(r'(?<!:)/{2,}'), '/')
+                  .replaceFirst(RegExp(r'^https?://'), '');
+
+              return GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  MenuUrlsBottomSheet.show(
+                    context,
+                    restaurantName: restaurantName,
+                    menuUrls: allUrls,
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.18),
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.28),
+                      width: 0.8.w,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.link_rounded,
+                        size: 14.sp,
+                        color: Colors.white.withOpacity(0.95),
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Text(
+                          cleanDisplayUrl,
+                          style: GoogleFonts.poppins(
+                            color: Colors.white,
+                            fontSize: 11.5.sp,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      SizedBox(width: 4.w),
+                      Icon(
+                        Icons.arrow_drop_down_rounded,
+                        size: 20.sp,
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
           SizedBox(height: 14.h),
 
@@ -127,10 +185,10 @@ class DashboardHeroCard extends StatelessWidget {
                       children: [
                         Text(
                           "NO. OF ITEMS",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             color: Colors.white.withOpacity(0.75),
                             fontSize: 9.5.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w500,
                             letterSpacing: 0.6,
                           ),
                         ),
@@ -141,20 +199,20 @@ class DashboardHeroCard extends StatelessWidget {
                           children: [
                             Text(
                               "$totalItems",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 color: Colors.white,
                                 fontSize: 22.sp,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 height: 1.1,
                               ),
                             ),
                             SizedBox(width: 4.w),
                             Text(
                               "Items",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 color: Colors.white.withOpacity(0.85),
                                 fontSize: 11.sp,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ],
@@ -162,10 +220,10 @@ class DashboardHeroCard extends StatelessWidget {
                         SizedBox(height: 2.h),
                         Text(
                           "Total items in menu",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             color: Colors.white.withOpacity(0.75),
                             fontSize: 10.sp,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],
@@ -194,10 +252,10 @@ class DashboardHeroCard extends StatelessWidget {
                       children: [
                         Text(
                           "NO. OF CATEGORIES",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             color: Colors.white.withOpacity(0.75),
                             fontSize: 9.5.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w500,
                             letterSpacing: 0.6,
                           ),
                         ),
@@ -208,20 +266,20 @@ class DashboardHeroCard extends StatelessWidget {
                           children: [
                             Text(
                               "$totalCategories",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 color: Colors.white,
                                 fontSize: 22.sp,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 height: 1.1,
                               ),
                             ),
                             SizedBox(width: 4.w),
                             Text(
                               "Categories",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 color: Colors.white.withOpacity(0.85),
                                 fontSize: 11.sp,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w400,
                               ),
                             ),
                           ],
@@ -229,10 +287,10 @@ class DashboardHeroCard extends StatelessWidget {
                         SizedBox(height: 2.h),
                         Text(
                           "Active categories",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             color: Colors.white.withOpacity(0.75),
                             fontSize: 10.sp,
-                            fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w400,
                           ),
                         ),
                       ],

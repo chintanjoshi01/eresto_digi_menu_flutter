@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 
 import '../../../../core/errors/failures.dart';
 
+import '../../../../core/services/app_update_service.dart';
 import '../../../../core/services/device_service.dart';
 import '../../../../core/services/toast_service.dart';
 import '../../../../core/storage/storage_service.dart';
@@ -41,9 +42,9 @@ class LoginController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    // Pre-fill remembered username if saved
+    // Pre-fill remembered username if saved (converted to uppercase)
     if (_storageService.userName.isNotEmpty) {
-      usernameController.text = _storageService.userName;
+      usernameController.text = _storageService.userName.toUpperCase();
     }
   }
 
@@ -55,7 +56,7 @@ class LoginController extends GetxController {
   }
 
   Future<void> login() async {
-    final username = usernameController.text.trim();
+    final username = usernameController.text.trim().toUpperCase();
     final password = passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
@@ -76,7 +77,7 @@ class LoginController extends GetxController {
         cv: DeviceService.appVersion,
         imei: _deviceService.deviceId,
         loginFrom: DeviceService.loginFrom, // 1 = Mobile
-        tsf: 0,
+        tsf: 1,
       );
 
       final result = await _authRepository.login(request);
@@ -130,7 +131,7 @@ class LoginController extends GetxController {
               versionTag: "Latest Version",
               isForceUpgrade: true,
               onUpdate: () {
-                // Open Google Play Store / App Store link
+                AppUpdateService.openPlayStore();
               },
             );
             return;
@@ -147,7 +148,7 @@ class LoginController extends GetxController {
           if (response.validationErrors != null && response.validationErrors!.isNotEmpty) {
             HapticFeedback.heavyImpact();
             final firstError = response.validationErrors!.values.first.first;
-            ToastService.showError(firstError, techDetail: jsonEncode(response.validationErrors));
+            ToastService.showError(firstError);
             return;
           }
 
@@ -155,9 +156,7 @@ class LoginController extends GetxController {
           HapticFeedback.heavyImpact();
           final detail = response.formattedErrorDetail.isNotEmpty
               ? response.formattedErrorDetail
-              : (response.rawResponse != null
-                  ? const JsonEncoder.withIndent('  ').convert(response.rawResponse)
-                  : null);
+              : null;
           ToastService.showError(
             response.displayErrorMessage,
             techDetail: detail,

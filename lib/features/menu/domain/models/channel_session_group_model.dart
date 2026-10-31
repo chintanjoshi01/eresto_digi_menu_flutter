@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import '../../../../core/api/endpoints.dart';
+import '../../../../core/storage/storage_service.dart';
 
 /// Single Session Model within a Channel Group matching Screenshot 2 & 4.
 class SessionCardModel {
@@ -70,17 +73,88 @@ class SessionCardModel {
     this.offerImages = const [],
   });
 
-  String get timingFormatted => '$startTime – $endTime';
+  String get timingFormatted => '${formatTo12Hour(startTime)} – ${formatTo12Hour(endTime)}';
+
+  /// Converts any 12-hour or 24-hour time string (e.g. "07:30 am", "10:30 pm", "22:30", "7:30")
+  /// into 24-hour format matching backend requirement: "7:30", "22:30".
+  static String formatTo24Hour(String rawTime) {
+    final clean = rawTime.trim().toLowerCase();
+    if (clean.isEmpty) return '00:00';
+
+    final isPm = clean.contains('pm');
+    final isAm = clean.contains('am');
+    final stripped = clean.replaceAll('am', '').replaceAll('pm', '').trim();
+    final parts = stripped.split(':');
+    if (parts.isEmpty) return rawTime;
+
+    int hour = int.tryParse(parts[0]) ?? 0;
+    int minute = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+
+    if (isPm && hour < 12) hour += 12;
+    if (isAm && hour == 12) hour = 0;
+
+    final hourStr = hour.toString().padLeft(2, '0');
+    final minStr = minute.toString().padLeft(2, '0');
+    return '$hourStr:$minStr';
+  }
+
+  /// Converts a 24-hour time string (e.g. "7:30", "07:30", "22:30")
+  /// into user-friendly 12-hour format with AM/PM (e.g. "07:30 am", "10:30 pm").
+  static String formatTo12Hour(String rawTime) {
+    final clean = rawTime.trim().toLowerCase();
+    if (clean.isEmpty) return '10:30 am';
+
+    if (clean.contains('am') || clean.contains('pm')) {
+      final parts = clean.replaceAll('am', '').replaceAll('pm', '').trim().split(':');
+      if (parts.length >= 2) {
+        final h = (int.tryParse(parts[0]) ?? 0).toString().padLeft(2, '0');
+        final m = (int.tryParse(parts[1]) ?? 0).toString().padLeft(2, '0');
+        final period = clean.contains('pm') ? 'pm' : 'am';
+        return '$h:$m $period';
+      }
+      return rawTime;
+    }
+
+    final parts = clean.split(':');
+    if (parts.length < 2) return rawTime;
+
+    int hour = int.tryParse(parts[0]) ?? 0;
+    int minute = int.tryParse(parts[1]) ?? 0;
+
+    final period = hour >= 12 ? 'pm' : 'am';
+    int hour12 = hour % 12;
+    if (hour12 == 0) hour12 = 12;
+
+    final hStr = hour12.toString().padLeft(2, '0');
+    final mStr = minute.toString().padLeft(2, '0');
+    return '$hStr:$mStr $period';
+  }
 
   /// Resolves raw image filename or relative path to full gallery URL
   static String resolveGalleryUrl(String rawNameOrUrl, [int? restoId]) {
     final clean = rawNameOrUrl.trim();
     if (clean.isEmpty) return '';
+
+    final dynamicAssetsBase = Endpoints.activeAssetsBaseUrl;
+    final targetHost = Uri.tryParse(dynamicAssetsBase)?.host ?? 'assets.eresto.in';
+
     if (clean.startsWith('http://') || clean.startsWith('https://')) {
+      final uri = Uri.tryParse(clean);
+      if (uri != null &&
+          (uri.host.contains('assets.eresto.in') || uri.host.contains('assets.eresto.app')) &&
+          uri.path.contains('/public/treasure/')) {
+        if (uri.host.startsWith('assets.') && uri.host != targetHost) {
+          return clean.replaceFirst(uri.host, targetHost);
+        }
+      }
       return clean;
     }
-    final rid = restoId ?? 85;
-    return 'https://assets.eresto.app/public/treasure/$rid/archive/gallery/$clean';
+
+    final storage = Get.isRegistered<StorageService>() ? Get.find<StorageService>() : null;
+    final effectiveRestoId = (restoId != null && restoId > 0) ? restoId : (storage?.restoId ?? 85);
+    final rid = effectiveRestoId > 0 ? effectiveRestoId : 85;
+
+    return '$dynamicAssetsBase/public/treasure/$rid/archive/gallery/$clean';
   }
 
   SessionCardModel copyWith({

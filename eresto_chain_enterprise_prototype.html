@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>eresto Chain – Enterprise Franchise Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   Official eResto Brand Design Tokens (app_colors.dart & app_typography.dart)
+   ===================================================================== */
+:root {
+  --primary: #C1272D;          /* eResto Brand Red */
+  --primary-dark: #9A0007;     /* Deep Red */
+  --primary-soft: #FEF2F2;     /* 10% Soft Red Background */
+  --primary-border: #FCA5A5;   /* Light Red Accent Border */
+  --primary-subtle: #FFF5F5;
+  
+  --ink: #374151;              /* Charcoal Body Text */
+  --ink-heading: #111827;      /* High Emphasis Titles */
+  --ink-muted: #6B7280;        /* Mid Gray Secondary */
+  --ink-faint: #9CA3AF;        /* Cool Gray Labels */
+  
+  --bg: #F4F5F7;               /* Clean App Background */
+  --surface: #FFFFFF;          /* Pure White Cards */
+  --surface-alt: #F9FAFB;      /* Subtle Alternating Surface */
+  --border: #E5E7EB;           /* Divider / Border Line */
+  --border-light: #F3F4F6;
+  
+  --veg: #15803D;              /* Veg Green */
+  --veg-soft: #DCFCE7;
+  --nonveg: #DC2626;           /* Non-Veg Red */
+  --nonveg-soft: #FEE2E2;
+  --amber: #A16207;            /* Alert Amber */
+  --amber-soft: #FEF9C3;
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.09), 0 4px 6px -4px rgba(0,0,0,0.04);
+  --shadow-phone: 0 25px 50px -12px rgba(0,0,0,0.25);
+
+  --font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color-scheme: light;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+html { scroll-padding-top: 70px; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-family);
+  font-size: 13.5px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; border: none; background: none; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+/* =====================================================================
+   App Top Bar (eResto Brand Header)
+   ===================================================================== */
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+.wrap { max-width: 1360px; margin: 0 auto; padding: 0 14px; }
+@media(min-width: 768px) { .wrap { padding: 0 24px; } }
+
+.topbar-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+.brand-icon {
+  width: 34px;
+  height: 34px;
+  background: var(--primary);
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: 0 2px 6px rgba(193, 39, 45, 0.3);
+}
+.brand-title {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--ink-heading);
+}
+.brand-title span { color: var(--primary); }
+.brand-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--primary-soft);
+  color: var(--primary);
+  padding: 3px 8px;
+  border-radius: 6px;
+  margin-left: 6px;
+}
+
+/* Desktop Navigation */
+.desktop-nav {
+  display: none;
+  gap: 4px;
+  background: var(--surface-alt);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+@media(min-width: 768px) { .desktop-nav { display: flex; } }
+.nav-btn {
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 7px;
+  color: var(--ink-muted);
+  transition: all 0.15s;
+}
+.nav-btn:hover { color: var(--ink-heading); }
+.nav-btn.active {
+  background: var(--surface);
+  color: var(--primary);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--primary-soft);
+  color: var(--primary);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  border: 1.5px solid var(--primary-border);
+}
+
+/* =====================================================================
+   Layout Containers & Common Components
+   ===================================================================== */
+.page-container { padding: 18px 0 40px; }
+
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+@media(min-width: 640px) {
+  .page-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+.page-title {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--ink-heading);
+}
+@media(min-width: 768px) { .page-title { font-size: 28px; } }
+.page-subtitle { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; }
+
+/* Control Segmented Buttons */
+.seg-control {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2px;
+  width: fit-content;
+}
+.seg-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.seg-btn.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(193, 39, 45, 0.3);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--ink-heading);
+  transition: all 0.15s;
+}
+.btn:hover { background: var(--surface-alt); border-color: #D1D5DB; }
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(193, 39, 45, 0.25);
+}
+.btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+.btn-subtle {
+  background: var(--primary-soft);
+  border-color: transparent;
+  color: var(--primary);
+}
+.btn-subtle:hover { background: #FDE8E8; }
+.btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+
+/* Cards & Badges */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+.card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.card-header h2 { font-size: 15px; font-weight: 700; color: var(--ink-heading); }
+.card-body { padding: 16px 18px; }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.badge-green { background: var(--veg-soft); color: var(--veg); }
+.badge-red { background: var(--primary-soft); color: var(--primary); }
+.badge-amber { background: var(--amber-soft); color: var(--amber); }
+.badge-gray { background: #F3F4F6; color: var(--ink-muted); }
+
+/* FSSAI Dietary Marks */
+.vm {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+.vm i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.vm.veg { color: var(--veg); }
+.vm.nonveg { color: var(--nonveg); }
+
+/* =====================================================================
+   VIEW 1: EXECUTIVE KPI SUMMARY TILES
+   ===================================================================== */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+@media(min-width: 900px) {
+  .kpi-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; }
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+.kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  letter-spacing: 0.03em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.kpi-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ink-heading);
+  letter-spacing: -0.02em;
+  margin: 4px 0 2px;
+}
+.kpi-value.red { color: var(--primary); }
+.kpi-sub { font-size: 11.5px; color: var(--ink-muted); display: flex; align-items: center; gap: 4px; }
+.growth-up { color: var(--veg); font-weight: 700; }
+
+/* Operational Alert Banner */
+.alert-card {
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  border-left: 4px solid var(--primary);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.alert-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.alert-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 14px;
+  flex: none;
+}
+.alert-text strong { color: var(--ink-heading); font-size: 13.5px; }
+.alert-text p { font-size: 12px; color: var(--ink-muted); margin-top: 1px; }
+
+/* Filter & Search Bar */
+.filter-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+@media(min-width: 640px) {
+  .filter-bar {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+.search-wrapper {
+  position: relative;
+  width: 100%;
+}
+@media(min-width: 640px) { .search-wrapper { max-width: 320px; } }
+.search-wrapper input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px 8px 34px;
+  font-size: 13px;
+  transition: border-color 0.15s;
+}
+.search-wrapper input:focus { border-color: var(--primary); outline: none; }
+.search-wrapper svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ink-faint);
+}
+
+/* =====================================================================
+   DUAL MODE: Desktop Table vs Mobile Cards
+   ===================================================================== */
+/* Desktop Table */
+.desktop-table-container {
+  display: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+@media(min-width: 1024px) {
+  .desktop-table-container { display: block; }
+}
+.prop-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.prop-table th {
+  background: var(--surface-alt);
+  color: var(--ink-muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.prop-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+.prop-table tr:hover td {
+  background: var(--primary-subtle);
+  cursor: pointer;
+}
+
+/* Mobile Property Cards */
+.mobile-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media(min-width: 1024px) {
+  .mobile-card-list { display: none; }
+}
+.outlet-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.outlet-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.outlet-name { font-size: 15px; font-weight: 700; color: var(--ink-heading); }
+.outlet-city { font-size: 12px; color: var(--ink-muted); }
+.tier-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-alt);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  margin-top: 4px;
+}
+.outlet-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  background: var(--surface-alt);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+}
+.stat-val { font-size: 14px; font-weight: 800; color: var(--ink-heading); }
+.stat-lbl { font-size: 10px; color: var(--ink-faint); font-weight: 600; text-transform: uppercase; }
+
+/* =====================================================================
+   VIEW 2: PROPERTY STUDIO (Responsive Grid on Desktop, Fluid on Mobile)
+   ===================================================================== */
+.studio-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+@media(min-width: 1024px) {
+  .studio-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+    gap: 24px;
+  }
+}
+
+.studio-tab-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 14px;
+  padding-bottom: 4px;
+}
+.studio-tab-strip::-webkit-scrollbar { display: none; }
+.studio-tab-btn {
+  flex: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.studio-tab-btn.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(193, 39, 45, 0.25);
+}
+
+.studio-pane { display: none; }
+.studio-pane.active { display: block; }
+
+/* Interactive Chart */
+.chart-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 160px;
+  padding-top: 14px;
+  border-bottom: 1px solid var(--border);
+}
+.chart-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+.chart-bar-fill {
+  width: 100%;
+  max-width: 20px;
+  background: var(--primary);
+  border-radius: 3px 3px 0 0;
+  transition: height 0.2s;
+}
+.chart-bar-fill.peak { background: var(--primary-dark); }
+.chart-bar-fill.dim { background: var(--primary-border); }
+.chart-day-label { font-size: 9.5px; color: var(--ink-faint); margin-top: 4px; }
+
+/* =====================================================================
+   PERSISTENT PHONE SIMULATOR
+   ===================================================================== */
+.phone-simulator-frame {
+  background: #1F2937;
+  border-radius: 36px;
+  padding: 10px;
+  box-shadow: var(--shadow-phone);
+  max-width: 360px;
+  margin: 0 auto;
+}
+@media(min-width: 1024px) {
+  .phone-simulator-frame {
+    position: sticky;
+    top: 74px;
+    width: 360px;
+    height: 660px;
+  }
+}
+.phone-screen {
+  background: #FFFFFF;
+  border-radius: 28px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 520px;
+}
+.sim-header {
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border-light);
+  padding: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.sim-brand-title { font-size: 15px; font-weight: 800; color: var(--ink-heading); }
+.sim-session-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+  margin: 8px 0;
+}
+.sim-session-strip::-webkit-scrollbar { display: none; }
+.sim-sess-pill {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--surface-alt);
+  color: var(--ink-muted);
+  border: 1px solid var(--border);
+}
+.sim-sess-pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.sim-search-box {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-alt);
+  padding: 7px 10px;
+  font-size: 12.5px;
+}
+.sim-items-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+.dish-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-light);
+  gap: 10px;
+}
+.dish-title { font-size: 13.5px; font-weight: 700; color: var(--ink-heading); }
+.dish-desc { font-size: 11.5px; color: var(--ink-muted); margin-top: 2px; }
+.dish-price { font-size: 13.5px; font-weight: 800; color: var(--primary); white-space: nowrap; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  border-radius: 99px;
+  padding: 9px 20px;
+  font-size: 12.5px;
+  font-weight: 600;
+  z-index: 1000;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP HEADER -->
+<header class="topbar">
+  <div class="wrap topbar-content">
+    <a class="brand-link" href="#/overview" onclick="navTo('overview')">
+      <div class="brand-icon">eR</div>
+      <div class="brand-title">eresto<span>Chain</span></div>
+      <span class="brand-pill">HQ</span>
+    </a>
+
+    <nav class="desktop-nav">
+      <button class="nav-btn active" id="dNavOverview" onclick="navTo('overview')">All Properties</button>
+      <button class="nav-btn" id="dNavStudio" onclick="navTo('studio')">Property Studio</button>
+      <button class="nav-btn" onclick="showToast('Master Catalog: 550 items governed centrally')">Master Catalog</button>
+      <button class="nav-btn" onclick="showToast('Pricing Tiers Manager: 3 Tiers configured')">Pricing Tiers</button>
+    </nav>
+
+    <div class="user-profile">
+      <div class="avatar">HQ</div>
+      <button class="btn btn-sm btn-primary" onclick="showToast('Add New Property wizard opened')">+ Add Property</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap page-container">
+
+  <!-- ===================================================================
+       VIEW 1: FRANCHISE OVERVIEW
+       =================================================================== -->
+  <div id="viewOverview">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Franchise Overview</h1>
+        <p class="page-subtitle" id="dateStr">Saturday, 3 October 2026 &bull; Central Brand Network</p>
+      </div>
+
+      <div class="seg-control">
+        <button class="seg-btn active" onclick="setPeriod('today', this)">Today</button>
+        <button class="seg-btn" onclick="setPeriod('7d', this)">7 Days</button>
+        <button class="seg-btn" onclick="setPeriod('30d', this)">30 Days</button>
+      </div>
+    </div>
+
+    <!-- 4 Meaningful Franchise KPIs -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Properties Network <span>🏢</span></div>
+        <div class="kpi-value">4</div>
+        <div class="kpi-sub"><span class="growth-up">● 3 Active</span> &bull; 1 Setup</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Active Sessions Now <span>⚡</span></div>
+        <div class="kpi-value red">9 <small style="font-size:14px;color:var(--ink-faint);font-weight:600;">/ 22</small></div>
+        <div class="kpi-sub">13 upcoming dayparts</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">Master Dishes <span>📖</span></div>
+        <div class="kpi-value">550</div>
+        <div class="kpi-sub">Across 50 categories</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label" id="kpiScanLabel">Network Scans Today <span>📱</span></div>
+        <div class="kpi-value red" id="kpiScanVal">4,820</div>
+        <div class="kpi-sub"><span class="growth-up">▲ 14.8%</span> vs yesterday</div>
+      </div>
+    </section>
+
+    <!-- Meaningful Operational Action Banner -->
+    <div class="alert-card">
+      <div class="alert-left">
+        <div class="alert-icon">!</div>
+        <div class="alert-text">
+          <strong>Operational Review Needed</strong>
+          <p>VRNT DEMO Resorts is inactive (4 mandatory profile fields missing). 1 dish marked sold-out at VRG Resorts.</p>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-subtle" onclick="showToast('Filter applied to review issues')">Review Issues</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="filter-bar">
+      <div class="search-wrapper">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="search" placeholder="Search property name, city, tier..." oninput="handleSearch(this.value)">
+      </div>
+
+      <div style="display:flex;gap:8px;overflow-x:auto;">
+        <select id="citySelect" onchange="handleCityFilter(this.value)" style="border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:12.5px;background:#fff;">
+          <option value="all">All Cities</option>
+          <option value="Ahmedabad">Ahmedabad</option>
+          <option value="Mumbai">Mumbai</option>
+          <option value="Goa">Goa</option>
+        </select>
+        <button class="btn btn-sm" onclick="showToast('Exporting franchise report CSV...')">Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Desktop High-Density Table -->
+    <div class="desktop-table-container">
+      <table class="prop-table">
+        <thead>
+          <tr>
+            <th>Property Name</th>
+            <th>Pricing Tier</th>
+            <th>Live Menus</th>
+            <th>Catalog</th>
+            <th>Scans</th>
+            <th>Compliance</th>
+            <th>Status</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="desktopTableBody">
+          <!-- Injected via JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Responsive Cards -->
+    <div class="mobile-card-list" id="mobileCardsContainer">
+      <!-- Injected via JavaScript -->
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       VIEW 2: PROPERTY STUDIO (Deep Dive)
+       =================================================================== -->
+  <div id="viewStudio" style="display:none;">
+    <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin-bottom:12px;">
+      <a onclick="navTo('overview')" style="color:var(--primary);cursor:pointer;">&larr; All Properties</a>
+      <span style="color:var(--ink-faint);">/</span>
+      <span id="studioPropTitle" style="color:var(--ink-heading);font-weight:700;">VRG Resorts</span>
+      <span class="badge badge-green"><span class="badge-dot"></span> Active</span>
+    </div>
+
+    <div class="studio-layout">
+      <!-- Left Panel: Deep Dive Tabs -->
+      <div>
+        <div class="studio-tab-strip">
+          <button class="studio-tab-btn active" onclick="switchStudioTab('analytics', this)">Scans & Trends</button>
+          <button class="studio-tab-btn" onclick="switchStudioTab('dayparts', this)">Daypart Sessions</button>
+          <button class="studio-tab-btn" onclick="switchStudioTab('pricing', this)">Pricing Tiers</button>
+          <button class="studio-tab-btn" onclick="switchStudioTab('qr', this)">Table QR Codes</button>
+          <button class="studio-tab-btn" onclick="switchStudioTab('profile', this)">Brand Profile</button>
+        </div>
+
+        <!-- TAB 1: SCANS & ANALYTICS -->
+        <div class="studio-pane active" id="paneAnalytics">
+          <div class="card">
+            <div class="card-header">
+              <h2>Scans Velocity (Last 14 Days)</h2>
+              <span style="font-size:12px;color:var(--primary);font-weight:700;">Peak: 451 scans (Sunday)</span>
+            </div>
+            <div class="card-body">
+              <div class="chart-box" id="chartBarsWrapper"></div>
+              <p style="font-size:11.5px;color:var(--ink-muted);margin-top:10px;text-align:center;">Daily scans recorded across dining table QR stands.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Guest Search Keyword Queries</h2>
+              <span style="font-size:12px;color:var(--ink-muted);">Top searched by guests at this outlet</span>
+            </div>
+            <div class="card-body" style="display:flex;gap:6px;flex-wrap:wrap;">
+              <span class="badge badge-gray" style="padding:5px 10px;font-size:12px;">🔍 "Jain Food" (214 queries)</span>
+              <span class="badge badge-gray" style="padding:5px 10px;font-size:12px;">🔍 "Cold Coffee" (182 queries)</span>
+              <span class="badge badge-gray" style="padding:5px 10px;font-size:12px;">🔍 "Gluten Free" (98 queries)</span>
+              <span class="badge badge-gray" style="padding:5px 10px;font-size:12px;">🔍 "Draft Beer" (76 queries)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: DAYPARTS -->
+        <div class="studio-pane" id="paneDayparts">
+          <div class="card">
+            <div class="card-header">
+              <h2>Automated Clock Sessions</h2>
+              <button class="btn btn-sm btn-primary" onclick="showToast('Add Session modal opened')">+ Add Daypart</button>
+            </div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+              <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <strong style="font-size:14px;color:var(--ink-heading);">Breakfast Session</strong>
+                  <div style="font-size:11.5px;color:var(--ink-muted);">07:30 AM &ndash; 10:30 AM &bull; 48 Categories &bull; 501 items</div>
+                </div>
+                <span class="badge badge-green"><span class="badge-dot"></span> Live Now</span>
+              </div>
+
+              <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <strong style="font-size:14px;color:var(--ink-heading);">Lunch Buffet & À la carte</strong>
+                  <div style="font-size:11.5px;color:var(--ink-muted);">12:30 PM &ndash; 03:30 PM &bull; 62 Categories &bull; 340 items</div>
+                </div>
+                <span class="badge badge-amber">Upcoming</span>
+              </div>
+
+              <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <strong style="font-size:14px;color:var(--ink-heading);">Dinner & Bar</strong>
+                  <div style="font-size:11.5px;color:var(--ink-muted);">07:00 PM &ndash; 11:30 PM &bull; 54 Categories &bull; 410 items</div>
+                </div>
+                <span class="badge badge-gray">Scheduled</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: PRICING TIERS -->
+        <div class="studio-pane" id="panePricing">
+          <div class="card">
+            <div class="card-header"><h2>Pricing Tier & Sold-Out Toggles</h2></div>
+            <div class="card-body">
+              <strong style="font-size:15px;color:var(--primary);">Metro Tier 1 (+10% markup applied)</strong>
+              <p style="font-size:12.5px;color:var(--ink-muted);margin:4px 0 14px;">Inherited from Master Catalog with automated rounding to the nearest ₹5.</p>
+
+              <div style="border-top:1px solid var(--border);padding-top:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;">
+                  <div>
+                    <strong>Egg Bhurji Pav</strong>
+                    <div style="font-size:11px;color:var(--ink-muted);">Master: ₹130 &bull; Outlet: ₹145</div>
+                  </div>
+                  <span class="badge badge-red">Marked Sold Out (86)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: TABLE QR CODES -->
+        <div class="studio-pane" id="paneQr">
+          <div class="card">
+            <div class="card-header"><h2>Batch Acrylic Stand QR Exporter</h2></div>
+            <div class="card-body">
+              <p style="font-size:12.5px;color:var(--ink-muted);margin-bottom:12px;">Print-ready vector PDF sheets with official eResto branding for acrylic dining table stands.</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <input type="text" value="Table 1 to 50" style="border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;width:140px;">
+                <button class="btn btn-primary btn-sm" onclick="showToast('Exporting Vector PDF Sheet for Tables 1 to 50...')">Download Print PDF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: BRAND PROFILE -->
+        <div class="studio-pane" id="paneProfile">
+          <div class="card">
+            <div class="card-header"><h2>Brand Compliance Checklist</h2></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:13px;color:var(--veg);font-weight:600;">✓ Official 4K Logo Synced</div>
+              <div style="font-size:13px;color:var(--veg);font-weight:600;">✓ Google Maps Pin Verified</div>
+              <div style="font-size:13px;color:var(--veg);font-weight:600;">✓ WhatsApp Order Link Active</div>
+              <div style="font-size:13px;color:var(--primary);font-weight:600;">⚠️ Wi-Fi Network credentials pending (1 required)</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Panel: Persistent Phone Simulator -->
+      <div class="phone-simulator-frame">
+        <div class="phone-screen">
+          <div class="sim-header">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span class="sim-brand-title" id="simBrandName">VRG Resorts</span>
+              <span class="badge badge-green">Live Customer View</span>
+            </div>
+
+            <div class="sim-session-strip">
+              <button class="sim-sess-pill active" onclick="switchSimSession('breakfast', this)">Breakfast (07:30 - 10:30)</button>
+              <button class="sim-sess-pill" onclick="switchSimSession('lunch', this)">Lunch Buffet</button>
+              <button class="sim-sess-pill" onclick="switchSimSession('dinner', this)">Dinner & Bar</button>
+            </div>
+
+            <input type="text" class="sim-search-box" placeholder="🔍 Search delicious food...">
+          </div>
+
+          <div class="sim-items-list">
+            <div class="dish-item">
+              <div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span class="vm veg"><i></i></span>
+                  <span class="dish-title">Puri Bhaji</span>
+                </div>
+                <div class="dish-desc">Fluffy golden puris with spiced potato bhaji and pickle</div>
+              </div>
+              <span class="dish-price">₹80</span>
+            </div>
+
+            <div class="dish-item">
+              <div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span class="vm nonveg"><i></i></span>
+                  <span class="dish-title">Masala Omelette</span>
+                </div>
+                <div class="dish-desc">Farm fresh eggs with chopped onions, green chillies, toast</div>
+              </div>
+              <span class="dish-price">₹120</span>
+            </div>
+
+            <div class="dish-item">
+              <div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span class="vm veg"><i></i></span>
+                  <span class="dish-title">Fresh Orange Juice</span>
+                </div>
+                <div class="dish-desc">100% cold pressed pure citrus juice</div>
+              </div>
+              <span class="dish-price">₹90</span>
+            </div>
+
+            <div class="dish-item">
+              <div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span class="vm nonveg"><i></i></span>
+                  <span class="dish-title">Chivas Regal (50ml)</span>
+                </div>
+                <div class="dish-desc">12-year-old premium blended scotch whisky</div>
+              </div>
+              <span class="dish-price">₹725</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<script>
+const PROPERTIES = [
+  {
+    id: 'vrg',
+    name: 'VRG Resorts',
+    city: 'Ahmedabad',
+    tier: 'Metro Tier 1 (+10%)',
+    items: 546,
+    categories: 50,
+    scansToday: 1240,
+    scans7d: 8856,
+    scans30d: 34120,
+    compliancePct: 92,
+    active: true,
+    sessions: ['Breakfast (Live)', 'IRD (24*7)', 'Poolside Bar']
+  },
+  {
+    id: 'pos',
+    name: 'Anurag POS Resto',
+    city: 'Mumbai',
+    tier: 'Metro Tier 1 (+10%)',
+    items: 136,
+    categories: 16,
+    scansToday: 412,
+    scans7d: 2980,
+    scans30d: 11400,
+    compliancePct: 80,
+    active: true,
+    sessions: ['Dine In (Lunch)']
+  },
+  {
+    id: 'cafe',
+    name: 'Anurag Cafe Demo',
+    city: 'Goa',
+    tier: 'Highway Tier 3 (Base)',
+    items: 127,
+    categories: 12,
+    scansToday: 890,
+    scans7d: 5610,
+    scans30d: 21300,
+    compliancePct: 100,
+    active: true,
+    sessions: ['24*7 All-Day', 'Takeaway Counter']
+  },
+  {
+    id: 'vrnt',
+    name: 'VRNT DEMO Resorts',
+    city: 'Goa',
+    tier: 'Unassigned',
+    items: 0,
+    categories: 0,
+    scansToday: 0,
+    scans7d: 0,
+    scans30d: 0,
+    compliancePct: 25,
+    active: false,
+    sessions: ['Draft Setup']
+  }
+];
+
+let selectedRange = 'today';
+let searchKeyword = '';
+let currentCity = 'all';
+
+function renderUI() {
+  const dBody = document.getElementById('desktopTableBody');
+  const mList = document.getElementById('mobileCardsContainer');
+
+  const filtered = PROPERTIES.filter(p => {
+    const matchCity = currentCity === 'all' || p.city === currentCity;
+    const matchSearch = p.name.toLowerCase().includes(searchKeyword.toLowerCase()) || p.city.toLowerCase().includes(searchKeyword.toLowerCase());
+    return matchCity && matchSearch;
+  });
+
+  // Render Desktop Table Rows
+  dBody.innerHTML = filtered.map(p => {
+    const scanVal = selectedRange === 'today' ? p.scansToday : (selectedRange === '7d' ? p.scans7d : p.scans30d);
+    const sessionBadges = p.sessions.map(s => `<span class="badge ${s.includes('Live') ? 'badge-green' : 'badge-gray'}">${s}</span>`).join(' ');
+
+    return `
+      <tr onclick="openStudio('${p.id}')">
+        <td>
+          <strong style="color:var(--ink-heading);font-size:14px;">${p.name}</strong>
+          <div style="font-size:11.5px;color:var(--ink-muted);">${p.city} &bull; ID: ${p.id.toUpperCase()}</div>
+        </td>
+        <td><span class="tier-tag">${p.tier}</span></td>
+        <td><div style="display:flex;gap:4px;flex-wrap:wrap;">${sessionBadges}</div></td>
+        <td><strong>${p.items}</strong> <small style="color:var(--ink-muted);font-size:11px;">(${p.categories} cats)</small></td>
+        <td>
+          <strong style="font-size:14px;color:${scanVal === 0 ? 'var(--primary)' : 'var(--ink-heading)'};">${scanVal.toLocaleString('en-IN')}</strong>
+          <div style="font-size:10.5px;color:var(--ink-muted);">${selectedRange} scans</div>
+        </td>
+        <td>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:50px;height:5px;background:#E5E7EB;border-radius:99px;overflow:hidden;">
+              <div style="height:100%;width:${p.compliancePct}%;background:${p.compliancePct === 100 ? 'var(--veg)' : 'var(--primary)'};"></div>
+            </div>
+            <span style="font-size:11px;font-weight:700;">${p.compliancePct}%</span>
+          </div>
+        </td>
+        <td><span class="badge ${p.active ? 'badge-green' : 'badge-gray'}"><span class="badge-dot"></span> ${p.active ? 'Active' : 'Setup'}</span></td>
+        <td style="text-align:right;" onclick="event.stopPropagation()">
+          <button class="btn btn-sm btn-subtle" onclick="openStudio('${p.id}')">Studio</button>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Render Mobile Cards
+  mList.innerHTML = filtered.map(p => {
+    const scanVal = selectedRange === 'today' ? p.scansToday : (selectedRange === '7d' ? p.scans7d : p.scans30d);
+    return `
+      <div class="outlet-card" onclick="openStudio('${p.id}')">
+        <div class="outlet-card-top">
+          <div>
+            <div class="outlet-name">${p.name}</div>
+            <div class="outlet-city">${p.city} &bull; <span class="tier-tag">${p.tier}</span></div>
+          </div>
+          <span class="badge ${p.active ? 'badge-green' : 'badge-gray'}">
+            <span class="badge-dot"></span> ${p.active ? 'Active' : 'Setup'}
+          </span>
+        </div>
+
+        <div class="outlet-stats-row">
+          <div><div class="stat-val">${p.items}</div><div class="stat-lbl">Dishes</div></div>
+          <div><div class="stat-val" style="color:${scanVal === 0 ? 'var(--primary)' : 'var(--ink-heading)'};">${scanVal.toLocaleString('en-IN')}</div><div class="stat-lbl">Scans</div></div>
+          <div><div class="stat-val" style="color:var(--veg);">${p.compliancePct}%</div><div class="stat-lbl">Compliance</div></div>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm btn-primary" style="flex:1;" onclick="openStudio('${p.id}')">Open Studio</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function navTo(view) {
+  document.getElementById('viewOverview').style.display = view === 'overview' ? 'block' : 'none';
+  document.getElementById('viewStudio').style.display = view === 'studio' ? 'block' : 'none';
+  document.getElementById('dNavOverview').classList.toggle('active', view === 'overview');
+  document.getElementById('dNavStudio').classList.toggle('active', view === 'studio');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openStudio(id) {
+  const p = PROPERTIES.find(x => x.id === id) || PROPERTIES[0];
+  document.getElementById('studioPropTitle').textContent = p.name;
+  document.getElementById('simBrandName').textContent = p.name;
+  navTo('studio');
+  showToast(`Switched into ${p.name} Studio`);
+}
+
+function switchStudioTab(tab, btn) {
+  document.querySelectorAll('.studio-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.studio-pane').forEach(p => p.classList.remove('active'));
+  if (tab === 'analytics') document.getElementById('paneAnalytics').classList.add('active');
+  if (tab === 'dayparts') document.getElementById('paneDayparts').classList.add('active');
+  if (tab === 'pricing') document.getElementById('panePricing').classList.add('active');
+  if (tab === 'qr') document.getElementById('paneQr').classList.add('active');
+  if (tab === 'profile') document.getElementById('paneProfile').classList.add('active');
+}
+
+function switchSimSession(session, btn) {
+  document.querySelectorAll('.sim-sess-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  showToast(`Guest View loaded ${session.toUpperCase()} Session`);
+}
+
+function setPeriod(period, btn) {
+  selectedRange = period;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const lbl = document.getElementById('kpiScanLabel');
+  const val = document.getElementById('kpiScanVal');
+  if (period === 'today') { lbl.textContent = 'Network Scans Today'; val.textContent = '4,820'; }
+  else if (period === '7d') { lbl.textContent = 'Network Scans (7 Days)'; val.textContent = '17,446'; }
+  else { lbl.textContent = 'Network Scans (30 Days)'; val.textContent = '66,820'; }
+
+  renderUI();
+}
+
+function handleSearch(q) { searchKeyword = q; renderUI(); }
+function handleCityFilter(c) { currentCity = c; renderUI(); }
+
+let toastT;
+function showToast(msg) {
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<span>✓</span> ${msg}`;
+  document.body.appendChild(toast);
+  clearTimeout(toastT);
+  toastT = setTimeout(() => toast.remove(), 2600);
+}
+
+function initHistogram() {
+  const wrapper = document.getElementById('chartBarsWrapper');
+  const heights = [35, 55, 45, 70, 90, 80, 110, 65, 80, 100, 125, 95, 85, 115];
+  wrapper.innerHTML = heights.map((h, i) => `
+    <div class="chart-col">
+      <div class="chart-bar-fill ${i === 10 ? 'peak' : (i < 12 ? 'dim' : '')}" style="height:${h}px;"></div>
+      <span class="chart-day-label">${i + 1}</span>
+    </div>
+  `).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderUI();
+  initHistogram();
+});
+</script>
+</body>
+</html>

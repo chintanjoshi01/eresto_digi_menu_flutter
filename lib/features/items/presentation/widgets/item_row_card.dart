@@ -124,64 +124,119 @@ class _ItemRowCardState extends State<ItemRowCard> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Item Name
-                    Text(
-                      widget.item.name,
-                      style: GoogleFonts.nunito(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF111827),
-                        height: 1.2,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-
-                    SizedBox(height: 3.h),
-
-                    // Short Code Badge & Portion Tag
                     Row(
                       children: [
-                        if (widget.item.shortCode.isNotEmpty && widget.item.shortCode != widget.item.name) ...[
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF3F4F6),
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                            child: Text(
-                              widget.item.shortCode,
-                              style: GoogleFonts.nunito(
-                                fontSize: 9.sp,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF4B5563),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: 5.w),
-                        ],
                         Expanded(
                           child: Text(
-                            widget.item.portion ?? "1 portion",
-                            style: GoogleFonts.nunito(
-                              fontSize: 10.sp,
-                              color: const Color(0xFF9CA3AF),
-                              fontWeight: FontWeight.w500,
+                            widget.item.name,
+                            style: GoogleFonts.poppins(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF111827),
+                              height: 1.2,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
+                        if (widget.item.hasVariants) ...[
+                          SizedBox(width: 4.w),
+                          Container(
+                            padding: EdgeInsets.all(2.5.w),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF3C7),
+                              borderRadius: BorderRadius.circular(4.r),
+                              border: Border.all(color: const Color(0xFFFDE68A), width: 0.8),
+                            ),
+                            child: Icon(
+                              Icons.tune_rounded,
+                              size: 10.5.sp,
+                              color: const Color(0xFFD97706),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
 
+                    SizedBox(height: 3.h),
+
+                    // Dietary tags + Quantity (Portion) displayed together (Short name removed per spec)
+                    if ((widget.item.dietaryTags != null && widget.item.dietaryTags!.isNotEmpty) ||
+                        (widget.item.portion != null && widget.item.portion!.trim().isNotEmpty)) ...[
+                      Wrap(
+                        spacing: 5.w,
+                        runSpacing: 3.h,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          if (widget.item.dietaryTags != null && widget.item.dietaryTags!.isNotEmpty)
+                            ...widget.item.dietaryTags!.map((tag) {
+                              final lower = tag.trim().toLowerCase();
+                              final isSpicy = lower.contains('spicy') || lower == 's';
+                              final isJain = lower.contains('jain') || lower == 'j';
+                              final isVegan = lower.contains('vegan') || lower == 'v';
+                              final bg = isSpicy
+                                  ? const Color(0xFFFEF2F2)
+                                  : (isJain ? const Color(0xFFEEF2FF) : const Color(0xFFF0FDF4));
+                              final fg = isSpicy
+                                  ? const Color(0xFFEF4444)
+                                  : (isJain ? const Color(0xFF6366F1) : const Color(0xFF16A34A));
+                              final label = isSpicy
+                                  ? 'SPICY'
+                                  : (isJain ? 'JAIN' : (isVegan ? 'VEGAN' : tag.toUpperCase()));
+                              return Container(
+                                padding: EdgeInsets.symmetric(horizontal: 4.5.w, vertical: 1.h),
+                                decoration: BoxDecoration(
+                                  color: bg,
+                                  borderRadius: BorderRadius.circular(3.r),
+                                ),
+                                child: Text(
+                                  label,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 7.5.sp,
+                                    fontWeight: FontWeight.w700,
+                                    color: fg,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              );
+                            }),
+                          if (widget.item.portion != null && widget.item.portion!.trim().isNotEmpty)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.grid_view_rounded,
+                                  size: 10.sp,
+                                  color: const Color(0xFF9CA3AF),
+                                ),
+                                SizedBox(width: 3.w),
+                                ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: 150.w),
+                                  child: Text(
+                                    widget.item.portion!.trim(),
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 10.sp,
+                                      color: const Color(0xFF6B7280),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ],
+
                     SizedBox(height: 4.h),
 
-                    // Price Tag
+                    // Price Tag (Price or Price Range)
                     Text(
-                      "₹ ${widget.item.price.toStringAsFixed(2)}",
-                      style: GoogleFonts.nunito(
+                      "₹ ${widget.item.formattedPriceRange}",
+                      style: GoogleFonts.poppins(
                         fontSize: 13.sp,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w600,
                         color: const Color(0xFF111827),
                       ),
                     ),
@@ -235,7 +290,7 @@ class _ItemRowCardState extends State<ItemRowCard> {
                           child: Text(
                             widget.item.isAvailable ? "AVAILABLE" : "HIDDEN",
                             key: ValueKey('row_status_${widget.item.isAvailable}'),
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 8.sp,
                               color: widget.item.isAvailable
                                   ? const Color(0xFF16A34A)

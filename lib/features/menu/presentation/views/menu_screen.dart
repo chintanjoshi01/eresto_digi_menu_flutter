@@ -98,16 +98,16 @@ class MenuScreen extends GetView<MenuThemeController> {
               children: [
                 Text(
                   "Menu Templates",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 14.5.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
                   ),
                 ),
                 SizedBox(height: 1.h),
                 Text(
                   "Tap a template to change theme or manage items",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 10.5.sp,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF6B7280),
@@ -139,7 +139,7 @@ class MenuScreen extends GetView<MenuThemeController> {
           ),
           child: Text(
             "No menu templates found",
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 12.sp,
               fontWeight: FontWeight.w600,
               color: const Color(0xFF6B7280),
@@ -209,9 +209,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                         isExpanded
                             ? "Show Less"
                             : "View All Templates (+${templates.length - 5})",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 11.5.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: AppColors.primary,
                         ),
                       ),
@@ -418,9 +418,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                           tmpl.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 13.5.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w600,
                             color: const Color(0xFF111827),
                           ),
                         ),
@@ -435,9 +435,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                           ),
                           child: Text(
                             "Active",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 9.sp,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: const Color(0xFF16A34A),
                             ),
                           ),
@@ -453,9 +453,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                           ),
                           child: Text(
                             "MULTI",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 8.5.sp,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: Colors.white,
                               letterSpacing: 0.3,
                             ),
@@ -470,7 +470,7 @@ class MenuScreen extends GetView<MenuThemeController> {
                   // Subtitle info
                   Text(
                     tmpl.details,
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 10.sp,
                       color: const Color(0xFF9CA3AF),
                       fontWeight: FontWeight.w500,
@@ -496,7 +496,7 @@ class MenuScreen extends GetView<MenuThemeController> {
                         SizedBox(width: 5.w),
                         Text(
                           tmpl.themeName,
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF9CA3AF),
@@ -514,9 +514,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                               ),
                               child: Text(
                                 pill,
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 9.sp,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w500,
                                   color: const Color(0xFF7C3AED),
                                 ),
                               ),
@@ -553,9 +553,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                     SizedBox(width: 4.w),
                     Text(
                       "Edit",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 10.5.sp,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.primary,
                       ),
                     ),
@@ -578,28 +578,33 @@ class MenuScreen extends GetView<MenuThemeController> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Sessions",
-                style: GoogleFonts.nunito(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Sessions",
+                  style: GoogleFonts.poppins(
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF111827),
+                  ),
                 ),
-              ),
-              SizedBox(height: 1.h),
-              Text(
-                "View & manage channel session settings",
-                style: GoogleFonts.nunito(
-                  fontSize: 10.5.sp,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF6B7280),
+                SizedBox(height: 1.h),
+                Text(
+                  "View & manage channel session settings",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 10.5.sp,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF6B7280),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+          SizedBox(width: 8.w),
           Obx(() {
             final count = controller.channelGroups.length;
             return Container(
@@ -611,9 +616,9 @@ class MenuScreen extends GetView<MenuThemeController> {
               ),
               child: Text(
                 "$count Channels",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 10.sp,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF4B5563),
                 ),
               ),
@@ -706,9 +711,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                                     group.title,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.nunito(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 12.sp,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w600,
                                       color: const Color(0xFF111827),
                                       letterSpacing: 0.3,
                                     ),
@@ -725,9 +730,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                                   ),
                                   child: Text(
                                     group.activeCountText,
-                                    style: GoogleFonts.nunito(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 9.5.sp,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w500,
                                       color: group.activeCount > 0
                                           ? const Color(0xFF15803D)
                                           : const Color(0xFF6B7280),
@@ -745,7 +750,7 @@ class MenuScreen extends GetView<MenuThemeController> {
                             children: [
                               Text(
                                 "${group.sessionsCount} ${group.sessionsCount == 1 ? 'Session' : 'Sessions'}",
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 10.5.sp,
                                   fontWeight: FontWeight.w600,
                                   color: const Color(0xFF6B7280),
@@ -822,9 +827,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                         session.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 13.5.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: const Color(0xFF111827),
                         ),
                       ),
@@ -852,9 +857,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                           ],
                           Text(
                             session.statusText,
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 9.5.sp,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: session.statusFg,
                             ),
                           ),
@@ -889,9 +894,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                       SizedBox(width: 4.w),
                       Text(
                         "Edit",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 10.5.sp,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.primary,
                         ),
                       ),
@@ -914,72 +919,112 @@ class MenuScreen extends GetView<MenuThemeController> {
                 color: session.isActiveNow ? const Color(0xFFDCFCE7) : const Color(0xFFF3F4F6),
               ),
             ),
-            child: Row(
-              children: [
-                // Left: Menu Template
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "MENU TEMPLATE",
-                        style: GoogleFonts.nunito(
-                          fontSize: 8.5.sp,
-                          fontWeight: FontWeight.w700,
-                          color: session.isActiveNow ? const Color(0xFF166534) : const Color(0xFF9CA3AF),
-                          letterSpacing: 0.3,
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Left: Menu Template
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "MENU TEMPLATE",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: 8.5.sp,
+                            fontWeight: FontWeight.w500,
+                            color: session.isActiveNow ? const Color(0xFF166534) : const Color(0xFF9CA3AF),
+                            letterSpacing: 0.3,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 2.h),
-                      Row(
-                        children: [
-                          Text(
-                            session.templateName,
-                            style: GoogleFonts.nunito(
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF111827),
+                        SizedBox(height: 3.h),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Flexible(
+                              child: Text(
+                                session.templateName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: const Color(0xFF111827),
+                                  height: 1.2,
+                                ),
+                              ),
                             ),
-                          ),
-                          SizedBox(width: 3.w),
-                          Icon(
-                            Icons.arrow_outward_rounded,
-                            size: 11.sp,
-                            color: session.isActiveNow ? const Color(0xFF16A34A) : const Color(0xFF9CA3AF),
-                          ),
-                        ],
-                      ),
-                    ],
+                            SizedBox(width: 3.w),
+                            Icon(
+                              Icons.arrow_outward_rounded,
+                              size: 11.sp,
+                              color: session.isActiveNow ? const Color(0xFF16A34A) : const Color(0xFF9CA3AF),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
 
-                // Right: Timing
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "TIMING",
-                        style: GoogleFonts.nunito(
-                          fontSize: 8.5.sp,
-                          fontWeight: FontWeight.w700,
-                          color: session.isActiveNow ? const Color(0xFF166534) : const Color(0xFF9CA3AF),
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                      SizedBox(height: 2.h),
-                      Text(
-                        session.timingFormatted,
-                        style: GoogleFonts.nunito(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFF111827),
-                        ),
-                      ),
-                    ],
+                  Container(
+                    width: 1.w,
+                    margin: EdgeInsets.symmetric(horizontal: 10.w, vertical: 2.h),
+                    color: session.isActiveNow ? const Color(0xFFDCFCE7) : const Color(0xFFE5E7EB),
                   ),
-                ),
-              ],
+
+                  // Right: Timing
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "TIMING",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
+                            fontSize: 8.5.sp,
+                            fontWeight: FontWeight.w500,
+                            color: session.isActiveNow ? const Color(0xFF166534) : const Color(0xFF9CA3AF),
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                        SizedBox(height: 3.h),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.access_time_rounded,
+                              size: 11.5.sp,
+                              color: session.isActiveNow ? const Color(0xFF16A34A) : const Color(0xFF6B7280),
+                            ),
+                            SizedBox(width: 4.w),
+                            Expanded(
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  session.timingFormatted,
+                                  maxLines: 1,
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: const Color(0xFF111827),
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -999,9 +1044,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                 ),
                 child: Text(
                   session.customerOrderEnabled ? "Customer Order: Enabled" : "Customer Order: ---",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 9.sp,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w500,
                     color: session.customerOrderEnabled ? const Color(0xFF15803D) : const Color(0xFF9CA3AF),
                   ),
                 ),
@@ -1016,7 +1061,7 @@ class MenuScreen extends GetView<MenuThemeController> {
                 ),
                 child: Text(
                   "Section: ${session.sectionName}",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 9.sp,
                     fontWeight: FontWeight.w600,
                     color: session.sectionName != '---' ? const Color(0xFF1D4ED8) : const Color(0xFF9CA3AF),
@@ -1040,9 +1085,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                       SizedBox(width: 3.w),
                       Text(
                         "Special Offer",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 9.sp,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w500,
                           color: const Color(0xFFEA580C),
                         ),
                       ),
@@ -1066,9 +1111,9 @@ class MenuScreen extends GetView<MenuThemeController> {
                       SizedBox(width: 3.w),
                       Text(
                         "Splash Screen",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 9.sp,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w500,
                           color: const Color(0xFFBE185D),
                         ),
                       ),

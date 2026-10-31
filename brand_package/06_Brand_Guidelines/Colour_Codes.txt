@@ -1,0 +1,12 @@
+ERESTO DIGIMENU — COLOUR CODES
+Version 1.0
+
+Eresto Red       #D32F2F   RGB 211,47,47
+Charcoal Gray    #424242   RGB 66,66,66
+Cool Gray        #9E9E9E   RGB 158,158,158
+Light Background #F9F9F9   RGB 249,249,249
+
+Primary typeface: Poppins
+Recommended DigiMenu treatment: Light / Regular
+Product tagline: Your Menu. More Possibilities.
+Supporting sequence: SCAN • EXPLORE • ORDER • GROW

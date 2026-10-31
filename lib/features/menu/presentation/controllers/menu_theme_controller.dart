@@ -11,6 +11,7 @@ import '../../domain/models/menu_template_model.dart';
 import '../../domain/models/session_model.dart';
 import '../../domain/models/template_model.dart';
 import '../../domain/repositories/menu_repository.dart';
+import '../widgets/session_edit_sheet.dart';
 
 /// Enterprise Menu Controller managing Templates, Channel Accordion Sessions, and Sheet Modals.
 class MenuThemeController extends GetxController {
@@ -51,6 +52,123 @@ class MenuThemeController extends GetxController {
       expandedChannelIds.remove(channelId);
     } else {
       expandedChannelIds.add(channelId);
+    }
+  }
+
+  int? _pendingSessionId;
+  String? _pendingSessionName;
+  String? _pendingSessionChannel;
+
+  /// Smartly focuses on a specific session, expands its channel accordion, and opens the SessionEditSheet.
+  void focusAndOpenSession({
+    int? sessionId,
+    String? sessionName,
+    String? channel,
+  }) {
+    _pendingSessionId = sessionId;
+    _pendingSessionName = sessionName;
+    _pendingSessionChannel = channel;
+
+    _tryOpenPendingSession();
+  }
+
+  void _tryOpenPendingSession() {
+    if (_pendingSessionId == null && (_pendingSessionName == null || _pendingSessionName!.isEmpty)) {
+      return;
+    }
+
+    final targetChannel = (_pendingSessionChannel ?? '').toLowerCase().trim();
+    final targetName = (_pendingSessionName ?? '').toLowerCase().trim();
+    final targetId = _pendingSessionId;
+
+    SessionCardModel? targetSession;
+    String? targetGroupId;
+
+    // STEP 1: Find the channel group that matches targetChannel first
+    ChannelSessionGroupModel? matchingGroup;
+    if (targetChannel.isNotEmpty) {
+      matchingGroup = channelGroups.firstWhereOrNull((g) {
+        final gSlug = g.id.toLowerCase().trim();
+        final gTitle = g.title.toLowerCase().trim();
+        return gSlug == targetChannel ||
+            gSlug.replaceAll('-', '') == targetChannel.replaceAll('-', '') ||
+            gTitle.contains(targetChannel);
+      });
+    }
+
+    if (matchingGroup != null) {
+      targetGroupId = matchingGroup.id;
+      // Inside this specific channel group, search for the session:
+      // Priority 1: Both name and ID match
+      if (targetName.isNotEmpty && targetId != null && targetId > 0) {
+        targetSession = matchingGroup.sessions.firstWhereOrNull(
+          (s) => s.name.trim().toLowerCase() == targetName && s.id == targetId,
+        );
+      }
+      // Priority 2: Name matches
+      if (targetSession == null && targetName.isNotEmpty) {
+        targetSession = matchingGroup.sessions.firstWhereOrNull(
+          (s) => s.name.trim().toLowerCase() == targetName,
+        );
+      }
+      // Priority 3: ID matches within this specific group
+      if (targetSession == null && targetId != null && targetId > 0) {
+        targetSession = matchingGroup.sessions.firstWhereOrNull(
+          (s) => s.id == targetId,
+        );
+      }
+    }
+
+    // STEP 2: If group not matched by channel slug, search across all groups
+    // but match by exact name
+    if (targetSession == null && targetName.isNotEmpty) {
+      for (final group in channelGroups) {
+        final s = group.sessions.firstWhereOrNull(
+          (item) => item.name.trim().toLowerCase() == targetName,
+        );
+        if (s != null) {
+          targetSession = s;
+          targetGroupId = group.id;
+          break;
+        }
+      }
+    }
+
+    // STEP 3: Fallback: If not in channelGroups yet, generate card from pending info
+    if (targetSession == null && targetName.isNotEmpty) {
+      String slug = targetChannel.isNotEmpty ? targetChannel : 'dine-in';
+      targetGroupId = slug;
+      targetSession = SessionCardModel(
+        id: targetId ?? 0,
+        name: _pendingSessionName!,
+        templateName: 'Main Menu',
+        startTime: '00:00',
+        endTime: '23:59',
+        statusText: 'Active Now',
+        statusBg: const Color(0xFFDCFCE7),
+        statusFg: const Color(0xFF16A34A),
+        isActiveNow: true,
+      );
+    }
+
+    if (targetSession != null && targetGroupId != null) {
+      if (!expandedChannelIds.contains(targetGroupId)) {
+        expandedChannelIds.add(targetGroupId);
+      }
+      final toOpen = targetSession;
+      _pendingSessionId = null;
+      _pendingSessionName = null;
+      _pendingSessionChannel = null;
+
+      Future.delayed(const Duration(milliseconds: 280), () {
+        if (Get.isBottomSheetOpen == true) {
+          Get.back();
+        }
+        Get.bottomSheet(
+          SessionEditSheet(sessionCard: toOpen),
+          isScrollControlled: true,
+        );
+      });
     }
   }
 
@@ -298,11 +416,21 @@ class MenuThemeController extends GetxController {
   void _mergeMenuBuilderSessions(List rawSessions) {
     try {
       final updatedGroups = <ChannelSessionGroupModel>[];
-      final currentRestoId = Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 85;
-      final activeRestoId = currentRestoId > 0 ? currentRestoId : 85;
+      final currentRestoId = Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 0;
+      final activeRestoId = currentRestoId > 0 ? currentRestoId : null;
 
       for (final rawGroup in rawSessions) {
         final gMap = rawGroup as Map<String, dynamic>;
+        final rInfo = gMap['resto_info'];
+        if (rInfo is Map && Get.isRegistered<StorageService>()) {
+          Get.find<StorageService>().saveRestoHeaderDetails(
+            name: (rInfo['title'] ?? rInfo['resto_name'])?.toString(),
+            contact: (rInfo['contact_no'] ?? rInfo['whatsapp_no'])?.toString(),
+            address: (rInfo['address'] ?? rInfo['location'])?.toString(),
+            city: rInfo['city']?.toString(),
+            pinCode: rInfo['pin_code']?.toString(),
+          );
+        }
         final slug = (gMap['session_for'] ?? '').toString().toLowerCase();
         final rawList = (gMap['sessions'] as List? ?? []);
         final chId = gMap['menu_session_id'] is int
@@ -380,8 +508,10 @@ class MenuThemeController extends GetxController {
 
           // Compute active status
           final now = TimeOfDay.now();
-          final startParts = start.split(':');
-          final endParts = end.split(':');
+          final start24 = SessionCardModel.formatTo24Hour(start);
+          final end24 = SessionCardModel.formatTo24Hour(end);
+          final startParts = start24.split(':');
+          final endParts = end24.split(':');
           bool isLive = false;
           if (startParts.length >= 2 && endParts.length >= 2) {
             final sMinutes = (int.tryParse(startParts[0]) ?? 0) * 60 + (int.tryParse(startParts[1]) ?? 0);
@@ -440,6 +570,7 @@ class MenuThemeController extends GetxController {
 
       if (updatedGroups.isNotEmpty) {
         channelGroups.assignAll(updatedGroups);
+        _tryOpenPendingSession();
       }
     } catch (_) {}
   }
@@ -447,8 +578,8 @@ class MenuThemeController extends GetxController {
   void _mergeRemoteSessions(List menuSessions) {
     try {
       final updatedGroups = <ChannelSessionGroupModel>[];
-      final currentRestoId = Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 85;
-      final activeRestoId = currentRestoId > 0 ? currentRestoId : 85;
+      final currentRestoId = Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 0;
+      final activeRestoId = currentRestoId > 0 ? currentRestoId : null;
 
       for (final rawGroup in menuSessions) {
         final gMap = rawGroup as Map<String, dynamic>;
@@ -504,8 +635,10 @@ class MenuThemeController extends GetxController {
 
           // Compute active status
           final now = TimeOfDay.now();
-          final startParts = start.toString().split(':');
-          final endParts = end.toString().split(':');
+          final start24 = SessionCardModel.formatTo24Hour(start.toString());
+          final end24 = SessionCardModel.formatTo24Hour(end.toString());
+          final startParts = start24.split(':');
+          final endParts = end24.split(':');
           bool isLive = false;
           if (startParts.length >= 2 && endParts.length >= 2) {
             final sMinutes = (int.tryParse(startParts[0]) ?? 0) * 60 + (int.tryParse(startParts[1]) ?? 0);
@@ -559,6 +692,7 @@ class MenuThemeController extends GetxController {
 
       if (updatedGroups.isNotEmpty) {
         channelGroups.assignAll(updatedGroups);
+        _tryOpenPendingSession();
       }
     } catch (_) {}
   }
@@ -645,10 +779,16 @@ class MenuThemeController extends GetxController {
     // 1. Optimistically update local reactive state
     for (int g = 0; g < channelGroups.length; g++) {
       final group = channelGroups[g];
-      final sIdx = group.sessions.indexWhere((s) => s.id == updatedSession.id);
+      final groupMatches = group.channelSessionId == updatedSession.channelSessionId ||
+          group.id.toLowerCase().trim() == updatedSession.sectionName.toLowerCase().trim();
+      final sIdx = group.sessions.indexWhere((s) =>
+          s.id == updatedSession.id && (groupMatches || s.name == updatedSession.name));
       if (sIdx != -1) {
         final newSessions = List<SessionCardModel>.from(group.sessions);
-        newSessions[sIdx] = updatedSession;
+        newSessions[sIdx] = updatedSession.copyWith(
+          startTime: SessionCardModel.formatTo24Hour(updatedSession.startTime),
+          endTime: SessionCardModel.formatTo24Hour(updatedSession.endTime),
+        );
         channelGroups[g] = group.copyWith(sessions: newSessions);
         break;
       }
@@ -679,8 +819,8 @@ class MenuThemeController extends GetxController {
         'id': updatedSession.id,
         'session_name': updatedSession.name,
         'menu_template_id': tId.toString(),
-        'start_time': updatedSession.startTime,
-        'end_time': updatedSession.endTime,
+        'start_time': SessionCardModel.formatTo24Hour(updatedSession.startTime),
+        'end_time': SessionCardModel.formatTo24Hour(updatedSession.endTime),
         'day_flag': updatedSession.crossesMidnight ? 1 : 0,
         'en_cust_order': updatedSession.customerOrderEnabled ? 1 : 0,
         'en_geo_fence': updatedSession.geoFenceEnabled ? 1 : 0,
@@ -772,10 +912,12 @@ class MenuThemeController extends GetxController {
       final sIdx = group.sessions.indexWhere((s) => s.id == sessionId);
       if (sIdx != -1) {
         final cur = group.sessions[sIdx];
+        final rawStart = data['start_time'] as String? ?? cur.startTime;
+        final rawEnd = data['end_time'] as String? ?? cur.endTime;
         final updated = cur.copyWith(
           name: data['name'] as String? ?? cur.name,
-          startTime: data['start_time'] as String? ?? cur.startTime,
-          endTime: data['end_time'] as String? ?? cur.endTime,
+          startTime: SessionCardModel.formatTo24Hour(rawStart),
+          endTime: SessionCardModel.formatTo24Hour(rawEnd),
         );
         saveSession(updated);
         return;

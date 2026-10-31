@@ -1,39 +1,49 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/v6_dashboard_response.dart';
 
 class ActiveSessionItemData {
+  final int id;
   final String title;
-  final String channel; // "DINE-IN" or "IRD"
+  final String channel; // Raw slug e.g. "dine-in", "ird", "cat2", "cat3", etc.
+  final String channelLabel; // Formatted display label e.g. "Dine-IN", "IRD", "Cat2", etc.
   final String templateAndTime;
   final String scansText;
   final String statusText;
   final bool isLive; // true for LIVE, false for UPCOMING
   final String? startsTime;
+  final V6SessionItem? rawSession;
 
   const ActiveSessionItemData({
+    this.id = 0,
     required this.title,
     required this.channel,
+    required this.channelLabel,
     required this.templateAndTime,
     required this.scansText,
     required this.statusText,
     required this.isLive,
     this.startsTime,
+    this.rawSession,
   });
 }
 
-/// 2x2 Grid of Active Sessions matching prototype s-dash and screenshot Image 1.
+/// 2x2 Grid of Active Live Sessions with Option C 'View More' support.
 class ActiveSessionGrid extends StatefulWidget {
   final List<V6SessionItem>? sessions;
-  final VoidCallback? onSessionTapped;
+  final void Function(ActiveSessionItemData item)? onSessionTapped;
+  final VoidCallback? onViewMoreTapped;
 
   const ActiveSessionGrid({
     super.key,
     this.sessions,
     this.onSessionTapped,
+    this.onViewMoreTapped,
   });
 
   @override
@@ -47,37 +57,34 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
 
   static const List<ActiveSessionItemData> _fallbackSessions = [
     ActiveSessionItemData(
+      id: 1,
       title: 'Lunch',
-      channel: 'DINE-IN',
+      channel: 'dine-in',
+      channelLabel: 'Dine-IN',
       templateAndTime: 'Main · 10:30–18:30',
       scansText: '156 scans',
       statusText: 'Orders On',
       isLive: true,
     ),
     ActiveSessionItemData(
+      id: 2,
       title: 'Dinner',
-      channel: 'IRD',
+      channel: 'ird',
+      channelLabel: 'IRD',
       templateAndTime: 'Main · 18:30–23:59',
       scansText: '91 scans',
       statusText: 'Orders On',
       isLive: true,
     ),
     ActiveSessionItemData(
+      id: 3,
       title: 'HI-TEA',
-      channel: 'IRD',
+      channel: 'ird',
+      channelLabel: 'IRD',
       templateAndTime: 'HI-TEA · 15:00–18:00',
       scansText: '— scans',
       statusText: 'No Orders',
       isLive: true,
-    ),
-    ActiveSessionItemData(
-      title: 'Dinner',
-      channel: 'DINE-IN',
-      templateAndTime: 'Main · 18:30–23:59',
-      scansText: '',
-      statusText: 'Orders On',
-      isLive: false,
-      startsTime: '18:30',
     ),
   ];
 
@@ -102,36 +109,51 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
 
   List<ActiveSessionItemData> _resolveItems() {
     if (widget.sessions == null || widget.sessions!.isEmpty) {
-      return _fallbackSessions;
+      return _fallbackSessions.where((s) => s.isLive).toList();
     }
 
-    return widget.sessions!.map((s) {
-      final channel = s.sessionFor.toUpperCase().contains('IRD') ? 'IRD' : 'DINE-IN';
-      return ActiveSessionItemData(
-        title: s.sessionName,
-        channel: channel,
-        templateAndTime: '${s.menuTemplateName} · ${s.timeRange}',
-        scansText: s.isLive
-            ? (s.todayScans > 0 ? '${s.todayScans} scans' : '— scans')
-            : '',
-        statusText: s.ordersBadge,
-        isLive: s.isLive,
-        startsTime: s.startTime,
-      );
-    }).toList();
+    // Strictly show ONLY LIVE sessions
+    return widget.sessions!
+        .where((s) => s.isLive)
+        .map((s) {
+          final channelSlug = s.sessionFor.toLowerCase().trim();
+          final channelLabel = s.menuType.isNotEmpty
+              ? s.menuType
+              : (s.sessionFor.toUpperCase());
+
+          return ActiveSessionItemData(
+            id: s.id,
+            title: s.sessionName,
+            channel: channelSlug,
+            channelLabel: channelLabel,
+            templateAndTime: '${s.menuTemplateName} · ${s.timeRange}',
+            scansText: s.isLive
+                ? (s.todayScans > 0 ? '${s.todayScans} scans' : '— scans')
+                : '',
+            statusText: s.ordersBadge,
+            isLive: s.isLive,
+            startsTime: s.startTime,
+            rawSession: s,
+          );
+        }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = _resolveItems();
-    if (items.isEmpty) {
-      return const SizedBox.shrink();
+    final liveItems = _resolveItems();
+    if (liveItems.isEmpty) {
+      return _buildNoActiveSessions();
     }
 
+    // Option C: If more than 4, show 4 in 2x2 grid and show View More below
+    final hasMore = liveItems.length > 4;
+    final displayedItems = hasMore ? liveItems.take(4).toList() : liveItems;
+    final remainingItems = hasMore ? liveItems.skip(4).toList() : <ActiveSessionItemData>[];
+
     final rows = <Widget>[];
-    for (int i = 0; i < items.length && i < 4; i += 2) {
-      final first = items[i];
-      final second = (i + 1 < items.length) ? items[i + 1] : null;
+    for (int i = 0; i < displayedItems.length; i += 2) {
+      final first = displayedItems[i];
+      final second = (i + 1 < displayedItems.length) ? displayedItems[i + 1] : null;
 
       if (rows.isNotEmpty) {
         rows.add(SizedBox(height: 8.h));
@@ -152,12 +174,312 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 12.w),
-      child: Column(children: rows),
+      child: Column(
+        children: [
+          ...rows,
+          if (hasMore) ...[
+            SizedBox(height: 8.h),
+            _buildViewMoreCard(context, remainingItems.length, remainingItems),
+          ],
+        ],
+      ),
     );
   }
 
-  Widget _buildCard(ActiveSessionItemData item) {
-    final isDineIn = item.channel == 'DINE-IN';
+  Widget _buildViewMoreCard(
+    BuildContext context,
+    int remainingCount,
+    List<ActiveSessionItemData> remainingItems,
+  ) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _openRemainingSessionsSheet(context, remainingItems),
+        borderRadius: BorderRadius.circular(10.r),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10.r),
+            border: Border.all(color: const Color(0xFFE5E7EB)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.02),
+                blurRadius: 4,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  borderRadius: BorderRadius.circular(4.r),
+                ),
+                child: Text(
+                  "+$remainingCount more live",
+                  style: GoogleFonts.poppins(
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF15803D),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: Text(
+                  "Tap to view remaining session${remainingCount > 1 ? 's' : ''}",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5.sp,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF374151),
+                  ),
+                ),
+              ),
+              SizedBox(width: 6.w),
+              Icon(
+                Icons.keyboard_arrow_up_rounded,
+                size: 18.sp,
+                color: const Color(0xFF6B7280),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openRemainingSessionsSheet(
+    BuildContext context,
+    List<ActiveSessionItemData> remainingItems,
+  ) {
+    HapticFeedback.lightImpact();
+    Get.bottomSheet(
+      Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.70,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8F9FA),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Drag handle
+              Center(
+                child: Container(
+                  margin: EdgeInsets.only(top: 10.h, bottom: 8.h),
+                  width: 38.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD1D5DB),
+                    borderRadius: BorderRadius.circular(2.r),
+                  ),
+                ),
+              ),
+
+              // Header Row
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          "Active Live Sessions",
+                          style: GoogleFonts.poppins(
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        SizedBox(width: 8.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.h),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDCFCE7),
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text(
+                            "● ${remainingItems.length} more",
+                            style: GoogleFonts.poppins(
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF15803D),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.close_rounded, size: 20.sp, color: const Color(0xFF6B7280)),
+                      onPressed: () => Get.back(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              ),
+
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                child: Row(
+                  children: [
+                    Text(
+                      "Tap any session to view & edit in Menu tab",
+                      style: GoogleFonts.poppins(
+                        fontSize: 11.sp,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 10.h),
+              const Divider(height: 1, color: Color(0xFFE5E7EB)),
+              SizedBox(height: 12.h),
+
+              // Remaining cards displayed in 2-column grid identical to dashboard
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(
+                    12.w,
+                    4.h,
+                    12.w,
+                    16.h + MediaQuery.of(context).padding.bottom,
+                  ),
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
+                    children: [
+                      for (int i = 0; i < remainingItems.length; i += 2) ...[
+                        if (i > 0) SizedBox(height: 8.h),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildCard(
+                                remainingItems[i],
+                                onTapped: () {
+                                  Get.back();
+                                  widget.onSessionTapped?.call(remainingItems[i]);
+                                },
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            Expanded(
+                              child: (i + 1 < remainingItems.length)
+                                  ? _buildCard(
+                                      remainingItems[i + 1],
+                                      onTapped: () {
+                                        Get.back();
+                                        widget.onSessionTapped?.call(remainingItems[i + 1]);
+                                      },
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
+
+  Widget _buildNoActiveSessions() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 12.w),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.lightImpact();
+            widget.onViewMoreTapped?.call();
+          },
+          borderRadius: BorderRadius.circular(12.r),
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: const Color(0xFFF3F4F6)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF2F2),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Icon(Icons.schedule_rounded, size: 18.sp, color: AppColors.primary),
+                ),
+                SizedBox(width: 12.w),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "No Active Sessions Now",
+                        style: GoogleFonts.poppins(
+                          fontSize: 12.5.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                      SizedBox(height: 2.h),
+                      Text(
+                        "Tap to check schedules and manage channels",
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5.sp,
+                          color: const Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, size: 18.sp, color: const Color(0xFF9CA3AF)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCard(ActiveSessionItemData item, {VoidCallback? onTapped}) {
+    final channelSlug = item.channel.toLowerCase();
+    Color channelColor = const Color(0xFFC1272D); // default Dine-in red
+    Color channelBg = const Color(0xFFFEF2F2);
+    if (channelSlug.contains('ird')) {
+      channelColor = const Color(0xFF2563EB); // blue
+      channelBg = const Color(0xFFEFF6FF);
+    } else if (channelSlug.contains('takeaway')) {
+      channelColor = const Color(0xFFD97706); // amber
+      channelBg = const Color(0xFFFFFBEB);
+    } else if (channelSlug.contains('delivery')) {
+      channelColor = const Color(0xFF059669); // green
+      channelBg = const Color(0xFFECFDF5);
+    } else if (channelSlug.startsWith('cat')) {
+      channelColor = const Color(0xFF7C3AED); // purple for categories
+      channelBg = const Color(0xFFF5F3FF);
+    }
     final topBorderColor = item.isLive ? const Color(0xFF16A34A) : const Color(0xFFD97706);
 
     return AspectRatio(
@@ -179,7 +501,11 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
           child: InkWell(
             onTap: () {
               HapticFeedback.lightImpact();
-              widget.onSessionTapped?.call();
+              if (onTapped != null) {
+                onTapped();
+              } else {
+                widget.onSessionTapped?.call(item);
+              }
             },
             borderRadius: BorderRadius.circular(12.r),
             child: ClipRRect(
@@ -236,9 +562,9 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
                                   SizedBox(width: 4.w),
                                   Text(
                                     item.isLive ? "LIVE" : "UPCOMING",
-                                    style: GoogleFonts.nunito(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 9.sp,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w600,
                                       color: item.isLive ? const Color(0xFF16A34A) : const Color(0xFFD97706),
                                       letterSpacing: 0.3,
                                     ),
@@ -249,21 +575,19 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
                               Container(
                                 padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.5.h),
                                 decoration: BoxDecoration(
-                                  color: isDineIn ? const Color(0xFFFEF2F2) : const Color(0xFFEFF6FF),
+                                  color: channelBg,
                                   borderRadius: BorderRadius.circular(3.r),
                                   border: Border.all(
-                                    color: isDineIn
-                                        ? const Color(0xFFC1272D).withOpacity(0.35)
-                                        : const Color(0xFF2563EB).withOpacity(0.35),
+                                    color: channelColor.withOpacity(0.35),
                                     width: 0.8,
                                   ),
                                 ),
                                 child: Text(
-                                  item.channel,
-                                  style: GoogleFonts.nunito(
+                                  item.channelLabel,
+                                  style: GoogleFonts.poppins(
                                     fontSize: 8.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: isDineIn ? const Color(0xFFC1272D) : const Color(0xFF2563EB),
+                                    fontWeight: FontWeight.w600,
+                                    color: channelColor,
                                     letterSpacing: 0.2,
                                   ),
                                 ),
@@ -280,9 +604,9 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
                                 item.title,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 14.sp,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w600,
                                   color: item.isLive ? const Color(0xFF111827) : const Color(0xFF6B7280),
                                   height: 1.1,
                                 ),
@@ -292,9 +616,9 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
                                 item.templateAndTime,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 9.sp,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w400,
                                   color: const Color(0xFF9CA3AF),
                                 ),
                               ),
@@ -309,9 +633,9 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
                               if (item.isLive) ...[
                                 Text(
                                   item.scansText,
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 11.sp,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w600,
                                     color: const Color(0xFF111827),
                                   ),
                                 ),
@@ -325,9 +649,9 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
                                   ),
                                   child: Text(
                                     item.statusText,
-                                    style: GoogleFonts.nunito(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 8.sp,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w500,
                                       color: item.statusText == 'Orders On'
                                           ? const Color(0xFF16A34A)
                                           : const Color(0xFF9CA3AF),
@@ -337,9 +661,9 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
                               ] else ...[
                                 Text(
                                   "Orders On",
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 9.sp,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight: FontWeight.w400,
                                     color: const Color(0xFF9CA3AF),
                                   ),
                                 ),
@@ -349,18 +673,18 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
                                   children: [
                                     Text(
                                       "Starts",
-                                      style: GoogleFonts.nunito(
+                                      style: GoogleFonts.poppins(
                                         fontSize: 8.sp,
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w500,
                                         color: const Color(0xFFD97706),
                                         height: 1,
                                       ),
                                     ),
                                     Text(
                                       item.startsTime ?? "18:30",
-                                      style: GoogleFonts.nunito(
+                                      style: GoogleFonts.poppins(
                                         fontSize: 12.sp,
-                                        fontWeight: FontWeight.w800,
+                                        fontWeight: FontWeight.w600,
                                         color: const Color(0xFFD97706),
                                         height: 1.1,
                                       ),

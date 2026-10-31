@@ -1,4 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,6 +10,7 @@ import 'package:toastification/toastification.dart';
 
 import 'core/api/api_client.dart';
 import 'core/services/device_service.dart';
+import 'core/services/fcm_service.dart';
 import 'core/services/logger_service.dart';
 import 'core/storage/database_service.dart';
 import 'core/storage/storage_service.dart';
@@ -17,6 +21,7 @@ import 'features/auth/data/datasources/login_sync_datasource.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/presentation/views/login_screen.dart';
+import 'features/auth/presentation/views/splash_screen.dart';
 import 'features/main/bindings/main_shell_binding.dart';
 import 'features/main/presentation/controllers/main_shell_controller.dart';
 import 'features/main/presentation/views/main_shell_screen.dart';
@@ -42,6 +47,14 @@ void main() async {
   // Firebase initialization
   try {
     await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    FlutterError.onError = (errorDetails) {
+      FirebaseCrashlytics.instance.recordFlutterFatalError(errorDetails);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+      return true;
+    };
   } catch (_) {}
 
   // Core Service Dependencies Initialization
@@ -49,6 +62,7 @@ void main() async {
   final storageService = await Get.putAsync(() => StorageService().init());
   await Get.putAsync(() => DatabaseService().init());
   await Get.putAsync(() => DeviceService(storageService).init());
+  await Get.putAsync(() => FcmService().init());
   final apiClient = Get.put(ApiClient());
 
   Get.put<AuthRemoteDataSource>(AuthRemoteDataSourceImpl(apiClient));
@@ -64,9 +78,6 @@ class ERestoMenuApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final storageService = Get.find<StorageService>();
-    final hasToken = storageService.isLoggedIn;
-
     return ToastificationWrapper(
       child: ScreenUtilInit(
         designSize: const Size(360, 690),
@@ -74,11 +85,15 @@ class ERestoMenuApp extends StatelessWidget {
         splitScreenMode: true,
         builder: (context, child) {
           return GetMaterialApp(
-            title: 'eResto Menu',
+            title: 'Digi Menu',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
-            initialRoute: hasToken ? '/main' : '/login',
+            initialRoute: '/splash',
             getPages: [
+              GetPage(
+                name: '/splash',
+                page: () => const SplashScreen(),
+              ),
               GetPage(
                 name: '/login',
                 page: () => const LoginScreen(),

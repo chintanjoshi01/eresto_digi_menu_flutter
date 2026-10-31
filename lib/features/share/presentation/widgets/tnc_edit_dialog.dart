@@ -66,9 +66,9 @@ class TncEditDialog extends StatelessWidget {
                         controller.isEditingTnc.value
                             ? "Edit Terms & Conditions"
                             : "New Terms & Conditions",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 15.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: const Color(0xFF111827),
                         ),
                       ),
@@ -94,7 +94,7 @@ class TncEditDialog extends StatelessWidget {
                     // Name Field
                     Text(
                       "Template Name *",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF374151),
@@ -109,10 +109,10 @@ class TncEditDialog extends StatelessWidget {
                       ),
                       child: TextField(
                         controller: controller.tncNameCtrl,
-                        style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
+                        style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
                         decoration: InputDecoration(
                           hintText: "e.g. T & C, Dining Policy",
-                          hintStyle: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
+                          hintStyle: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
                           border: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                         ),
@@ -124,14 +124,19 @@ class TncEditDialog extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Terms & Condition Text *",
-                          style: GoogleFonts.nunito(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF374151),
+                        Expanded(
+                          child: Text(
+                            "Terms & Condition Text *",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.poppins(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF374151),
+                            ),
                           ),
                         ),
+                        SizedBox(width: 8.w),
                         // "+ Add Line" Button
                         ElevatedButton.icon(
                           onPressed: () => controller.addTncLine(),
@@ -150,9 +155,9 @@ class TncEditDialog extends StatelessWidget {
                           icon: Icon(Icons.add_rounded, size: 14.sp),
                           label: Text(
                             "Add Line",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 11.5.sp,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
@@ -181,10 +186,10 @@ class TncEditDialog extends StatelessWidget {
                                   child: TextField(
                                     controller: lineCtrl,
                                     maxLines: null,
-                                    style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF111827)),
+                                    style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF111827)),
                                     decoration: InputDecoration(
                                       hintText: "Enter clause or policy line...",
-                                      hintStyle: GoogleFonts.nunito(fontSize: 11.sp, color: const Color(0xFF9CA3AF)),
+                                      hintStyle: GoogleFonts.poppins(fontSize: 11.sp, color: const Color(0xFF9CA3AF)),
                                       border: InputBorder.none,
                                       contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                                     ),
@@ -230,7 +235,7 @@ class TncEditDialog extends StatelessWidget {
                       ),
                       child: Text(
                         "Cancel",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 13.sp,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF4B5563),
@@ -269,7 +274,7 @@ class TncEditDialog extends StatelessWidget {
                               )
                             : Text(
                                 "Save Template",
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w700,
                                 ),

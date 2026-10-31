@@ -1,4 +1,4 @@
-package `in`.eresto.eresto_menu
+package `in`.eresto.digimenu
 
 import io.flutter.embedding.android.FlutterActivity
 

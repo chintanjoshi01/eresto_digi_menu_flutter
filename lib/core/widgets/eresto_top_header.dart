@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../storage/storage_service.dart';
 import '../theme/app_colors.dart';
 
 /// Enterprise Top App Header Bar for eResto Digital Menu POS.
@@ -49,6 +50,23 @@ class ErestoTopHeader extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => Size.fromHeight(56.h);
+
+  String _getUserInitial() {
+    if (Get.isRegistered<StorageService>()) {
+      final storage = Get.find<StorageService>();
+      final name = storage.userName.trim().isNotEmpty
+          ? storage.userName.trim()
+          : (storage.shortName.trim().isNotEmpty
+              ? storage.shortName.trim()
+              : (storage.restoName.trim().isNotEmpty
+                  ? storage.restoName.trim()
+                  : (storage.email.trim().isNotEmpty ? storage.email.trim() : '')));
+      if (name.isNotEmpty) {
+        return name.characters.first.toUpperCase();
+      }
+    }
+    return 'U';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,14 +132,26 @@ class ErestoTopHeader extends StatelessWidget implements PreferredSizeWidget {
               child: Container(
                 width: 32.w,
                 height: 32.h,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.primary,
                   shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.25),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: Icon(
-                  Icons.person_rounded,
-                  color: Colors.white,
-                  size: 18.sp,
+                alignment: Alignment.center,
+                child: Text(
+                  _getUserInitial(),
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    height: 1.1,
+                  ),
                 ),
               ),
             ),
@@ -278,10 +308,10 @@ class _AnimatedHeaderLogoState extends State<AnimatedHeaderLogo>
       fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) => Text(
         "eResto",
-        style: GoogleFonts.nunito(
+        style: GoogleFonts.poppins(
           color: AppColors.primary,
           fontSize: 18.sp,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

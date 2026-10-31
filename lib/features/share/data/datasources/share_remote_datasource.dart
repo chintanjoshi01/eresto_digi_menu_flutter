@@ -49,10 +49,19 @@ class ShareRemoteDataSourceImpl implements ShareRemoteDataSource {
         data: request.toJson(),
       );
       final data = response.data;
-      if (data != null && data['status'] == 1 && data['data'] != null) {
-        return PdfDownloadResponse.fromJson(data['data'] as Map<String, dynamic>);
+      if (data is Map<String, dynamic> && data['status'] == 1) {
+        final inner = data['data'];
+        if (inner is Map<String, dynamic>) {
+          return PdfDownloadResponse.fromJson(inner);
+        } else if (inner is String && inner.trim().isNotEmpty) {
+          return PdfDownloadResponse.fromJson({'url': inner.trim()});
+        } else {
+          return PdfDownloadResponse.fromJson(data);
+        }
       } else {
-        throw Exception(data?['message'] ?? 'Failed to generate menu PDF');
+        throw Exception(
+          (data is Map ? data['message'] : null) ?? 'Failed to generate menu PDF',
+        );
       }
     } catch (e) {
       rethrow;
@@ -175,15 +184,26 @@ class ShareRemoteDataSourceImpl implements ShareRemoteDataSource {
 
   @override
   Future<List<int>> downloadPdfBytes(String url) async {
+    final cleanUrl = url.trim();
+    if (cleanUrl.isEmpty) {
+      throw Exception('PDF download URL is empty');
+    }
     try {
       final response = await _apiClient.dio.get<List<int>>(
-        url,
-        options: Options(responseType: ResponseType.bytes),
+        cleanUrl,
+        options: Options(
+          responseType: ResponseType.bytes,
+          headers: {
+            'Accept': '*/*',
+          },
+          followRedirects: true,
+          validateStatus: (status) => status != null && status < 400,
+        ),
       );
-      if (response.data != null) {
+      if (response.data != null && response.data!.isNotEmpty) {
         return response.data!;
       } else {
-        throw Exception('Failed to download PDF bytes');
+        throw Exception('Server returned 0 bytes for PDF file');
       }
     } catch (e) {
       rethrow;

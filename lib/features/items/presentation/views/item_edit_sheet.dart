@@ -140,6 +140,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
 
   // Variants management
   bool _hasVariants = false;
+  String? _savedBasePrice;
   final List<_VariantItem> _variants = [];
 
   // Add-on groups management
@@ -147,13 +148,13 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
 
   String? _normalizeAllergenToKey(String raw) {
     final lower = raw.trim().toLowerCase();
-    if (lower.contains('gluten') || lower.contains('cereal')) return 'Gluten';
-    if (lower.contains('crustacean')) return 'Crustacean';
+    if (lower.contains('gluten') || lower.contains('cereal') || lower.contains('wheat')) return 'Gluten';
+    if (lower.contains('crust') || lower.contains('shellfish') || lower.contains('prawn') || lower.contains('shrimp') || lower.contains('crab')) return 'Crustacean';
     if (lower.contains('egg')) return 'Eggs';
     if (lower.contains('fish')) return 'Fish';
-    if (lower.contains('peanut')) return 'Peanuts';
+    if (lower.contains('peanut') || lower.contains('pean') || lower.contains('groundnut')) return 'Peanuts';
     if (lower.contains('soya') || lower.contains('soy')) return 'Soyabean';
-    if (lower.contains('milk') || lower.contains('dairy')) return 'Milk';
+    if (lower.contains('milk') || lower.contains('dairy') || lower.contains('lactose')) return 'Milk';
     if (lower.contains('nut') || lower.contains('tree')) return 'Nuts';
     return null;
   }
@@ -195,6 +196,39 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
       }
     } catch (_) {
       _hasVariants = false;
+    }
+  }
+
+  String _calculateVariantsPriceRange() {
+    final prices = <double>[];
+    for (final v in _variants) {
+      final p = double.tryParse(v.priceController.text.trim());
+      if (p != null && p > 0) {
+        prices.add(p);
+      }
+    }
+    if (prices.isNotEmpty) {
+      final min = prices.reduce((a, b) => a < b ? a : b);
+      final max = prices.reduce((a, b) => a > b ? a : b);
+      if (min != max) {
+        return '${min.toStringAsFixed(2)} - ${max.toStringAsFixed(2)}';
+      } else {
+        return min.toStringAsFixed(2);
+      }
+    }
+    if (_savedBasePrice != null && _savedBasePrice!.isNotEmpty && _savedBasePrice != '0') {
+      final base = double.tryParse(_savedBasePrice!);
+      if (base != null && base > 0) return base.toStringAsFixed(2);
+    }
+    return "0.00";
+  }
+
+  void _updatePriceRangeDisplay() {
+    if (_hasVariants) {
+      final range = _calculateVariantsPriceRange();
+      if (_priceController.text != range) {
+        _priceController.text = range;
+      }
     }
   }
 
@@ -271,7 +305,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
     _nameController = TextEditingController(text: item.name);
     _priceController = TextEditingController(text: item.price.toString());
     _shortCodeController = TextEditingController(text: item.shortCode);
-    _portionController = TextEditingController(text: item.portion ?? '1 portion');
+    _portionController = TextEditingController(text: item.portion ?? '');
     _descriptionController = TextEditingController(text: item.shortDescription ?? '');
     _ingredientsController = TextEditingController(text: item.ingredients ?? '');
     _caloriesController = TextEditingController(text: item.calorificValue?.toString() ?? '0');
@@ -304,13 +338,16 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
       _taxTemplate = defaultTax;
     }
 
-    final kCats = storage?.kitchenCategories ?? [];
-    final sCats = storage?.salesCategories ?? [];
-    _kitchenCategory = item.kitchenCategory ?? (kCats.isNotEmpty ? kCats.first.itemKitchenCat : 'Main Kitchen');
-    _salesCategory = item.salesCategory ?? (sCats.isNotEmpty ? sCats.first.itemSalesCat : 'Food');
+    // Do NOT auto-select unassigned Kitchen or Sales categories
+    _kitchenCategory = item.kitchenCategory?.trim() ?? '';
+    _salesCategory = item.salesCategory?.trim() ?? '';
 
     // Populate initial customizations
     _parseVariantsJson(item.variantsJson);
+    if (_hasVariants) {
+      if (item.price > 0) _savedBasePrice = item.price.toString();
+      _priceController.text = _calculateVariantsPriceRange();
+    }
     _parseAddonsJson(item.addonsJson);
     _parseSpecialInstructions(item.specialInstructions);
 
@@ -354,11 +391,8 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
 
   void _populateFromDetails(ItemModel fresh) {
     _nameController.text = fresh.name;
-    _priceController.text = fresh.price.toString();
     _shortCodeController.text = fresh.shortCode;
-    if (fresh.portion != null && fresh.portion!.isNotEmpty) {
-      _portionController.text = fresh.portion!;
-    }
+    _portionController.text = fresh.portion ?? '';
     if (fresh.shortDescription != null && fresh.shortDescription!.isNotEmpty) {
       _descriptionController.text = fresh.shortDescription!;
     }
@@ -383,12 +417,8 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
     if (fresh.itemGroup.isNotEmpty) {
       _itemGroup = fresh.itemGroup;
     }
-    if (fresh.kitchenCategory != null && fresh.kitchenCategory!.isNotEmpty) {
-      _kitchenCategory = fresh.kitchenCategory!;
-    }
-    if (fresh.salesCategory != null && fresh.salesCategory!.isNotEmpty) {
-      _salesCategory = fresh.salesCategory!;
-    }
+    _kitchenCategory = fresh.kitchenCategory?.trim() ?? '';
+    _salesCategory = fresh.salesCategory?.trim() ?? '';
     if (fresh.imageUrl != null && fresh.imageUrl!.isNotEmpty) {
       final storage = Get.isRegistered<StorageService>() ? Get.find<StorageService>() : null;
       _currentImageUrl = V6ApiMenuItem.resolveImageUrl(
@@ -400,6 +430,14 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
 
     // Sync fresh customizations
     _parseVariantsJson(fresh.variantsJson);
+    if (_hasVariants) {
+      if (_savedBasePrice == null && fresh.price > 0) {
+        _savedBasePrice = fresh.price.toString();
+      }
+      _priceController.text = _calculateVariantsPriceRange();
+    } else {
+      _priceController.text = fresh.price.toString();
+    }
     _parseAddonsJson(fresh.addonsJson);
     _parseSpecialInstructions(fresh.specialInstructions);
 
@@ -477,9 +515,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                 ),
                 Text(
                   "Set Item Photo (Square 1:1)",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 14.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
                   ),
                 ),
@@ -495,11 +533,11 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                   ),
                   title: Text(
                     "Choose from Gallery & Crop",
-                    style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 13.sp),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13.sp),
                   ),
                   subtitle: Text(
                     "Pick a photo and crop freely to 1:1 square",
-                    style: GoogleFonts.nunito(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
+                    style: GoogleFonts.poppins(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
                   ),
                   onTap: () => Navigator.of(ctx).pop('gallery'),
                 ),
@@ -514,11 +552,11 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                   ),
                   title: Text(
                     "Take with Camera & Crop",
-                    style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 13.sp),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13.sp),
                   ),
                   subtitle: Text(
                     "Capture a photo and crop freely to 1:1 square",
-                    style: GoogleFonts.nunito(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
+                    style: GoogleFonts.poppins(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
                   ),
                   onTap: () => Navigator.of(ctx).pop('camera'),
                 ),
@@ -533,11 +571,11 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                   ),
                   title: Text(
                     "Select from Restaurant Gallery",
-                    style: GoogleFonts.nunito(fontWeight: FontWeight.w700, fontSize: 13.sp),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600, fontSize: 13.sp),
                   ),
                   subtitle: Text(
                     "Choose an already uploaded gallery image",
-                    style: GoogleFonts.nunito(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
+                    style: GoogleFonts.poppins(fontSize: 10.5.sp, color: const Color(0xFF6B7280)),
                   ),
                   onTap: () => Navigator.of(ctx).pop('resto_gallery'),
                 ),
@@ -608,6 +646,67 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
     }
   }
 
+  void _showPickInstructionsSheet() {
+    HapticFeedback.selectionClick();
+    final storage = Get.isRegistered<StorageService>() ? Get.find<StorageService>() : null;
+    final cachedNotes = (storage?.specialInstructions.map((e) => e.spInst.trim()).toList() ?? [])
+        .where((e) => e.isNotEmpty)
+        .toList();
+
+    const defaultPresets = [
+      'One By Two',
+      'Jain',
+      'Swami Narayan',
+      'Non Spicy',
+      'Plain',
+      'Less Spicy',
+      'Extra Spicy',
+      'Without Sugar',
+      'No Onion No Garlic',
+      'Less Oil',
+      'Serve Hot',
+      'Pack Separately',
+      'Extra Cheese',
+      'Gluten Free',
+      'Sauce on the Side',
+      'Crispy / Well Done',
+      'Mild',
+    ];
+
+    final allOptions = <String>{
+      ..._selectedSpecialInstructions,
+      ...cachedNotes,
+      ...defaultPresets,
+    }.toList();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _SpecialInstructionsPickerSheet(
+        allOptions: allOptions,
+        selectedInstructions: _selectedSpecialInstructions,
+        onChanged: () => setState(() {}),
+      ),
+    );
+  }
+
+  void _showAddCustomInstructionDialog() {
+    HapticFeedback.selectionClick();
+    showDialog(
+      context: context,
+      builder: (ctx) => _AddCustomInstructionDialog(
+        onAdd: (txt) {
+          setState(() {
+            _selectedSpecialInstructions.add(txt);
+          });
+          HapticFeedback.selectionClick();
+          ToastService.showSuccess("Instruction added: $txt");
+        },
+      ),
+    );
+  }
+
   void _save() {
     if (_formKey.currentState!.validate()) {
       final controller = Get.find<ItemsController>();
@@ -642,8 +741,19 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
 
       final isNonVeg = _vegType == 'non_veg';
 
-      // Serialize allergens (comma-separated for aik, and list)
-      final aikStr = _selectedAllergens.join(',');
+      // Serialize allergens (ordered canonically, with Crusta so all 8 fit within MySQL VARCHAR(50))
+      const canonicalAllergenOrder = ['Gluten', 'Eggs', 'Peanuts', 'Milk', 'Nuts', 'Soyabean', 'Fish', 'Crustacean'];
+      final sortedAllergens = _selectedAllergens.toList()
+        ..sort((a, b) {
+          final idxA = canonicalAllergenOrder.indexOf(a);
+          final idxB = canonicalAllergenOrder.indexOf(b);
+          return (idxA == -1 ? 99 : idxA).compareTo(idxB == -1 ? 99 : idxB);
+        });
+      final aikTokens = sortedAllergens.map((k) {
+        if (k == 'Crustacean') return 'Crusta';
+        return k;
+      }).toList();
+      final aikStr = aikTokens.join(',');
 
       // Serialize dietary tags (flags: s, j, v for item_att, and list)
       final attCodes = <String>[];
@@ -709,11 +819,12 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
         'item_name': _nameController.text.trim(),
         'name': _nameController.text.trim(),
         'item_cat_id': catId,
-        'item_price': double.parse(_priceController.text.trim()),
-        'price': double.parse(_priceController.text.trim()),
+        'item_price': _hasVariants ? 0 : (double.tryParse(_priceController.text.trim()) ?? 0),
+        'price': _hasVariants ? 0 : (double.tryParse(_priceController.text.trim()) ?? 0),
         'item_short_name': _shortCodeController.text.trim(),
         'short_code': _shortCodeController.text.trim(),
         'portion': _portionController.text.trim(),
+        'qty': _portionController.text.trim(),
         'veg_type': isNonVeg ? 'non_veg' : (_vegType == 'na' ? 'na' : 'veg'),
         'is_nonveg': isNonVeg ? 1 : 0,
         'is_available': _isAvailable,
@@ -729,9 +840,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
         'cal': int.tryParse(_caloriesController.text.trim()),
         'service_time': int.tryParse(_serviceTimeController.text.trim()),
         'delivery_time': _serviceTimeController.text.trim(),
-        'kitchen_category': _kitchenCategory,
+        'kitchen_category': _kitchenCategory.trim().isNotEmpty ? _kitchenCategory.trim() : null,
         if (kitchenCatId != null) 'kitchen_cat_id': kitchenCatId,
-        'sales_category': _salesCategory,
+        'sales_category': _salesCategory.trim().isNotEmpty ? _salesCategory.trim() : null,
         if (salesCatId != null) 'item_sales_cat_id': salesCatId,
         'item_tax_tmpl_id': taxTmplId,
         'tax_tmpl_mast_id': taxTmplId,
@@ -817,6 +928,8 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                             ? CachedNetworkImage(
                                 imageUrl: _currentImageUrl!,
                                 fit: BoxFit.cover,
+                                memCacheWidth: 150,
+                                memCacheHeight: 150,
                                 errorListener: (_) {},
                                 errorWidget: (_, __, ___) => _buildFallbackThumbnail(),
                               )
@@ -832,16 +945,20 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                     children: [
                       Text(
                         _nameController.text.isEmpty ? widget.item.name : _nameController.text,
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 14.sp,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w600,
                           color: const Color(0xFF111827),
                         ),
                       ),
                       SizedBox(height: 2.h),
                       Text(
-                        "$_itemGroup · ${_shortCodeController.text} · ${_portionController.text}",
-                        style: GoogleFonts.nunito(
+                        [
+                          _itemGroup,
+                          if (_shortCodeController.text.trim().isNotEmpty) _shortCodeController.text.trim(),
+                          if (_portionController.text.trim().isNotEmpty) _portionController.text.trim(),
+                        ].join(' · '),
+                        style: GoogleFonts.poppins(
                           fontSize: 10.sp,
                           color: const Color(0xFF9CA3AF),
                         ),
@@ -908,6 +1025,8 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                                                 width: double.infinity,
                                                 height: double.infinity,
                                                 fit: BoxFit.cover,
+                                                memCacheWidth: 600,
+                                                memCacheHeight: 400,
                                                 errorListener: (_) {},
                                                 placeholder: (context, url) => Container(
                                                   color: const Color(0xFFF3F4F6),
@@ -945,7 +1064,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                                             _localImagePath != null || (_currentImageUrl != null && _currentImageUrl!.isNotEmpty)
                                                 ? "Change Photo"
                                                 : "Upload Photo",
-                                            style: GoogleFonts.nunito(
+                                            style: GoogleFonts.poppins(
                                               color: Colors.white,
                                               fontSize: 9.sp,
                                               fontWeight: FontWeight.w600,
@@ -962,7 +1081,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                           SizedBox(height: 5.h),
                           Text(
                             "JPG, PNG, WEBP · Max 5 MB · 1:1 Square Crop",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 9.sp,
                               color: const Color(0xFF9CA3AF),
                             ),
@@ -975,40 +1094,94 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                     _buildDrawerSection(
                       title: "Special Instructions",
                       titleIcon: Icons.notes_rounded,
-                      headerAction: Text(
-                        "↔ Pick from list",
-                        style: GoogleFonts.nunito(
-                          fontSize: 11.sp,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primary,
+                      headerAction: InkWell(
+                        onTap: _showPickInstructionsSheet,
+                        borderRadius: BorderRadius.circular(4.r),
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+                          child: Text(
+                            "↔ Pick from list",
+                            style: GoogleFonts.poppins(
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary,
+                            ),
+                          ),
                         ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Icon(Icons.add_circle_outline_rounded, size: 13.sp, color: AppColors.primary),
-                              SizedBox(width: 6.w),
-                              Text(
-                                "Add custom",
-                                style: GoogleFonts.nunito(
-                                  fontSize: 11.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary,
-                                ),
+                          InkWell(
+                            onTap: _showAddCustomInstructionDialog,
+                            borderRadius: BorderRadius.circular(4.r),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(vertical: 2.h),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.add_circle_outline_rounded, size: 14.sp, color: AppColors.primary),
+                                  SizedBox(width: 6.w),
+                                  Text(
+                                    "Add custom",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 11.5.sp,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          SizedBox(height: 6.h),
-                          Text(
-                            "None yet. Use Pick from list above, or add a custom one.",
-                            style: GoogleFonts.nunito(
-                              fontSize: 11.sp,
-                              color: const Color(0xFF9CA3AF),
-                              fontStyle: FontStyle.italic,
                             ),
                           ),
+                          SizedBox(height: 8.h),
+                          if (_selectedSpecialInstructions.isEmpty)
+                            Text(
+                              "None yet. Use Pick from list above, or add a custom one.",
+                              style: GoogleFonts.poppins(
+                                fontSize: 11.sp,
+                                color: const Color(0xFF9CA3AF),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            )
+                          else
+                            Wrap(
+                              spacing: 6.w,
+                              runSpacing: 6.h,
+                              children: _selectedSpecialInstructions.map((inst) {
+                                return Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF2F2),
+                                    borderRadius: BorderRadius.circular(6.r),
+                                    border: Border.all(color: AppColors.primary),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        inst,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                      SizedBox(width: 4.w),
+                                      InkWell(
+                                        onTap: () {
+                                          HapticFeedback.selectionClick();
+                                          setState(() {
+                                            _selectedSpecialInstructions.remove(inst);
+                                          });
+                                        },
+                                        child: Icon(Icons.close_rounded, size: 13.sp, color: AppColors.primary),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
                         ],
                       ),
                     ),
@@ -1018,12 +1191,13 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                       title: "Identity",
                       titleIcon: Icons.person_outline_rounded,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildFieldLabel("ITEM NAME", isRequired: true),
                           SizedBox(height: 4.h),
                           TextFormField(
                             controller: _nameController,
-                            style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
+                            style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
                             decoration: _buildInputDecoration(),
                             validator: (v) => v == null || v.trim().isEmpty ? "Required" : null,
                             onChanged: (_) => setState(() {}),
@@ -1039,7 +1213,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                                     SizedBox(height: 4.h),
                                     TextFormField(
                                       controller: _shortCodeController,
-                                      style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
+                                      style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
                                       decoration: _buildInputDecoration(),
                                       onChanged: (_) => setState(() {}),
                                     ),
@@ -1126,16 +1300,40 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                           ? _taxTemplate
                           : availableTaxes.first;
 
+                      final syncedKitchens = storage?.kitchenCategories
+                              .map((k) => k.itemKitchenCat.trim())
+                              .where((k) => k.isNotEmpty)
+                              .toList() ??
+                          [];
                       final availableKitchens = <String>{
                         if (_kitchenCategory.trim().isNotEmpty) _kitchenCategory.trim(),
-                        if (storage != null) ...storage.kitchenCategories.map((k) => k.itemKitchenCat.trim()).where((k) => k.isNotEmpty),
-                        'Main Kitchen', 'Tandoor', 'Bar / Beverages', 'Chinese', 'Continental',
+                        if (syncedKitchens.isNotEmpty)
+                          ...syncedKitchens
+                        else ...[
+                          'Main Kitchen',
+                          'Tandoor',
+                          'Bar / Beverages',
+                          'Chinese',
+                          'Continental',
+                        ],
                       }.toList();
 
+                      final syncedSalesCats = storage?.salesCategories
+                              .map((s) => s.itemSalesCat.trim())
+                              .where((s) => s.isNotEmpty)
+                              .toList() ??
+                          [];
                       final availableSalesCats = <String>{
                         if (_salesCategory.trim().isNotEmpty) _salesCategory.trim(),
-                        if (storage != null) ...storage.salesCategories.map((s) => s.itemSalesCat.trim()).where((s) => s.isNotEmpty),
-                        'Food', 'Beverages', 'Liquor', 'Dine-In Special', 'Takeaway Offer',
+                        if (syncedSalesCats.isNotEmpty)
+                          ...syncedSalesCats
+                        else ...[
+                          'Food',
+                          'Beverages',
+                          'Liquor',
+                          'Dine-In Special',
+                          'Takeaway Offer',
+                        ],
                       }.toList();
 
                       return _buildDrawerSection(
@@ -1188,7 +1386,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                                       _buildDropdown(
                                         value: _kitchenCategory,
                                         items: availableKitchens,
-                                        onChanged: (val) => setState(() => _kitchenCategory = val ?? _kitchenCategory),
+                                        allowEmpty: true,
+                                        hint: "Select Kitchen Category",
+                                        onChanged: (val) => setState(() => _kitchenCategory = val ?? ''),
                                       ),
                                     ],
                                   ),
@@ -1203,7 +1403,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                                       _buildDropdown(
                                         value: _salesCategory,
                                         items: availableSalesCats,
-                                        onChanged: (val) => setState(() => _salesCategory = val ?? _salesCategory),
+                                        allowEmpty: true,
+                                        hint: "Select Sales Category",
+                                        onChanged: (val) => setState(() => _salesCategory = val ?? ''),
                                       ),
                                     ],
                                   ),
@@ -1222,19 +1424,76 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                       child: Column(
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _buildFieldLabel("PRICE (₹)", isRequired: true),
+                                    SizedBox(
+                                      height: 20.h,
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          RichText(
+                                            text: TextSpan(
+                                              text: "PRICE (₹)",
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 10.sp,
+                                                color: const Color(0xFF6B7280),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              children: [
+                                                if (!_hasVariants)
+                                                  TextSpan(
+                                                    text: " *",
+                                                    style: GoogleFonts.poppins(color: AppColors.primary),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          if (_hasVariants) ...[
+                                            SizedBox(width: 6.w),
+                                            Container(
+                                              padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.5.h),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFEF3C7),
+                                                borderRadius: BorderRadius.circular(4.r),
+                                                border: Border.all(color: const Color(0xFFFDE68A)),
+                                              ),
+                                              child: Text(
+                                                "In Variants",
+                                                style: GoogleFonts.poppins(
+                                                  fontSize: 8.5.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: const Color(0xFFD97706),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
                                     SizedBox(height: 4.h),
                                     TextFormField(
                                       controller: _priceController,
+                                      enabled: !_hasVariants,
                                       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                      style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
-                                      decoration: _buildInputDecoration(),
-                                      validator: (v) => v == null || v.trim().isEmpty ? "Required" : null,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 13.sp,
+                                        color: _hasVariants ? const Color(0xFF374151) : const Color(0xFF111827),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      decoration: _buildInputDecoration(
+                                        hint: _hasVariants ? "0" : "0.00",
+                                        fillColor: _hasVariants ? const Color(0xFFF3F4F6) : Colors.white,
+                                        enabled: !_hasVariants,
+                                      ),
+                                      validator: (v) {
+                                        if (_hasVariants) return null;
+                                        if (v == null || v.trim().isEmpty) return "Required";
+                                        return null;
+                                      },
                                     ),
                                   ],
                                 ),
@@ -1244,12 +1503,18 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _buildFieldLabel("SERVICE TIME"),
+                                    SizedBox(
+                                      height: 20.h,
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: _buildFieldLabel("SERVICE TIME"),
+                                      ),
+                                    ),
                                     SizedBox(height: 4.h),
                                     TextFormField(
                                       controller: _serviceTimeController,
                                       keyboardType: TextInputType.number,
-                                      style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
+                                      style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
                                       decoration: _buildInputDecoration(hint: "min"),
                                     ),
                                   ],
@@ -1264,12 +1529,18 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _buildFieldLabel("SIZE / QTY / PORTION"),
+                                    SizedBox(
+                                      height: 20.h,
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: _buildFieldLabel("SIZE / QTY / PORTION"),
+                                      ),
+                                    ),
                                     SizedBox(height: 4.h),
                                     TextFormField(
                                       controller: _portionController,
-                                      style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
-                                      decoration: _buildInputDecoration(),
+                                      style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
+                                      decoration: _buildInputDecoration(hint: "e.g. 1 portion, 250 ml"),
                                       onChanged: (_) => setState(() {}),
                                     ),
                                   ],
@@ -1280,12 +1551,18 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    _buildFieldLabel("CALORIFIC VALUE"),
+                                    SizedBox(
+                                      height: 20.h,
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: _buildFieldLabel("CALORIFIC VALUE"),
+                                      ),
+                                    ),
                                     SizedBox(height: 4.h),
                                     TextFormField(
                                       controller: _caloriesController,
                                       keyboardType: TextInputType.number,
-                                      style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
+                                      style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
                                       decoration: _buildInputDecoration(hint: "kcal"),
                                     ),
                                   ],
@@ -1311,7 +1588,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                         children: [
                           _buildDietaryTag("Spicy", "Spicy", icon: Icons.local_fire_department_rounded),
                           SizedBox(width: 8.w),
-                          _buildDietaryTag("Jain", "Jain"),
+                          _buildDietaryTag("Jain", "Jain", icon: Icons.spa_rounded),
                           SizedBox(width: 8.w),
                           _buildDietaryTag("Vegan", "Vegan", icon: Icons.eco_rounded),
                         ],
@@ -1330,7 +1607,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                           TextFormField(
                             controller: _ingredientsController,
                             maxLines: 2,
-                            style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
+                            style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
                             decoration: _buildInputDecoration(hint: "e.g. Lime juice, soda water, mint leaves, sugar, salt"),
                           ),
                           SizedBox(height: 10.h),
@@ -1339,8 +1616,8 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                           TextFormField(
                             controller: _descriptionController,
                             maxLines: 2,
-                            style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
-                            decoration: _buildInputDecoration(),
+                            decoration: _buildInputDecoration(hint: "e.g. a short description show to customers."),
+                            style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
                           ),
                         ],
                       ),
@@ -1352,7 +1629,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                       titleIcon: Icons.warning_amber_rounded,
                       headerAction: Text(
                         "FSSAI (8 Mandated)",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 9.sp,
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF9CA3AF),
@@ -1399,10 +1676,10 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                                   Expanded(
                                     child: Text(
                                       item.label,
-                                      style: GoogleFonts.nunito(
+                                      style: GoogleFonts.poppins(
                                         fontSize: 10.5.sp,
                                         color: isSelected ? const Color(0xFFD97706) : const Color(0xFF374151),
-                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                        fontWeight: isSelected ? FontWeight.w500 : FontWeight.w500,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -1432,167 +1709,6 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                       ),
                     ),
 
-                    // SECTION 10: ROUTING & SPECIAL INSTRUCTIONS (From Login Sync Cache)
-                    Builder(builder: (context) {
-                      final storage = Get.isRegistered<StorageService>() ? Get.find<StorageService>() : null;
-                      final availableKitchen = <String>{
-                        if (_kitchenCategory.trim().isNotEmpty) _kitchenCategory.trim(),
-                        ...(storage?.kitchenCategories.map((e) => e.itemKitchenCat.trim()).where((e) => e.isNotEmpty) ?? []),
-                        'Main Kitchen', 'Tandoor', 'Bar / Beverages',
-                      }.toList();
-
-                      final selectedKitchen = availableKitchen.contains(_kitchenCategory)
-                          ? _kitchenCategory
-                          : (availableKitchen.isNotEmpty ? availableKitchen.first : null);
-
-                      final availableSales = <String>{
-                        if (_salesCategory.trim().isNotEmpty) _salesCategory.trim(),
-                        ...(storage?.salesCategories.map((e) => e.itemSalesCat.trim()).where((e) => e.isNotEmpty) ?? []),
-                        'Food', 'Beverages', 'Liquor',
-                      }.toList();
-
-                      final selectedSales = availableSales.contains(_salesCategory)
-                          ? _salesCategory
-                          : (availableSales.isNotEmpty ? availableSales.first : null);
-
-                      final specialNotes = (storage?.specialInstructions.map((e) => e.spInst).toList() ?? [])
-                          .where((e) => e.isNotEmpty)
-                          .toList();
-
-                      return _buildDrawerSection(
-                        title: "Station Routing & Preparation",
-                        titleIcon: Icons.alt_route_rounded,
-                        headerAction: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(4.r),
-                          ),
-                          child: Text(
-                            "Offline Cached",
-                            style: GoogleFonts.nunito(
-                              fontSize: 9.sp,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF2563EB),
-                            ),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _buildFieldLabel("KITCHEN CATEGORY (KOT)"),
-                                      SizedBox(height: 4.h),
-                                      DropdownButtonFormField<String>(
-                                        value: selectedKitchen,
-                                        items: availableKitchen
-                                            .map((c) => DropdownMenuItem(
-                                                  value: c,
-                                                  child: Text(
-                                                    c,
-                                                    style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF111827)),
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ))
-                                            .toList(),
-                                        onChanged: (val) {
-                                          if (val != null) setState(() => _kitchenCategory = val);
-                                        },
-                                        decoration: _buildInputDecoration(),
-                                        isExpanded: true,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(width: 8.w),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _buildFieldLabel("SALES CATEGORY (POS)"),
-                                      SizedBox(height: 4.h),
-                                      DropdownButtonFormField<String>(
-                                        value: selectedSales,
-                                        items: availableSales
-                                            .map((c) => DropdownMenuItem(
-                                                  value: c,
-                                                  child: Text(
-                                                    c,
-                                                    style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF111827)),
-                                                    overflow: TextOverflow.ellipsis,
-                                                  ),
-                                                ))
-                                            .toList(),
-                                        onChanged: (val) {
-                                          if (val != null) setState(() => _salesCategory = val);
-                                        },
-                                        decoration: _buildInputDecoration(),
-                                        isExpanded: true,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (specialNotes.isNotEmpty) ...[
-                              SizedBox(height: 12.h),
-                              _buildFieldLabel("COMMON PREPARATION INSTRUCTIONS"),
-                              SizedBox(height: 6.h),
-                              Wrap(
-                                spacing: 6.w,
-                                runSpacing: 6.h,
-                                children: specialNotes.map((inst) {
-                                  final isSelected = _selectedSpecialInstructions.contains(inst);
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        if (isSelected) {
-                                          _selectedSpecialInstructions.remove(inst);
-                                        } else {
-                                          _selectedSpecialInstructions.add(inst);
-                                        }
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? const Color(0xFFFEF2F2) : const Color(0xFFF3F4F6),
-                                        borderRadius: BorderRadius.circular(6.r),
-                                        border: Border.all(
-                                          color: isSelected ? AppColors.primary : const Color(0xFFE5E7EB),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          if (isSelected) ...[
-                                            Icon(Icons.check, size: 12.sp, color: AppColors.primary),
-                                            SizedBox(width: 4.w),
-                                          ],
-                                          Text(
-                                            inst,
-                                            style: GoogleFonts.nunito(
-                                              fontSize: 10.5.sp,
-                                              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                                              color: isSelected ? AppColors.primary : const Color(0xFF374151),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    }),
 
                     SizedBox(height: 16.h),
                   ],
@@ -1601,9 +1717,14 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
             ),
           ),
 
-          // Save Bar
+          // Save Bar with system navigation bar clearance
           Container(
-            padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 20.h),
+            padding: EdgeInsets.fromLTRB(
+              16.w,
+              12.h,
+              16.w,
+              12.h + MediaQuery.of(context).padding.bottom,
+            ),
             decoration: const BoxDecoration(
               color: Colors.white,
               border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
@@ -1623,8 +1744,8 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                       ),
                     ),
                     child: Text(
-                      "Duplicate",
-                      style: GoogleFonts.nunito(
+                      "Cancel",
+                      style: GoogleFonts.poppins(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1652,9 +1773,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                         SizedBox(width: 5.w),
                         Text(
                           "Save Changes",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 13.sp,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -1671,6 +1792,32 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
 );
 }
 
+  void _toggleVariants(bool nextVal) {
+    setState(() {
+      _hasVariants = nextVal;
+      if (_hasVariants) {
+        if (_savedBasePrice == null && _priceController.text.trim().isNotEmpty && _priceController.text.trim() != '0') {
+          _savedBasePrice = _priceController.text.trim();
+        }
+        if (_variants.isEmpty) {
+          final defaultPrice = (_savedBasePrice != null && _savedBasePrice!.isNotEmpty && _savedBasePrice != '0')
+              ? _savedBasePrice!
+              : (_priceController.text.trim().isNotEmpty && _priceController.text.trim() != '0'
+                  ? _priceController.text.trim()
+                  : '');
+          _variants.add(_VariantItem(name: "Regular", price: defaultPrice, isDefault: true));
+        }
+        _priceController.text = _calculateVariantsPriceRange();
+      } else {
+        if (_savedBasePrice != null && _savedBasePrice!.isNotEmpty) {
+          _priceController.text = _savedBasePrice!;
+        } else if (_variants.isNotEmpty && _variants.first.priceController.text.trim().isNotEmpty) {
+          _priceController.text = _variants.first.priceController.text.trim();
+        }
+      }
+    });
+  }
+
   Widget _buildVariantsSection() {
     return _buildDrawerSection(
       title: "Variants",
@@ -1679,14 +1826,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           GestureDetector(
-            onTap: () {
-              setState(() {
-                _hasVariants = !_hasVariants;
-                if (_hasVariants && _variants.isEmpty) {
-                  _variants.add(_VariantItem(name: "Regular", price: _priceController.text.trim(), isDefault: true));
-                }
-              });
-            },
+            onTap: () => _toggleVariants(!_hasVariants),
             child: Row(
               children: [
                 SizedBox(
@@ -1696,20 +1836,13 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                     value: _hasVariants,
                     activeColor: AppColors.primary,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
-                    onChanged: (val) {
-                      setState(() {
-                        _hasVariants = val ?? false;
-                        if (_hasVariants && _variants.isEmpty) {
-                          _variants.add(_VariantItem(name: "Regular", price: _priceController.text.trim(), isDefault: true));
-                        }
-                      });
-                    },
+                    onChanged: (val) => _toggleVariants(val ?? false),
                   ),
                 ),
                 SizedBox(width: 8.w),
                 Text(
                   "Item has multiple Variants",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF374151),
@@ -1723,22 +1856,28 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "Item Variants",
-                  style: GoogleFonts.nunito(
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF374151),
+                Expanded(
+                  child: Text(
+                    "Item Variants",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.poppins(
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF374151),
+                    ),
                   ),
                 ),
+                SizedBox(width: 8.w),
                 GestureDetector(
                   onTap: () {
                     setState(() {
                       _variants.add(_VariantItem(
                         name: "",
-                        price: _priceController.text.trim(),
+                        price: "",
                         isDefault: _variants.isEmpty,
                       ));
+                      _updatePriceRangeDisplay();
                     });
                   },
                   child: Container(
@@ -1750,9 +1889,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                     ),
                     child: Text(
                       "+ Add Variant",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 10.sp,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
                         color: AppColors.primary,
                       ),
                     ),
@@ -1773,9 +1912,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                   Expanded(
                     child: Text(
                       "VARIANT NAME",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 9.sp,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
                         color: const Color(0xFF9CA3AF),
                       ),
                     ),
@@ -1784,9 +1923,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                     width: 80.w,
                     child: Text(
                       "PRICE (₹)",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 9.sp,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
                         color: const Color(0xFF9CA3AF),
                       ),
                     ),
@@ -1796,9 +1935,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                     child: Text(
                       "DEFAULT",
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 9.sp,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w500,
                         color: const Color(0xFF9CA3AF),
                       ),
                     ),
@@ -1819,7 +1958,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                     Expanded(
                       child: TextFormField(
                         controller: item.nameController,
-                        style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF111827)),
+                        style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF111827)),
                         decoration: _buildInputDecoration(hint: "e.g. Regular / Large"),
                       ),
                     ),
@@ -1829,8 +1968,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                       child: TextFormField(
                         controller: item.priceController,
                         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF111827)),
+                        style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF111827)),
                         decoration: _buildInputDecoration(hint: "0.00"),
+                        onChanged: (_) => _updatePriceRangeDisplay(),
                       ),
                     ),
                     SizedBox(width: 6.w),
@@ -1861,6 +2001,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                           if (wasDefault && _variants.isNotEmpty) {
                             _variants.first.isDefault = true;
                           }
+                          _updatePriceRangeDisplay();
                         });
                       },
                       child: Container(
@@ -1909,9 +2050,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
           ),
           child: Text(
             "+ Add Group",
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 10.sp,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w500,
               color: AppColors.primary,
             ),
           ),
@@ -1925,7 +2066,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
               padding: EdgeInsets.symmetric(vertical: 8.h),
               child: Text(
                 "No add-on groups added yet. Tap '+ Add Group' to create choices like extra toppings, dips, cheese, etc.",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 11.sp,
                   color: const Color(0xFF9CA3AF),
                   fontStyle: FontStyle.italic,
@@ -1957,9 +2098,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                         Expanded(
                           child: TextFormField(
                             controller: group.titleController,
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 12.sp,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w600,
                               color: const Color(0xFF111827),
                             ),
                             decoration: _buildInputDecoration(hint: "Group Title e.g. Add-ons / Dips"),
@@ -1998,16 +2139,16 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                       children: [
                         Text(
                           "Selection Rules:",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 10.sp,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w500,
                             color: const Color(0xFF6B7280),
                           ),
                         ),
                         const Spacer(),
                         Text(
                           "Min",
-                          style: GoogleFonts.nunito(fontSize: 10.sp, color: const Color(0xFF9CA3AF)),
+                          style: GoogleFonts.poppins(fontSize: 10.sp, color: const Color(0xFF9CA3AF)),
                         ),
                         SizedBox(width: 4.w),
                         SizedBox(
@@ -2016,14 +2157,14 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                             controller: group.minController,
                             keyboardType: TextInputType.number,
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.nunito(fontSize: 11.sp, color: const Color(0xFF111827)),
+                            style: GoogleFonts.poppins(fontSize: 11.sp, color: const Color(0xFF111827)),
                             decoration: _buildInputDecoration(hint: "0"),
                           ),
                         ),
                         SizedBox(width: 8.w),
                         Text(
                           "Max",
-                          style: GoogleFonts.nunito(fontSize: 10.sp, color: const Color(0xFF9CA3AF)),
+                          style: GoogleFonts.poppins(fontSize: 10.sp, color: const Color(0xFF9CA3AF)),
                         ),
                         SizedBox(width: 4.w),
                         SizedBox(
@@ -2032,7 +2173,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                             controller: group.maxController,
                             keyboardType: TextInputType.number,
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.nunito(fontSize: 11.sp, color: const Color(0xFF111827)),
+                            style: GoogleFonts.poppins(fontSize: 11.sp, color: const Color(0xFF111827)),
                             decoration: _buildInputDecoration(hint: "1"),
                           ),
                         ),
@@ -2052,9 +2193,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                         Expanded(
                           child: Text(
                             "OPTION NAME",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 9.sp,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: const Color(0xFF9CA3AF),
                             ),
                           ),
@@ -2063,9 +2204,9 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                           width: 80.w,
                           child: Text(
                             "EXTRA PRICE (₹)",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 9.sp,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.w500,
                               color: const Color(0xFF9CA3AF),
                             ),
                           ),
@@ -2087,7 +2228,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                           Expanded(
                             child: TextFormField(
                               controller: choice.nameController,
-                              style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF111827)),
+                              style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF111827)),
                               decoration: _buildInputDecoration(hint: "e.g. Extra Cheese"),
                             ),
                           ),
@@ -2097,7 +2238,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                             child: TextFormField(
                               controller: choice.priceController,
                               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF111827)),
+                              style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF111827)),
                               decoration: _buildInputDecoration(hint: "0.00"),
                             ),
                           ),
@@ -2143,14 +2284,14 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                           children: [
                             Text(
                               "⊕",
-                              style: TextStyle(fontSize: 13.sp, color: AppColors.primary, fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 13.sp, color: AppColors.primary, fontWeight: FontWeight.w600),
                             ),
                             SizedBox(width: 4.w),
                             Text(
                               "Add Choice / Option",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 fontSize: 11.sp,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w500,
                                 color: AppColors.primary,
                               ),
                             ),
@@ -2185,22 +2326,31 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(titleIcon, size: 12.sp, color: const Color(0xFF9CA3AF)),
-                  SizedBox(width: 6.w),
-                  Text(
-                    title.toUpperCase(),
-                    style: GoogleFonts.nunito(
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF9CA3AF),
-                      letterSpacing: 0.6,
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(titleIcon, size: 12.sp, color: const Color(0xFF9CA3AF)),
+                    SizedBox(width: 6.w),
+                    Flexible(
+                      child: Text(
+                        title.toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF9CA3AF),
+                          letterSpacing: 0.6,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              if (headerAction != null) headerAction,
+              if (headerAction != null) ...[
+                SizedBox(width: 8.w),
+                headerAction,
+              ],
             ],
           ),
           SizedBox(height: 10.h),
@@ -2211,33 +2361,42 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
   }
 
   Widget _buildFieldLabel(String label, {bool isRequired = false}) {
-    return RichText(
-      text: TextSpan(
-        text: label,
-        style: GoogleFonts.nunito(
-          fontSize: 10.sp,
-          color: const Color(0xFF6B7280),
-          fontWeight: FontWeight.w500,
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: RichText(
+        text: TextSpan(
+          text: label,
+          style: GoogleFonts.poppins(
+            fontSize: 10.sp,
+            color: const Color(0xFF6B7280),
+            fontWeight: FontWeight.w500,
+          ),
+          children: [
+            if (isRequired)
+              TextSpan(
+                text: " *",
+                style: GoogleFonts.poppins(color: AppColors.primary),
+              ),
+          ],
         ),
-        children: [
-          if (isRequired)
-            TextSpan(
-              text: " *",
-              style: GoogleFonts.nunito(color: AppColors.primary),
-            ),
-        ],
       ),
     );
   }
 
-  InputDecoration _buildInputDecoration({String? hint}) {
+  InputDecoration _buildInputDecoration({String? hint, Color? fillColor, bool? enabled}) {
+    final isFieldEnabled = enabled ?? true;
     return InputDecoration(
       hintText: hint,
-      hintStyle: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
+      hintStyle: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
       isDense: true,
       contentPadding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
       filled: true,
-      fillColor: Colors.white,
+      fillColor: fillColor ?? (isFieldEnabled ? Colors.white : const Color(0xFFF3F4F6)),
+      enabled: isFieldEnabled,
+      disabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8.r),
+        borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
+      ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8.r),
         borderSide: const BorderSide(color: Color(0xFFE5E7EB), width: 1.5),
@@ -2267,7 +2426,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
           alignment: Alignment.center,
           child: Text(
             label,
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 11.sp,
               fontWeight: FontWeight.w600,
               color: isSelected ? color : const Color(0xFF6B7280),
@@ -2307,7 +2466,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
               children: [
                 Text(
                   title,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
@@ -2315,7 +2474,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                 ),
                 Text(
                   subtitle,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 10.sp,
                     color: const Color(0xFF9CA3AF),
                   ),
@@ -2362,15 +2521,17 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
     required String value,
     required List<String> items,
     required ValueChanged<String?> onChanged,
+    bool allowEmpty = false,
+    String? hint,
   }) {
     final uniqueItems = items.where((e) => e.trim().isNotEmpty).toSet().toList();
     final cleanVal = value.trim();
     if (cleanVal.isNotEmpty && !uniqueItems.contains(cleanVal)) {
       uniqueItems.insert(0, cleanVal);
     }
-    final selectedVal = uniqueItems.contains(cleanVal)
+    final String? selectedVal = uniqueItems.contains(cleanVal)
         ? cleanVal
-        : (uniqueItems.isNotEmpty ? uniqueItems.first : null);
+        : (allowEmpty ? null : (uniqueItems.isNotEmpty ? uniqueItems.first : null));
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w),
@@ -2383,14 +2544,38 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
         child: DropdownButton<String>(
           value: selectedVal,
           isExpanded: true,
-          style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF111827)),
+          hint: Text(
+            hint ?? "Select",
+            style: GoogleFonts.poppins(
+              fontSize: 11.5.sp,
+              color: const Color(0xFF9CA3AF),
+              fontWeight: FontWeight.w400,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+          style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF111827)),
           icon: Icon(Icons.keyboard_arrow_down_rounded, size: 16.sp, color: const Color(0xFF9CA3AF)),
-          items: uniqueItems
-              .map((e) => DropdownMenuItem(
-                    value: e,
-                    child: Text(e, overflow: TextOverflow.ellipsis),
-                  ))
-              .toList(),
+          items: [
+            if (allowEmpty && selectedVal != null)
+              DropdownMenuItem<String>(
+                value: '',
+                child: Text(
+                  "None (Unassigned)",
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5.sp,
+                    color: const Color(0xFF9CA3AF),
+                    fontStyle: FontStyle.italic,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ...uniqueItems.map(
+              (e) => DropdownMenuItem<String>(
+                value: e,
+                child: Text(e, overflow: TextOverflow.ellipsis),
+              ),
+            ),
+          ],
           onChanged: onChanged,
         ),
       ),
@@ -2445,7 +2630,7 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
             ],
             Text(
               label,
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 11.sp,
                 fontWeight: FontWeight.w600,
                 color: isSelected ? AppColors.primary : const Color(0xFF6B7280),
@@ -2738,9 +2923,14 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
                 ),
               ),
 
-              // Save Bar Skeleton
+              // Save Bar Skeleton with system navigation bar clearance
               Container(
-                padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 20.h),
+                padding: EdgeInsets.fromLTRB(
+                  16.w,
+                  12.h,
+                  16.w,
+                  12.h + MediaQuery.of(context).padding.bottom,
+                ),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
@@ -2778,6 +2968,427 @@ class _ItemEditSheetState extends State<ItemEditSheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SpecialInstructionsPickerSheet extends StatefulWidget {
+  final List<String> allOptions;
+  final Set<String> selectedInstructions;
+  final VoidCallback onChanged;
+
+  const _SpecialInstructionsPickerSheet({
+    required this.allOptions,
+    required this.selectedInstructions,
+    required this.onChanged,
+  });
+
+  @override
+  State<_SpecialInstructionsPickerSheet> createState() => _SpecialInstructionsPickerSheetState();
+}
+
+class _SpecialInstructionsPickerSheetState extends State<_SpecialInstructionsPickerSheet> {
+  late final TextEditingController _searchCtrl;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final query = _searchQuery.trim().toLowerCase();
+    final filteredOptions = query.isEmpty
+        ? widget.allOptions
+        : widget.allOptions.where((opt) => opt.toLowerCase().contains(query)).toList();
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: bottomInset > 0 ? screenHeight * 0.94 : screenHeight * 0.85,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+      ),
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: EdgeInsets.only(top: 10.h, bottom: 8.h),
+              width: 40.w,
+              height: 4.h,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD1D5DB),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.notes_rounded, size: 18.sp, color: AppColors.primary),
+                      SizedBox(width: 8.w),
+                      Text(
+                        "Special Instructions",
+                        style: GoogleFonts.poppins(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF111827),
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: Color(0xFFE5E7EB)),
+
+            // Search Instructions Field
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 4.h),
+              child: Container(
+                height: 40.h,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(color: const Color(0xFFE5E7EB)),
+                ),
+                child: TextField(
+                  controller: _searchCtrl,
+                  onChanged: (val) {
+                    setState(() {
+                      _searchQuery = val;
+                    });
+                  },
+                  style: GoogleFonts.poppins(
+                    fontSize: 13.sp,
+                    color: const Color(0xFF1F2937),
+                  ),
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: "Search instructions...",
+                    hintStyle: GoogleFonts.poppins(
+                      fontSize: 12.5.sp,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 19.sp,
+                      color: const Color(0xFF9CA3AF),
+                    ),
+                    prefixIconConstraints: BoxConstraints(minWidth: 38.w),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: Icon(
+                              Icons.close_rounded,
+                              size: 16.sp,
+                              color: const Color(0xFF9CA3AF),
+                            ),
+                            onPressed: () {
+                              _searchCtrl.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                            splashRadius: 16.r,
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(vertical: 10.h),
+                  ),
+                ),
+              ),
+            ),
+
+            Expanded(
+              child: filteredOptions.isEmpty
+                  ? Center(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 8.h),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (_searchQuery.trim().isNotEmpty) ...[
+                              InkWell(
+                                onTap: () {
+                                  final newInst = _searchQuery.trim();
+                                  if (newInst.isNotEmpty) {
+                                    HapticFeedback.selectionClick();
+                                    widget.selectedInstructions.add(newInst);
+                                    if (!widget.allOptions.contains(newInst)) {
+                                      widget.allOptions.insert(0, newInst);
+                                    }
+                                    _searchCtrl.clear();
+                                    setState(() {
+                                      _searchQuery = '';
+                                    });
+                                    widget.onChanged();
+                                    ToastService.showSuccess("Added: $newInst");
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(8.r),
+                                child: Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 9.h),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFEF2F2),
+                                    borderRadius: BorderRadius.circular(8.r),
+                                    border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.add_circle_outline_rounded, size: 16.sp, color: AppColors.primary),
+                                      SizedBox(width: 6.w),
+                                      Flexible(
+                                        child: Text(
+                                          "Add \"${_searchQuery.trim()}\"",
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.primary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 6.h),
+                              Text(
+                                "No preset matching \"${_searchQuery.trim()}\"",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 11.5.sp,
+                                  color: const Color(0xFF9CA3AF),
+                                ),
+                              ),
+                            ] else ...[
+                              Icon(Icons.notes_rounded, size: 28.sp, color: const Color(0xFFD1D5DB)),
+                              SizedBox(height: 6.h),
+                              Text(
+                                "No instructions available",
+                                style: GoogleFonts.poppins(
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w500,
+                                  color: const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                      itemCount: filteredOptions.length,
+                      separatorBuilder: (_, __) => SizedBox(height: 6.h),
+                      itemBuilder: (context, idx) {
+                        final opt = filteredOptions[idx];
+                        final isSelected = widget.selectedInstructions.contains(opt);
+                        return InkWell(
+                          borderRadius: BorderRadius.circular(8.r),
+                          onTap: () {
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              if (isSelected) {
+                                widget.selectedInstructions.remove(opt);
+                              } else {
+                                widget.selectedInstructions.add(opt);
+                              }
+                            });
+                            widget.onChanged();
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFFFEF2F2) : const Color(0xFFF9FAFB),
+                              borderRadius: BorderRadius.circular(8.r),
+                              border: Border.all(
+                                color: isSelected ? AppColors.primary : const Color(0xFFE5E7EB),
+                                width: isSelected ? 1.5 : 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  isSelected ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+                                  size: 18.sp,
+                                  color: isSelected ? AppColors.primary : const Color(0xFF9CA3AF),
+                                ),
+                                SizedBox(width: 10.w),
+                                Expanded(
+                                  child: Text(
+                                    opt,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 12.5.sp,
+                                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                                      color: isSelected ? AppColors.primary : const Color(0xFF1F2937),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+
+            // Done Button - positioned cleanly adjacent to bottom navigation without double padding
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 8.h),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    "Done (${widget.selectedInstructions.length} Selected)",
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.5.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AddCustomInstructionDialog extends StatefulWidget {
+  final ValueChanged<String> onAdd;
+
+  const _AddCustomInstructionDialog({required this.onAdd});
+
+  @override
+  State<_AddCustomInstructionDialog> createState() => _AddCustomInstructionDialogState();
+}
+
+class _AddCustomInstructionDialogState extends State<_AddCustomInstructionDialog> {
+  late final TextEditingController _textCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _textCtrl = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _textCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+      title: Row(
+        children: [
+          Icon(Icons.add_circle_outline_rounded, color: AppColors.primary, size: 20.sp),
+          SizedBox(width: 8.w),
+          Text(
+            "Add Custom Instruction",
+            style: GoogleFonts.poppins(fontSize: 15.sp, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Enter special preparation note or kitchen instruction for this item:",
+            style: GoogleFonts.poppins(fontSize: 11.5.sp, color: const Color(0xFF6B7280)),
+          ),
+          SizedBox(height: 10.h),
+          TextField(
+            controller: _textCtrl,
+            autofocus: true,
+            textCapitalization: TextCapitalization.sentences,
+            style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: "e.g. Extra crispy, No salt",
+              hintStyle: GoogleFonts.poppins(fontSize: 12.5.sp, color: const Color(0xFF9CA3AF)),
+              contentPadding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.r),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.r),
+                borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.r),
+                borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            "Cancel",
+            style: GoogleFonts.poppins(color: const Color(0xFF6B7280), fontWeight: FontWeight.w600),
+          ),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            final txt = _textCtrl.text.trim();
+            if (txt.isNotEmpty) {
+              widget.onAdd(txt);
+            }
+            Navigator.pop(context);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+          ),
+          child: Text(
+            "Add",
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: Colors.white),
+          ),
+        ),
+      ],
     );
   }
 }

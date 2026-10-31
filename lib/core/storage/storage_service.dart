@@ -26,11 +26,40 @@ class StorageService extends GetxService {
 
   // --- Restaurant & Business Details ---
   int get restoId => _prefs.getInt('resto_id') ?? 0;
-  String get restoName => _prefs.getString('def_resto') ?? 'Trulyy Tadkaaz';
+  String get restoName => _prefs.getString('def_resto') ?? '';
   String get restoLocation => _prefs.getString('resto_location') ?? '';
+  String get restoAddress => _prefs.getString('resto_address') ?? '';
+  String get restoCity => _prefs.getString('resto_city') ?? '';
+  String get restoPin => _prefs.getString('resto_pin') ?? '';
+  String get restoContact => _prefs.getString('resto_contact') ?? '';
   String get subscription => _prefs.getString('subscription') ?? '';
   String get validity => _prefs.getString('validity') ?? '';
   String get treasureUrl => _prefs.getString('treasure_url') ?? '';
+
+  /// Persist restaurant contact/address metadata from dashboard or menu_builder resto_info
+  Future<void> saveRestoHeaderDetails({
+    String? name,
+    String? contact,
+    String? address,
+    String? city,
+    String? pinCode,
+  }) async {
+    if (name != null && name.trim().isNotEmpty) {
+      await _prefs.setString('def_resto', name.trim());
+    }
+    if (contact != null && contact.trim().isNotEmpty) {
+      await _prefs.setString('resto_contact', contact.trim());
+    }
+    if (address != null && address.trim().isNotEmpty) {
+      await _prefs.setString('resto_address', address.trim());
+    }
+    if (city != null && city.trim().isNotEmpty) {
+      await _prefs.setString('resto_city', city.trim());
+    }
+    if (pinCode != null && pinCode.trim().isNotEmpty) {
+      await _prefs.setString('resto_pin', pinCode.trim());
+    }
+  }
 
   // --- User Profile Details ---
   int get userId => _prefs.getInt('user_id') ?? 0;

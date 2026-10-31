@@ -53,7 +53,12 @@ class TncSheet extends StatelessWidget {
               }
 
               return SingleChildScrollView(
-                padding: EdgeInsets.all(16.w),
+                padding: EdgeInsets.fromLTRB(
+                  16.w,
+                  16.h,
+                  16.w,
+                  24.h + MediaQuery.of(context).padding.bottom,
+                ),
                 physics: const BouncingScrollPhysics(),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,9 +99,9 @@ class TncSheet extends StatelessWidget {
               children: [
                 Text(
                   "Terms Condition Master",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: Colors.white,
                   ),
                 ),
@@ -104,7 +109,7 @@ class TncSheet extends StatelessWidget {
                 Obx(
                   () => Text(
                     "${controller.restoName.value} • Customer Terms & Rules",
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 11.sp,
                       color: Colors.white.withOpacity(0.85),
                       fontWeight: FontWeight.w600,
@@ -135,14 +140,19 @@ class TncSheet extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Terms Condition Master",
-              style: GoogleFonts.nunito(
-                fontSize: 13.5.sp,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF1F2937),
+            Expanded(
+              child: Text(
+                "Terms Condition Master",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.poppins(
+                  fontSize: 13.5.sp,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF1F2937),
+                ),
               ),
             ),
+            SizedBox(width: 8.w),
             // "+ New" Red Pill Button
             ElevatedButton.icon(
               onPressed: () => controller.startNewTnc(),
@@ -158,7 +168,7 @@ class TncSheet extends StatelessWidget {
               icon: Icon(Icons.add_rounded, size: 14.sp),
               label: Text(
                 "New",
-                style: GoogleFonts.nunito(fontSize: 11.5.sp, fontWeight: FontWeight.w700),
+                style: GoogleFonts.poppins(fontSize: 11.5.sp, fontWeight: FontWeight.w600),
               ),
             ),
           ],
@@ -177,7 +187,7 @@ class TncSheet extends StatelessWidget {
             child: Center(
               child: Text(
                 "No terms templates found. Tap + New to create one.",
-                style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
+                style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
               ),
             ),
           )
@@ -241,16 +251,16 @@ class TncSheet extends StatelessWidget {
               children: [
                 Text(
                   item.tncName,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 13.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
                   ),
                 ),
                 SizedBox(height: 2.h),
                 Text(
                   item.formattedDate.isNotEmpty ? item.formattedDate : "Terms Template",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 10.5.sp,
                     color: const Color(0xFF9CA3AF),
                   ),
@@ -297,16 +307,16 @@ class TncSheet extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
         title: Text(
           "Delete Template",
-          style: GoogleFonts.nunito(fontWeight: FontWeight.w800),
+          style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
         ),
         content: Text(
           "Are you sure you want to delete '${item.tncName}'? This action cannot be undone.",
-          style: GoogleFonts.nunito(fontSize: 12.5.sp, color: const Color(0xFF4B5563)),
+          style: GoogleFonts.poppins(fontSize: 12.5.sp, color: const Color(0xFF4B5563)),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: Text("Cancel", style: GoogleFonts.nunito(color: const Color(0xFF6B7280))),
+            child: Text("Cancel", style: GoogleFonts.poppins(color: const Color(0xFF6B7280))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -314,7 +324,7 @@ class TncSheet extends StatelessWidget {
               controller.deleteTnc(item);
             },
             style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444)),
-            child: Text("Delete", style: GoogleFonts.nunito(color: Colors.white)),
+            child: Text("Delete", style: GoogleFonts.poppins(color: Colors.white)),
           ),
         ],
       ),
@@ -350,14 +360,19 @@ class TncSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isEditing ? "Edit Terms & Conditions" : "New Terms & Conditions",
-                style: GoogleFonts.nunito(
-                  fontSize: 13.5.sp,
-                  fontWeight: FontWeight.w800,
-                  color: const Color(0xFF1F2937),
+              Expanded(
+                child: Text(
+                  isEditing ? "Edit Terms & Conditions" : "New Terms & Conditions",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 13.5.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                  ),
                 ),
               ),
+              SizedBox(width: 8.w),
               ElevatedButton(
                 onPressed: isSaving ? null : () => controller.saveTnc(),
                 style: ElevatedButton.styleFrom(
@@ -380,7 +395,7 @@ class TncSheet extends StatelessWidget {
                       )
                     : Text(
                         "Save",
-                        style: GoogleFonts.nunito(fontSize: 12.sp, fontWeight: FontWeight.w700),
+                        style: GoogleFonts.poppins(fontSize: 12.sp, fontWeight: FontWeight.w700),
                       ),
               ),
             ],
@@ -390,7 +405,7 @@ class TncSheet extends StatelessWidget {
           // Name Field
           Text(
             "Name",
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 11.5.sp,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF4B5563),
@@ -405,10 +420,10 @@ class TncSheet extends StatelessWidget {
             ),
             child: TextField(
               controller: controller.tncNameCtrl,
-              style: GoogleFonts.nunito(fontSize: 13.sp, color: const Color(0xFF111827)),
+              style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
               decoration: InputDecoration(
                 hintText: "e.g. Standard T&C",
-                hintStyle: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
+                hintStyle: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF9CA3AF)),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
               ),
@@ -420,14 +435,19 @@ class TncSheet extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Terms & Condition Text",
-                style: GoogleFonts.nunito(
-                  fontSize: 11.5.sp,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF4B5563),
+              Expanded(
+                child: Text(
+                  "Terms & Condition Text",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF4B5563),
+                  ),
                 ),
               ),
+              SizedBox(width: 8.w),
               OutlinedButton.icon(
                 onPressed: () => controller.addTncLine(),
                 style: OutlinedButton.styleFrom(
@@ -440,9 +460,9 @@ class TncSheet extends StatelessWidget {
                 icon: Icon(Icons.add_rounded, size: 13.sp, color: AppColors.primary),
                 label: Text(
                   "Add Line",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 11.sp,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: AppColors.primary,
                   ),
                 ),
@@ -471,10 +491,10 @@ class TncSheet extends StatelessWidget {
                         ),
                         child: TextField(
                           controller: lineCtrl,
-                          style: GoogleFonts.nunito(fontSize: 12.sp, color: const Color(0xFF111827)),
+                          style: GoogleFonts.poppins(fontSize: 12.sp, color: const Color(0xFF111827)),
                           decoration: InputDecoration(
                             hintText: "Enter condition text...",
-                            hintStyle: GoogleFonts.nunito(fontSize: 11.sp, color: const Color(0xFF9CA3AF)),
+                            hintStyle: GoogleFonts.poppins(fontSize: 11.sp, color: const Color(0xFF9CA3AF)),
                             border: InputBorder.none,
                             contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
                           ),

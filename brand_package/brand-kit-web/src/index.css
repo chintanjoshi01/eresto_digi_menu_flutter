@@ -1,0 +1,145 @@
+@import "tailwindcss";
+
+/* Custom Modern CSS for Brand Kit Studio Pro */
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-heading: 'Outfit', 'Poppins', sans-serif;
+  --font-serif: 'Cormorant Garamond', Georgia, serif;
+  --font-mono: 'Fira Code', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background-color: #0b0f19;
+  color: #f1f5f9;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.8);
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-card:hover {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: translateY(-2px);
+}
+
+.glass-input {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+  font-family: var(--font-sans);
+  border-radius: 8px;
+  padding: 8px 12px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+/* Canvas Blueprint Background */
+.canvas-grid-bg {
+  background-color: #0d111c;
+  background-image: 
+    radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.08) 0%, transparent 60%),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 24px 24px, 24px 24px;
+}
+
+/* Shimmer & Glow Effects */
+.glow-primary {
+  box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
+}
+
+.glow-accent {
+  box-shadow: 0 0 25px -5px rgba(234, 179, 8, 0.4);
+}
+
+.text-gradient-primary {
+  background: linear-gradient(135deg, #818cf8 0%, #c084fc 50%, #f472b6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 50%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Micro-animations */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+/* Tab button styling */
+.tab-btn {
+  padding: 8px 16px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+  background: #6366f1;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+}
+
+.tab-btn.inactive {
+  color: #94a3b8;
+}
+
+.tab-btn.inactive:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+}

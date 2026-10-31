@@ -44,18 +44,46 @@ class GalleryRemoteDataSourceImpl implements GalleryRemoteDataSource {
   @override
   Future<List<String>> getGalleryImages() async {
     try {
+      final currentRestoId = Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 0;
+      final payload = <String, dynamic>{};
+      if (currentRestoId > 0) {
+        payload['resto_id'] = currentRestoId;
+        payload['rid'] = currentRestoId;
+      }
+
       final response = await _apiClient.dio.post(
         Endpoints.v6GetGallery,
-        data: {},
+        data: payload,
       );
 
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         final data = response.data as Map<String, dynamic>;
-        if (data['status'] == 1 && data['data'] is List) {
-          return (data['data'] as List)
-              .map((e) => e.toString().trim())
-              .where((e) => e.isNotEmpty)
-              .toList();
+        if (data['status'] == 1) {
+          final rawData = data['data'];
+          if (rawData is List) {
+            return rawData
+                .map((e) {
+                  if (e is Map) {
+                    return (e['image'] ?? e['img'] ?? e['name'] ?? e['filename'] ?? e['file'] ?? '').toString().trim();
+                  }
+                  return e.toString().trim();
+                })
+                .where((e) => e.isNotEmpty)
+                .toList();
+          } else if (rawData is Map<String, dynamic>) {
+            final list = rawData['images'] ?? rawData['gallery'] ?? rawData['gallery_images'] ?? rawData['items'] ?? rawData['files'];
+            if (list is List) {
+              return list
+                  .map((e) {
+                    if (e is Map) {
+                      return (e['image'] ?? e['img'] ?? e['name'] ?? e['filename'] ?? e['file'] ?? '').toString().trim();
+                    }
+                    return e.toString().trim();
+                  })
+                  .where((e) => e.isNotEmpty)
+                  .toList();
+            }
+          }
         }
       }
       return [];
@@ -108,11 +136,13 @@ class GalleryRemoteDataSourceImpl implements GalleryRemoteDataSource {
 
         if (uploadedList.isNotEmpty) {
           final uploadedName = uploadedList.first;
-          final restoId = dataMap['resto_id'] is int
+          final storageRestoId = Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 0;
+          final serverRestoId = dataMap['resto_id'] is int
               ? dataMap['resto_id'] as int
-              : (Get.isRegistered<StorageService>() ? Get.find<StorageService>().restoId : 85);
+              : (int.tryParse(dataMap['resto_id']?.toString() ?? '') ?? 0);
+          final restoId = serverRestoId > 0 ? serverRestoId : (storageRestoId > 0 ? storageRestoId : 0);
 
-          final fullUrl = SessionCardModel.resolveGalleryUrl(uploadedName, restoId);
+          final fullUrl = SessionCardModel.resolveGalleryUrl(uploadedName, restoId > 0 ? restoId : null);
 
           return GalleryUploadResult(
             success: true,

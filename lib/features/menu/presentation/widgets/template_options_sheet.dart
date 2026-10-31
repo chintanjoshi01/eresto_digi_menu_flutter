@@ -107,9 +107,9 @@ class TemplateOptionsSheet extends StatelessWidget {
                   alignment: Alignment.center,
                   child: Text(
                     name.isNotEmpty ? name.substring(0, 1).toUpperCase() : 'M',
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 16.sp,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w600,
                       color: Colors.white,
                     ),
                   ),
@@ -122,16 +122,16 @@ class TemplateOptionsSheet extends StatelessWidget {
                     children: [
                       Text(
                         name,
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 15.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: const Color(0xFF111827),
                         ),
                       ),
                       SizedBox(height: 1.h),
                       Text(
                         subtitle,
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 10.5.sp,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xFF9CA3AF),
@@ -164,7 +164,12 @@ class TemplateOptionsSheet extends StatelessWidget {
           Flexible(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+              padding: EdgeInsets.fromLTRB(
+                14.w,
+                12.h,
+                14.w,
+                16.h + MediaQuery.of(context).padding.bottom,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -182,9 +187,9 @@ class TemplateOptionsSheet extends StatelessWidget {
                       children: [
                         Text(
                           "BASIC SETTINGS",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 9.5.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w500,
                             color: const Color(0xFF6B7280),
                             letterSpacing: 0.4,
                           ),
@@ -201,12 +206,12 @@ class TemplateOptionsSheet extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Menu Type",
-                                    style: GoogleFonts.nunito(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.poppins(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(height: 2.h),
                                   Text(
                                     menuType,
-                                    style: GoogleFonts.nunito(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
+                                    style: GoogleFonts.poppins(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
                                   ),
                                 ],
                               ),
@@ -218,12 +223,12 @@ class TemplateOptionsSheet extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Customer Title",
-                                    style: GoogleFonts.nunito(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.poppins(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(height: 2.h),
                                   Text(
                                     customerTitle,
-                                    style: GoogleFonts.nunito(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
+                                    style: GoogleFonts.poppins(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
                                   ),
                                 ],
                               ),
@@ -239,12 +244,12 @@ class TemplateOptionsSheet extends StatelessWidget {
                           children: [
                             Text(
                               "Tagline",
-                              style: GoogleFonts.nunito(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
+                              style: GoogleFonts.poppins(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
                             ),
                             SizedBox(height: 2.h),
                             Text(
                               tagline,
-                              style: GoogleFonts.nunito(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
+                              style: GoogleFonts.poppins(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
                             ),
                           ],
                         ),
@@ -261,12 +266,12 @@ class TemplateOptionsSheet extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Price List",
-                                    style: GoogleFonts.nunito(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.poppins(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(height: 2.h),
                                   Text(
                                     priceList,
-                                    style: GoogleFonts.nunito(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
+                                    style: GoogleFonts.poppins(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
                                   ),
                                 ],
                               ),
@@ -278,12 +283,12 @@ class TemplateOptionsSheet extends StatelessWidget {
                                 children: [
                                   Text(
                                     "Language",
-                                    style: GoogleFonts.nunito(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
+                                    style: GoogleFonts.poppins(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
                                   ),
                                   SizedBox(height: 2.h),
                                   Text(
                                     language,
-                                    style: GoogleFonts.nunito(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
+                                    style: GoogleFonts.poppins(fontSize: 11.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF111827)),
                                   ),
                                 ],
                               ),
@@ -297,33 +302,40 @@ class TemplateOptionsSheet extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Selected Theme",
-                                  style: GoogleFonts.nunito(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w600),
-                                ),
-                                SizedBox(height: 4.h),
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 11.w,
-                                      height: 11.h,
-                                      decoration: BoxDecoration(
-                                        color: themeColor,
-                                        borderRadius: BorderRadius.circular(2.r),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Selected Theme",
+                                    style: GoogleFonts.poppins(fontSize: 9.sp, color: const Color(0xFF9CA3AF), fontWeight: FontWeight.w500),
+                                  ),
+                                  SizedBox(height: 4.h),
+                                  Row(
+                                    children: [
+                                      Container(
+                                        width: 11.w,
+                                        height: 11.h,
+                                        decoration: BoxDecoration(
+                                          color: themeColor,
+                                          borderRadius: BorderRadius.circular(2.r),
+                                        ),
                                       ),
-                                    ),
-                                    SizedBox(width: 6.w),
-                                    Text(
-                                      themeName,
-                                      style: GoogleFonts.nunito(fontSize: 12.sp, fontWeight: FontWeight.w800, color: const Color(0xFF111827)),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                      SizedBox(width: 6.w),
+                                      Flexible(
+                                        child: Text(
+                                          themeName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.poppins(fontSize: 12.sp, fontWeight: FontWeight.w600, color: const Color(0xFF111827)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
+                            SizedBox(width: 8.w),
 
                             // Change Theme Button
                             InkWell(
@@ -360,7 +372,7 @@ class TemplateOptionsSheet extends StatelessWidget {
                                     SizedBox(width: 5.w),
                                     Text(
                                       "Change Theme",
-                                      style: GoogleFonts.nunito(
+                                      style: GoogleFonts.poppins(
                                         fontSize: 11.sp,
                                         fontWeight: FontWeight.w700,
                                         color: AppColors.primary,
@@ -395,9 +407,9 @@ class TemplateOptionsSheet extends StatelessWidget {
                           children: [
                             Text(
                               "ITEMS & CATEGORIES",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 fontSize: 9.5.sp,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w500,
                                 color: const Color(0xFF6B7280),
                                 letterSpacing: 0.4,
                               ),
@@ -422,12 +434,12 @@ class TemplateOptionsSheet extends StatelessWidget {
                                   children: [
                                     Text(
                                       "ITEM CATEGORIES",
-                                      style: GoogleFonts.nunito(fontSize: 8.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF9CA3AF)),
+                                      style: GoogleFonts.poppins(fontSize: 8.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF9CA3AF)),
                                     ),
                                     SizedBox(height: 2.h),
                                     Text(
                                       "$catsCount picked",
-                                      style: GoogleFonts.nunito(fontSize: 13.sp, fontWeight: FontWeight.w800, color: const Color(0xFF111827)),
+                                      style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF111827)),
                                     ),
                                   ],
                                 ),
@@ -447,12 +459,12 @@ class TemplateOptionsSheet extends StatelessWidget {
                                   children: [
                                     Text(
                                       "ITEMS TOTAL",
-                                      style: GoogleFonts.nunito(fontSize: 8.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF9CA3AF)),
+                                      style: GoogleFonts.poppins(fontSize: 8.5.sp, fontWeight: FontWeight.w700, color: const Color(0xFF9CA3AF)),
                                     ),
                                     SizedBox(height: 2.h),
                                     Text(
                                       "$itemsCount",
-                                      style: GoogleFonts.nunito(fontSize: 13.sp, fontWeight: FontWeight.w800, color: const Color(0xFF111827)),
+                                      style: GoogleFonts.poppins(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF111827)),
                                     ),
                                   ],
                                 ),
@@ -480,9 +492,9 @@ class TemplateOptionsSheet extends StatelessWidget {
                       children: [
                         Text(
                           "DISPLAY SETTINGS ON MENU",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 9.5.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w500,
                             color: const Color(0xFF6B7280),
                             letterSpacing: 0.4,
                           ),
@@ -536,7 +548,7 @@ class _DisplayCheckPill extends StatelessWidget {
           SizedBox(width: 3.w),
           Text(
             label,
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 10.sp,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF15803D),

@@ -1,24 +1,188 @@
+/// Version and upgrade policy information returned from /api/v6/get_dashboard_data
+class V6AppVersionInfo {
+  final int nvId;
+  final String nv;
+  final String msg;
+  final int force;
+
+  const V6AppVersionInfo({
+    required this.nvId,
+    required this.nv,
+    required this.msg,
+    required this.force,
+  });
+
+  const V6AppVersionInfo.empty()
+      : nvId = 0,
+        nv = '',
+        msg = '',
+        force = 0;
+
+  bool get isForceUpgrade => force == 1 || force == 2;
+  bool get hasUpdate => nv.isNotEmpty;
+
+  factory V6AppVersionInfo.fromJson(Map<String, dynamic> json) {
+    return V6AppVersionInfo(
+      nvId: json['nv_id'] is int
+          ? json['nv_id'] as int
+          : int.tryParse(json['nv_id']?.toString() ?? '0') ?? 0,
+      nv: json['nv']?.toString() ?? '',
+      msg: json['msg']?.toString() ?? '',
+      force: json['force'] is int
+          ? json['force'] as int
+          : int.tryParse(json['force']?.toString() ?? '0') ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'nv_id': nvId,
+        'nv': nv,
+        'msg': msg,
+        'force': force,
+      };
+}
+
+/// Enterprise Subscription status and validity details returned from /api/v6/get_dashboard_data
+class V6SubscriptionInfo {
+  final int flag;
+  final String message;
+  final String validity;
+  final int daysLeft;
+  final int extDays;
+  final String extValidity;
+
+  const V6SubscriptionInfo({
+    required this.flag,
+    required this.message,
+    required this.validity,
+    required this.daysLeft,
+    required this.extDays,
+    required this.extValidity,
+  });
+
+  const V6SubscriptionInfo.empty()
+      : flag = 1,
+        message = 'Subscription is active.',
+        validity = '',
+        daysLeft = 365,
+        extDays = 0,
+        extValidity = '';
+
+  /// Flag 1: Active (> 7 days remaining)
+  bool get isActive => flag == 1;
+
+  /// Flag 2: Expiring Soon (0 to 7 days remaining)
+  bool get isExpiringSoon => flag == 2;
+
+  /// Flag 3: Grace Period (Validity expired, but within ext_days)
+  bool get isInGracePeriod => flag == 3;
+
+  /// Flag 0 or 4: Expired (Validity and grace period both elapsed) -> Blocks app
+  bool get isExpired =>
+      flag == 0 ||
+      flag == 4 ||
+      (daysLeft <= 0 && extDays <= 0 && (message.toLowerCase().contains('expired') || flag > 3));
+
+  /// Helper to check if warning banner should be displayed (Flag 2 or Flag 3)
+  bool get shouldShowWarningBanner => isExpiringSoon || isInGracePeriod;
+
+  /// Display text for warning banners or dialogs
+  String get displayMessage {
+    if (message.isNotEmpty) return message;
+    if (isExpired) {
+      return "Subscription has expired. Please renew your subscription to continue using services.";
+    }
+    if (isExpiringSoon) {
+      if (daysLeft <= 0) {
+        return "Your subscription expires today. Please renew now.";
+      } else if (daysLeft == 1) {
+        return "Your subscription will expire tomorrow. Please renew now.";
+      } else {
+        return "Your subscription will expire in $daysLeft days. Please renew now.";
+      }
+    }
+    if (isInGracePeriod) {
+      final days = extDays > 0 ? extDays : daysLeft;
+      return "Subscription expired. Grace period is active for $days more days. Please renew now.";
+    }
+    return "Subscription is active.";
+  }
+
+  factory V6SubscriptionInfo.fromJson(Map<String, dynamic> json) {
+    return V6SubscriptionInfo(
+      flag: json['flag'] is int
+          ? json['flag'] as int
+          : int.tryParse(json['flag']?.toString() ?? '1') ?? 1,
+      message: json['message']?.toString() ?? '',
+      validity: json['validity']?.toString() ?? '',
+      daysLeft: json['days_left'] is int
+          ? json['days_left'] as int
+          : int.tryParse(json['days_left']?.toString() ?? '0') ?? 0,
+      extDays: json['ext_days'] is int
+          ? json['ext_days'] as int
+          : int.tryParse(json['ext_days']?.toString() ?? '0') ?? 0,
+      extValidity: json['ext_validity']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'flag': flag,
+        'message': message,
+        'validity': validity,
+        'days_left': daysLeft,
+        'ext_days': extDays,
+        'ext_validity': extValidity,
+      };
+}
+
 /// Top-level API Response wrapper for /api/v6/get_dashboard_data
 class V6DashboardResponse {
   final int status;
   final String message;
   final V6DashboardData? data;
+  final V6AppVersionInfo? topLevelVersion;
+  final V6SubscriptionInfo? topLevelSubscription;
 
   const V6DashboardResponse({
     required this.status,
     required this.message,
     this.data,
+    this.topLevelVersion,
+    this.topLevelSubscription,
   });
 
   bool get isSuccess => status == 1 && data != null;
 
+  V6AppVersionInfo? get version => data?.version ?? topLevelVersion;
+  bool get isForceUpgrade => version?.isForceUpgrade ?? false;
+  String get upgradeMessage => version?.msg.isNotEmpty == true ? version!.msg : message;
+  String get newVersion => version?.nv ?? '';
+
+  V6SubscriptionInfo? get subscription => data?.subscription ?? topLevelSubscription;
+  bool get isSubscriptionExpired => subscription?.isExpired ?? false;
+
   factory V6DashboardResponse.fromJson(Map<String, dynamic> json) {
+    final rawData = json['data'];
+    final dataMap = rawData is Map<String, dynamic> ? rawData : null;
+
+    final rawVersion = json['version'];
+    final topVer = rawVersion is Map<String, dynamic>
+        ? V6AppVersionInfo.fromJson(rawVersion)
+        : null;
+
+    final rawSub = json['subscription'];
+    final topSub = rawSub is Map<String, dynamic>
+        ? V6SubscriptionInfo.fromJson(rawSub)
+        : null;
+
     return V6DashboardResponse(
-      status: json['status'] is int ? json['status'] : int.tryParse(json['status']?.toString() ?? '0') ?? 0,
+      status: json['status'] is int
+          ? json['status']
+          : int.tryParse(json['status']?.toString() ?? '0') ?? 0,
       message: json['message']?.toString() ?? '',
-      data: json['data'] != null && json['data'] is Map<String, dynamic>
-          ? V6DashboardData.fromJson(json['data'] as Map<String, dynamic>)
-          : null,
+      data: dataMap != null ? V6DashboardData.fromJson(dataMap) : null,
+      topLevelVersion: topVer,
+      topLevelSubscription: topSub,
     );
   }
 
@@ -26,16 +190,22 @@ class V6DashboardResponse {
         'status': status,
         'message': message,
         'data': data?.toJson(),
+        if (topLevelVersion != null) 'version': topLevelVersion?.toJson(),
+        if (topLevelSubscription != null) 'subscription': topLevelSubscription?.toJson(),
       };
 }
 
 /// Main dashboard data payload
 class V6DashboardData {
+  final V6AppVersionInfo? version;
+  final V6SubscriptionInfo? subscription;
   final V6DashboardHero hero;
   final List<V6MenuSessionContainer> menuSessions;
   final V6ScanData scanData;
 
   const V6DashboardData({
+    this.version,
+    this.subscription,
     required this.hero,
     required this.menuSessions,
     required this.scanData,
@@ -44,6 +214,7 @@ class V6DashboardData {
   // --- Convenience Getters for Interoperability ---
   String get restaurantName => hero.restoName;
   String get restaurantUrl => hero.restoSub;
+  List<String> get menuUrls => hero.allMenuUrls;
   bool get isPublished => hero.isPublished;
   int get totalItems => hero.totalItems;
   int get totalCategories => hero.totalCategories;
@@ -73,6 +244,12 @@ class V6DashboardData {
 
   factory V6DashboardData.fromJson(Map<String, dynamic> json) {
     return V6DashboardData(
+      version: json['version'] != null && json['version'] is Map<String, dynamic>
+          ? V6AppVersionInfo.fromJson(json['version'] as Map<String, dynamic>)
+          : null,
+      subscription: json['subscription'] != null && json['subscription'] is Map<String, dynamic>
+          ? V6SubscriptionInfo.fromJson(json['subscription'] as Map<String, dynamic>)
+          : null,
       hero: json['hero'] != null
           ? V6DashboardHero.fromJson(json['hero'] as Map<String, dynamic>)
           : const V6DashboardHero.empty(),
@@ -87,6 +264,8 @@ class V6DashboardData {
   }
 
   Map<String, dynamic> toJson() => {
+        if (version != null) 'version': version!.toJson(),
+        if (subscription != null) 'subscription': subscription!.toJson(),
         'hero': hero.toJson(),
         'menu_sessions': menuSessions.map((e) => e.toJson()).toList(),
         'scan_data': scanData.toJson(),
@@ -99,6 +278,7 @@ class V6DashboardHero {
   final String restoName;
   final String restoSub;
   final String menuUrl;
+  final List<String> menuUrls;
   final bool isPublished;
   final int totalItems;
   final int totalCategories;
@@ -111,6 +291,7 @@ class V6DashboardHero {
     required this.restoName,
     required this.restoSub,
     required this.menuUrl,
+    this.menuUrls = const [],
     required this.isPublished,
     required this.totalItems,
     required this.totalCategories,
@@ -124,6 +305,7 @@ class V6DashboardHero {
         restoName = 'Trulyy Tadkaaz',
         restoSub = 'menu.eresto.in/trulyy-tadkaaz',
         menuUrl = '',
+        menuUrls = const [],
         isPublished = true,
         totalItems = 247,
         totalCategories = 10,
@@ -139,12 +321,60 @@ class V6DashboardHero {
 
   String get deltaText => "${deltaPct >= 0 ? '↑' : '↓'} ${deltaPct.abs()}% vs yesterday";
 
+  /// Unified list of all menu URLs
+  List<String> get allMenuUrls {
+    if (menuUrls.isNotEmpty) return menuUrls;
+    if (menuUrl.isNotEmpty) return [menuUrl];
+    return const [];
+  }
+
   factory V6DashboardHero.fromJson(Map<String, dynamic> json) {
+    // 1. Parse menu_url (supports List<dynamic> from new API and String from legacy API)
+    final List<String> parsedMenuUrls = [];
+    String parsedPrimaryMenuUrl = '';
+
+    final rawMenuUrl = json['menu_url'];
+    if (rawMenuUrl is List) {
+      for (final item in rawMenuUrl) {
+        if (item != null) {
+          // Normalize double slashes e.g. "https://pmenu.eresto.app//vrg/dine-in" -> "https://pmenu.eresto.app/vrg/dine-in"
+          final url = item.toString().replaceAll(RegExp(r'(?<!:)/{2,}'), '/');
+          parsedMenuUrls.add(url);
+        }
+      }
+      if (parsedMenuUrls.isNotEmpty) {
+        parsedPrimaryMenuUrl = parsedMenuUrls.first;
+      }
+    } else if (rawMenuUrl != null && rawMenuUrl.toString().isNotEmpty) {
+      final url = rawMenuUrl.toString().replaceAll(RegExp(r'(?<!:)/{2,}'), '/');
+      parsedPrimaryMenuUrl = url;
+      parsedMenuUrls.add(url);
+    }
+
+    // 2. Parse resto_sub (or cleanly extract domain/slug from menu_url if absent)
+    String parsedRestoSub = json['resto_sub']?.toString() ?? '';
+    if (parsedRestoSub.isEmpty) {
+      if (parsedPrimaryMenuUrl.isNotEmpty) {
+        // e.g. "https://pmenu.eresto.app/vrg/dine-in" -> "pmenu.eresto.app/vrg"
+        final uri = Uri.tryParse(parsedPrimaryMenuUrl);
+        if (uri != null && uri.pathSegments.isNotEmpty) {
+          final firstSeg = uri.pathSegments.first;
+          parsedRestoSub = "${uri.host}/$firstSeg";
+        } else {
+          parsedRestoSub = parsedPrimaryMenuUrl.replaceFirst(RegExp(r'^https?://'), '');
+        }
+      } else {
+        final slug = json['resto_name']?.toString().toLowerCase().replaceAll(RegExp(r'\s+'), '') ?? 'vrg';
+        parsedRestoSub = 'pmenu.eresto.app/$slug';
+      }
+    }
+
     return V6DashboardHero(
       restoId: _asInt(json['resto_id']),
       restoName: json['resto_name']?.toString() ?? 'Trulyy Tadkaaz',
-      restoSub: json['resto_sub']?.toString() ?? 'menu.eresto.in/trulyy-tadkaaz',
-      menuUrl: json['menu_url']?.toString() ?? '',
+      restoSub: parsedRestoSub,
+      menuUrl: parsedPrimaryMenuUrl,
+      menuUrls: parsedMenuUrls,
       isPublished: _asBool(json['is_published']),
       totalItems: _asInt(json['total_items'], defaultValue: 247),
       totalCategories: _asInt(json['total_categories'], defaultValue: 10),
@@ -162,6 +392,7 @@ class V6DashboardHero {
         'resto_name': restoName,
         'resto_sub': restoSub,
         'menu_url': menuUrl,
+        'menu_urls': menuUrls,
         'is_published': isPublished,
         'total_items': totalItems,
         'total_categories': totalCategories,
@@ -195,13 +426,15 @@ class V6HeroBreakdown {
   }
 
   factory V6HeroBreakdown.fromJson(Map<String, dynamic> json) {
+    final rawUrl = json['menu_url']?.toString() ?? '';
+    final cleanUrl = rawUrl.replaceAll(RegExp(r'(?<!:)/{2,}'), '/');
     return V6HeroBreakdown(
       sessionFor: json['session_for']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       scansToday: _asInt(json['scans_today']),
       scansYesterday: _asInt(json['scans_yesterday']),
       sessionsCount: _asInt(json['sessions_count']),
-      menuUrl: json['menu_url']?.toString() ?? '',
+      menuUrl: cleanUrl,
     );
   }
 
@@ -234,11 +467,13 @@ class V6MenuSessionContainer {
   });
 
   factory V6MenuSessionContainer.fromJson(Map<String, dynamic> json) {
+    final rawUrl = json['menu_url']?.toString() ?? '';
+    final cleanUrl = rawUrl.replaceAll(RegExp(r'(?<!:)/{2,}'), '/');
     return V6MenuSessionContainer(
       id: _asInt(json['id']),
       sessionFor: json['session_for']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
-      menuUrl: json['menu_url']?.toString() ?? '',
+      menuUrl: cleanUrl,
       restoInfo: json['resto_info'] != null && json['resto_info'] is Map<String, dynamic>
           ? V6RestoInfo.fromJson(json['resto_info'] as Map<String, dynamic>)
           : null,
@@ -264,11 +499,31 @@ class V6RestoInfo {
   final String title;
   final String subtitle;
   final String logo;
+  final String address;
+  final String city;
+  final String pinCode;
+  final String contactNo;
+  final String whatsappNo;
+  final String location;
+  final String website;
+  final String restoCurrency;
+  final Map<String, dynamic>? smLinks;
+  final Map<String, dynamic>? zsLinks;
 
   const V6RestoInfo({
     required this.title,
     required this.subtitle,
     required this.logo,
+    this.address = '',
+    this.city = '',
+    this.pinCode = '',
+    this.contactNo = '',
+    this.whatsappNo = '',
+    this.location = '',
+    this.website = '',
+    this.restoCurrency = '₹',
+    this.smLinks,
+    this.zsLinks,
   });
 
   factory V6RestoInfo.fromJson(Map<String, dynamic> json) {
@@ -276,6 +531,16 @@ class V6RestoInfo {
       title: json['title']?.toString() ?? json['resto_name']?.toString() ?? '',
       subtitle: json['subtitle']?.toString() ?? json['tag_line']?.toString() ?? '',
       logo: json['logo']?.toString() ?? '',
+      address: json['address']?.toString() ?? '',
+      city: json['city']?.toString() ?? '',
+      pinCode: json['pin_code']?.toString() ?? '',
+      contactNo: json['contact_no']?.toString() ?? '',
+      whatsappNo: json['whatsapp_no']?.toString() ?? '',
+      location: json['location']?.toString() ?? '',
+      website: json['website']?.toString() ?? '',
+      restoCurrency: json['resto_currency']?.toString() ?? '₹',
+      smLinks: json['sm_links'] is Map<String, dynamic> ? json['sm_links'] as Map<String, dynamic> : null,
+      zsLinks: json['zs_links'] is Map<String, dynamic> ? json['zs_links'] as Map<String, dynamic> : null,
     );
   }
 
@@ -283,6 +548,16 @@ class V6RestoInfo {
         'title': title,
         'subtitle': subtitle,
         'logo': logo,
+        'address': address,
+        'city': city,
+        'pin_code': pinCode,
+        'contact_no': contactNo,
+        'whatsapp_no': whatsappNo,
+        'location': location,
+        'website': website,
+        'resto_currency': restoCurrency,
+        'sm_links': smLinks,
+        'zs_links': zsLinks,
       };
 }
 

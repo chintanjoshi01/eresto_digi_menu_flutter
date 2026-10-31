@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -100,8 +101,10 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
       }
     }
 
-    _startTime = sCard?.startTime ?? sLegacy?.startTime ?? '10:30 am';
-    _endTime = sCard?.endTime ?? sLegacy?.endTime ?? '06:30 pm';
+    final rawStart = sCard?.startTime ?? sLegacy?.startTime ?? '10:30 am';
+    final rawEnd = sCard?.endTime ?? sLegacy?.endTime ?? '06:30 pm';
+    _startTime = SessionCardModel.formatTo12Hour(rawStart);
+    _endTime = SessionCardModel.formatTo12Hour(rawEnd);
     _crossesMidnight = sCard?.crossesMidnight ?? false;
     _allowOrders = sCard?.customerOrderEnabled ?? true;
     _hasSplash = sCard?.hasSplash ?? (sLegacy?.isActive ?? true);
@@ -128,10 +131,6 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
     _splashActiveDays = List<String>.from(sCard?.splashActiveDays ?? _allDays);
     if (sCard != null && sCard.splashImages.isNotEmpty) {
       _splashImages = sCard.splashImages.map((img) => SessionCardModel.resolveGalleryUrl(img)).toList();
-    } else if (_hasSplash) {
-      _splashImages = [
-        'https://assets.eresto.app/public/treasure/85/archive/gallery/sp_1768571424_0696a42204fe45.png'
-      ];
     } else {
       _splashImages = [];
     }
@@ -145,10 +144,6 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
     _offerActiveDays = List<String>.from(sCard?.offerActiveDays ?? _allDays);
     if (sCard != null && sCard.offerImages.isNotEmpty) {
       _offerImages = sCard.offerImages.map((img) => SessionCardModel.resolveGalleryUrl(img)).toList();
-    } else if (_hasOffer) {
-      _offerImages = [
-        'https://assets.eresto.app/public/treasure/85/archive/gallery/off_1.webp'
-      ];
     } else {
       _offerImages = [];
     }
@@ -246,8 +241,8 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
         name: _nameController.text.trim(),
         templateName: _selectedTemplate,
         menuTemplateId: _selectedTemplateId,
-        startTime: _startTime,
-        endTime: _endTime,
+        startTime: SessionCardModel.formatTo24Hour(_startTime),
+        endTime: SessionCardModel.formatTo24Hour(_endTime),
         crossesMidnight: _crossesMidnight,
         customerOrderEnabled: _allowOrders,
         hasSplash: _hasSplash,
@@ -270,8 +265,8 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
     } else if (widget.session != null) {
       await _controller.updateSessionSettings(widget.session!.id, {
         'name': _nameController.text.trim(),
-        'start_time': _startTime,
-        'end_time': _endTime,
+        'start_time': SessionCardModel.formatTo24Hour(_startTime),
+        'end_time': SessionCardModel.formatTo24Hour(_endTime),
       });
     }
     if (mounted) {
@@ -299,15 +294,18 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Draggable Top Grab Bar
-          Container(
-            margin: EdgeInsets.only(top: 10.h, bottom: 6.h),
-            width: 44.w,
-            height: 4.5.h,
-            decoration: BoxDecoration(
-              color: const Color(0xFFD1D5DB),
-              borderRadius: BorderRadius.circular(10.r),
+          Center(
+            child: Container(
+              margin: EdgeInsets.only(top: 10.h, bottom: 6.h),
+              width: 44.w,
+              height: 4.5.h,
+              decoration: BoxDecoration(
+                color: const Color(0xFFD1D5DB),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
             ),
           ),
 
@@ -317,28 +315,33 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "SESSIONS",
-                      style: GoogleFonts.nunito(
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                        letterSpacing: 0.5,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "SESSIONS",
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.primary,
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
-                    Text(
-                      title,
-                      style: GoogleFonts.nunito(
-                        fontSize: 17.sp,
-                        fontWeight: FontWeight.w800,
-                        color: const Color(0xFF111827),
+                      Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.poppins(
+                          fontSize: 17.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF111827),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                SizedBox(width: 8.w),
                 GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => Get.back(),
@@ -395,11 +398,21 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
 
           const Divider(height: 1, color: Color(0xFFE5E7EB)),
 
-          // 5. Sticky Bottom Feature Checkboxes & Action Buttons
-          Container(
-            padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 16.h),
-            color: Colors.white,
-            child: Column(
+          // 5. Sticky Bottom Feature Checkboxes & Action Buttons with Android Navigation Bar Clearance
+          Builder(builder: (context) {
+            final bottomInset = math.max(
+              MediaQuery.of(context).viewPadding.bottom,
+              MediaQuery.of(context).padding.bottom,
+            );
+            return Container(
+              padding: EdgeInsets.fromLTRB(
+                16.w,
+                10.h,
+                16.w,
+                math.max(16.h, bottomInset + 12.h),
+              ),
+              color: Colors.white,
+              child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -407,40 +420,36 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildFeatureCheckbox("Allow Orders", _allowOrders, (v) {
-                      setState(() {
-                        _allowOrders = v;
-                        if (!v && _activeTab == 'orders') {
-                          _activeTab = 'details';
-                        }
-                      });
-                    }),
-                    _buildFeatureCheckbox("Splash Screen", _hasSplash, (v) {
-                      setState(() {
-                        _hasSplash = v;
-                        if (v && _splashImages.isEmpty) {
-                          _splashImages = [
-                            'https://assets.eresto.app/public/treasure/85/archive/gallery/sp_1768571424_0696a42204fe45.png'
-                          ];
-                        }
-                        if (!v && _activeTab == 'splash') {
-                          _activeTab = 'details';
-                        }
-                      });
-                    }),
-                    _buildFeatureCheckbox("Special Offer", _hasOffer, (v) {
-                      setState(() {
-                        _hasOffer = v;
-                        if (v && _offerImages.isEmpty) {
-                          _offerImages = [
-                            'https://assets.eresto.app/public/treasure/85/archive/gallery/off_1.webp'
-                          ];
-                        }
-                        if (!v && _activeTab == 'offer') {
-                          _activeTab = 'details';
-                        }
-                      });
-                    }),
+                    Flexible(
+                      child: _buildFeatureCheckbox("Allow Orders", _allowOrders, (v) {
+                        setState(() {
+                          _allowOrders = v;
+                          if (!v && _activeTab == 'orders') {
+                            _activeTab = 'details';
+                          }
+                        });
+                      }),
+                    ),
+                    Flexible(
+                      child: _buildFeatureCheckbox("Splash Screen", _hasSplash, (v) {
+                        setState(() {
+                          _hasSplash = v;
+                          if (!v && _activeTab == 'splash') {
+                            _activeTab = 'details';
+                          }
+                        });
+                      }),
+                    ),
+                    Flexible(
+                      child: _buildFeatureCheckbox("Special Offer", _hasOffer, (v) {
+                        setState(() {
+                          _hasOffer = v;
+                          if (!v && _activeTab == 'offer') {
+                            _activeTab = 'details';
+                          }
+                        });
+                      }),
+                    ),
                   ],
                 ),
                 SizedBox(height: 10.h),
@@ -459,7 +468,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                         ),
                         child: Text(
                           "Cancel",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF4B5563),
@@ -498,7 +507,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                             ],
                             Text(
                               _isSaving ? "Saving..." : "Save Session",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 fontSize: 13.5.sp,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
@@ -512,7 +521,8 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                 ),
               ],
             ),
-          ),
+          );
+        }),
         ],
       ),
     );
@@ -588,9 +598,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                   SizedBox(width: 6.w),
                   Text(
                     "BASIC SESSION INFO",
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 10.sp,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w500,
                       color: AppColors.primary,
                       letterSpacing: 0.4,
                     ),
@@ -602,9 +612,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               // Field 1: SESSION NAME
               Text(
                 "SESSION NAME *",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.5.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.3,
                 ),
@@ -619,7 +629,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                 ),
                 child: TextField(
                   controller: _nameController,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF111827),
@@ -637,9 +647,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               // Field 2: SELECT TEMPLATE
               Text(
                 "SELECT TEMPLATE *",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.5.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.3,
                 ),
@@ -658,7 +668,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                     ),
                     child: Text(
                       _selectedTemplate.isNotEmpty ? _selectedTemplate : "Loading templates...",
-                      style: GoogleFonts.nunito(
+                      style: GoogleFonts.poppins(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w700,
                         color: const Color(0xFF111827),
@@ -694,7 +704,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                               Expanded(
                                 child: Text(
                                   tmpl.name,
-                                  style: GoogleFonts.nunito(
+                                  style: GoogleFonts.poppins(
                                     fontSize: 13.sp,
                                     fontWeight: FontWeight.w700,
                                     color: const Color(0xFF111827),
@@ -713,7 +723,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                                   ),
                                   child: Text(
                                     tmpl.themeName.replaceFirst('Theme: ', '').trim(),
-                                    style: GoogleFonts.nunito(
+                                    style: GoogleFonts.poppins(
                                       fontSize: 10.sp,
                                       color: const Color(0xFF6B7280),
                                       fontWeight: FontWeight.w600,
@@ -744,6 +754,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
 
               // Field 3: START TIME & END TIME
               Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
@@ -751,9 +762,11 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                       children: [
                         Text(
                           "START TIME *",
-                          style: GoogleFonts.nunito(
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
                             fontSize: 9.5.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w500,
                             color: const Color(0xFF6B7280),
                             letterSpacing: 0.3,
                           ),
@@ -763,7 +776,8 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                           behavior: HitTestBehavior.opaque,
                           onTap: () => _pickTime(true),
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                            height: 40.h,
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(8.r),
@@ -771,15 +785,24 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Text(
-                                  _startTime,
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 12.5.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF111827),
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      _startTime,
+                                      maxLines: 1,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12.5.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                SizedBox(width: 6.w),
                                 Icon(Icons.access_time_rounded, size: 16.sp, color: const Color(0xFF9CA3AF)),
                               ],
                             ),
@@ -795,9 +818,11 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                       children: [
                         Text(
                           "END TIME *",
-                          style: GoogleFonts.nunito(
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.poppins(
                             fontSize: 9.5.sp,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w500,
                             color: const Color(0xFF6B7280),
                             letterSpacing: 0.3,
                           ),
@@ -807,7 +832,8 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                           behavior: HitTestBehavior.opaque,
                           onTap: () => _pickTime(false),
                           child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+                            height: 40.h,
+                            padding: EdgeInsets.symmetric(horizontal: 12.w),
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(8.r),
@@ -815,15 +841,24 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Text(
-                                  _endTime,
-                                  style: GoogleFonts.nunito(
-                                    fontSize: 12.5.sp,
-                                    fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF111827),
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      _endTime,
+                                      maxLines: 1,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12.5.sp,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
                                   ),
                                 ),
+                                SizedBox(width: 6.w),
                                 Icon(Icons.access_time_rounded, size: 16.sp, color: const Color(0xFF9CA3AF)),
                               ],
                             ),
@@ -837,30 +872,35 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               SizedBox(height: 10.h),
 
               // Checkbox: Session crosses midnight
-              Row(
-                children: [
-                  SizedBox(
-                    width: 22.w,
-                    height: 22.h,
-                    child: Checkbox(
-                      value: _crossesMidnight,
-                      activeColor: AppColors.primary,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
-                      onChanged: (val) => setState(() => _crossesMidnight = val ?? false),
-                    ),
-                  ),
-                  SizedBox(width: 6.w),
-                  Expanded(
-                    child: Text(
-                      "Session crosses midnight (e.g. 11:00 PM – 07:00 AM)",
-                      style: GoogleFonts.nunito(
-                        fontSize: 10.5.sp,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF4B5563),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _crossesMidnight = !_crossesMidnight),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 22.w,
+                      height: 22.h,
+                      child: Checkbox(
+                        value: _crossesMidnight,
+                        activeColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
+                        onChanged: (val) => setState(() => _crossesMidnight = val ?? false),
                       ),
                     ),
-                  ),
-                ],
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        "Session crosses midnight (e.g. 11:00 PM – 07:00 AM)",
+                        style: GoogleFonts.poppins(
+                          fontSize: 10.5.sp,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF4B5563),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: 12.h),
 
@@ -883,16 +923,16 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                         children: [
                           Text(
                             "Need Help?",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 11.sp,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                               color: const Color(0xFF9A3412),
                             ),
                           ),
                           SizedBox(height: 1.h),
                           Text(
                             "Set up your session details and configure features for a seamless customer ordering experience.",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 10.sp,
                               fontWeight: FontWeight.w500,
                               color: const Color(0xFFC2410C),
@@ -933,9 +973,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
             children: [
               Text(
                 "TARGET ORDER SECTION",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.4,
                 ),
@@ -973,14 +1013,17 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Enable Geo Fencing for ${_getChannelDisplayName(_selectedOrderChannel)}",
-                style: GoogleFonts.nunito(
-                  fontSize: 11.5.sp,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1F2937),
+              Expanded(
+                child: Text(
+                  "Enable Geo Fencing for ${_getChannelDisplayName(_selectedOrderChannel)}",
+                  style: GoogleFonts.poppins(
+                    fontSize: 11.5.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF1F2937),
+                  ),
                 ),
               ),
+              SizedBox(width: 8.w),
               SizedBox(
                 width: 20.w,
                 height: 20.h,
@@ -1010,9 +1053,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
             children: [
               Text(
                 "SUBMIT ${_getChannelDisplayName(_selectedOrderChannel).toUpperCase()} ORDERS ON *",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.3,
                 ),
@@ -1033,7 +1076,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                   child: TextField(
                     controller: _whatsappController,
                     keyboardType: TextInputType.phone,
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF111827),
@@ -1066,9 +1109,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
             children: [
               Text(
                 "MANDATORY CUSTOMER FIELDS",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.3,
                 ),
@@ -1128,9 +1171,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
             children: [
               Text(
                 "SUBMIT ORDER RESPONSE TEXT",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.3,
                 ),
@@ -1146,7 +1189,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                 child: TextField(
                   controller: _responseMsgController,
                   maxLines: 3,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 11.sp,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
@@ -1188,14 +1231,19 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Selected Images (Max 3)",
-                    style: GoogleFonts.nunito(
-                      fontSize: 11.5.sp,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF111827),
+                  Expanded(
+                    child: Text(
+                      "Selected Images (Max 3)",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11.5.sp,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF111827),
+                      ),
                     ),
                   ),
+                  SizedBox(width: 8.w),
                   GestureDetector(
                     onTap: () => _openGallery(mode: 'splash', maxCount: 3),
                     child: Container(
@@ -1207,9 +1255,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                       ),
                       child: Text(
                         "+ Select from Gallery",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 10.sp,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.primary,
                         ),
                       ),
@@ -1251,9 +1299,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               // DISPLAY DURATION PER IMAGE *
               Text(
                 "DISPLAY DURATION PER IMAGE *",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.3,
                 ),
@@ -1275,7 +1323,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                       children: [
                         Text(
                           "$_splashDuration",
-                          style: GoogleFonts.nunito(
+                          style: GoogleFonts.poppins(
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF111827),
@@ -1308,7 +1356,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                   SizedBox(width: 8.w),
                   Text(
                     "seconds (Max 30)",
-                    style: GoogleFonts.nunito(
+                    style: GoogleFonts.poppins(
                       fontSize: 10.5.sp,
                       fontWeight: FontWeight.w600,
                       color: const Color(0xFF6B7280),
@@ -1321,9 +1369,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               // ACTIVE ON DAYS
               Text(
                 "ACTIVE ON DAYS",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.3,
                 ),
@@ -1361,9 +1409,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               // OFFER TITLE *
               Text(
                 "OFFER TITLE *",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.3,
                 ),
@@ -1378,7 +1426,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                 ),
                 child: TextField(
                   controller: _offerTitleController,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 12.5.sp,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF111827),
@@ -1396,9 +1444,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               // ACTIVE ON DAYS
               Text(
                 "ACTIVE ON DAYS",
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.sp,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w500,
                   color: const Color(0xFF6B7280),
                   letterSpacing: 0.3,
                 ),
@@ -1413,14 +1461,19 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Offer Images (Max 10)",
-                    style: GoogleFonts.nunito(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF111827),
+                  Expanded(
+                    child: Text(
+                      "Offer Images (Max 10)",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.poppins(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF111827),
+                      ),
                     ),
                   ),
+                  SizedBox(width: 8.w),
                   GestureDetector(
                     onTap: () => _openGallery(mode: 'offer', maxCount: 10),
                     child: Container(
@@ -1432,9 +1485,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                       ),
                       child: Text(
                         "Select from Gallery",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 10.sp,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w500,
                           color: AppColors.primary,
                         ),
                       ),
@@ -1523,9 +1576,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
             ],
             Text(
               label,
-              style: GoogleFonts.nunito(
+              style: GoogleFonts.poppins(
                 fontSize: 10.5.sp,
-                fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
                 color: isSel ? AppColors.primary : const Color(0xFF4B5563),
               ),
             ),
@@ -1564,9 +1617,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
             Expanded(
               child: Text(
                 label,
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 11.sp,
-                  fontWeight: isSel ? FontWeight.w800 : FontWeight.w600,
+                  fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
                   color: isSel ? AppColors.primary : const Color(0xFF374151),
                 ),
               ),
@@ -1624,7 +1677,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
           SizedBox(width: 8.w),
           Text(
             label,
-            style: GoogleFonts.nunito(
+            style: GoogleFonts.poppins(
               fontSize: 11.sp,
               fontWeight: FontWeight.w700,
               color: const Color(0xFF374151),
@@ -1652,7 +1705,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
         SizedBox(width: 6.w),
         Text(
           label,
-          style: GoogleFonts.nunito(
+          style: GoogleFonts.poppins(
             fontSize: 10.5.sp,
             fontWeight: FontWeight.w600,
             color: const Color(0xFF4B5563),
@@ -1689,9 +1742,9 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
               ),
               child: Text(
                 day,
-                style: GoogleFonts.nunito(
+                style: GoogleFonts.poppins(
                   fontSize: 9.5.sp,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   color: isDayActive ? Colors.white : const Color(0xFF6B7280),
                 ),
               ),
@@ -1703,29 +1756,40 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
   }
 
   Widget _buildFeatureCheckbox(String label, bool value, ValueChanged<bool> onChanged) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 20.w,
-          height: 20.h,
-          child: Checkbox(
-            value: value,
-            activeColor: AppColors.primary,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3.r)),
-            onChanged: (v) => onChanged(v ?? false),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onChanged(!value),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 20.w,
+            height: 20.h,
+            child: Checkbox(
+              value: value,
+              activeColor: AppColors.primary,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              visualDensity: VisualDensity.compact,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(3.r)),
+              onChanged: (v) => onChanged(v ?? false),
+            ),
           ),
-        ),
-        SizedBox(width: 4.w),
-        Text(
-          label,
-          style: GoogleFonts.nunito(
-            fontSize: 10.sp,
-            fontWeight: FontWeight.w700,
-            color: const Color(0xFF374151),
+          SizedBox(width: 5.w),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.poppins(
+                fontSize: 10.5.sp,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF374151),
+              ),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1749,6 +1813,8 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
             CachedNetworkImage(
               imageUrl: cleanUrl,
               fit: BoxFit.cover,
+              memCacheWidth: 400,
+              memCacheHeight: 400,
               placeholder: (context, url) => Container(
                 color: const Color(0xFFF3F4F6),
                 child: const Center(
@@ -1774,7 +1840,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 9.sp,
                           fontWeight: FontWeight.w700,
                           color: const Color(0xFF9A3412),
@@ -1827,7 +1893,7 @@ class _SessionEditSheetState extends State<SessionEditSheet> {
                 SizedBox(height: 2.h),
                 Text(
                   label,
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 8.5.sp,
                     fontWeight: FontWeight.w600,
                     color: const Color(0xFF9CA3AF),

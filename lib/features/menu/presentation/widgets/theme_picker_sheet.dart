@@ -237,7 +237,7 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                             children: [
                               Text(
                                 "Menu Templates",
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 11.sp,
                                   color: const Color(0xFF9CA3AF),
                                   fontWeight: FontWeight.w600,
@@ -245,9 +245,9 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                               ),
                               Text(
                                 widget.template.name,
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 15.sp,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w600,
                                   color: const Color(0xFF111827),
                                 ),
                               ),
@@ -285,7 +285,7 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                           Expanded(
                             child: Text(
                               "You are changing the theme for this template. Sessions using this template will reflect the new theme.",
-                              style: GoogleFonts.nunito(
+                              style: GoogleFonts.poppins(
                                 fontSize: 11.sp,
                                 color: const Color(0xFF6B7280),
                                 fontWeight: FontWeight.w500,
@@ -311,9 +311,9 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                     children: [
                       Text(
                         "SELECT THEME",
-                        style: GoogleFonts.nunito(
+                        style: GoogleFonts.poppins(
                           fontSize: 10.sp,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w600,
                           color: const Color(0xFF6B7280),
                           letterSpacing: 0.5,
                         ),
@@ -413,9 +413,9 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                                           SizedBox(height: 5.h),
                                           Text(
                                             theme.name,
-                                            style: GoogleFonts.nunito(
+                                            style: GoogleFonts.poppins(
                                               fontSize: 10.sp,
-                                              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
+                                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                                               color: isSelected ? const Color(0xFF111827) : const Color(0xFF4B5563),
                                             ),
                                             textAlign: TextAlign.center,
@@ -426,7 +426,7 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                                             SizedBox(height: 2.h),
                                             Text(
                                               "Selected",
-                                              style: GoogleFonts.nunito(
+                                              style: GoogleFonts.poppins(
                                                 fontSize: 8.5.sp,
                                                 fontWeight: FontWeight.w700,
                                                 color: AppColors.primary,
@@ -448,16 +448,19 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                 ),
               ),
 
-              // Bottom Fixed Action Bar
+              // Bottom Fixed Action Bar with system navigation clearance
               Container(
-                padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 12.h),
+                padding: EdgeInsets.fromLTRB(
+                  16.w,
+                  10.h,
+                  16.w,
+                  12.h + MediaQuery.of(context).padding.bottom,
+                ),
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   border: Border(top: BorderSide(color: Color(0xFFF3F4F6))),
                 ),
-                child: SafeArea(
-                  top: false,
-                  child: Row(
+                child: Row(
                     children: [
                       Expanded(
                         child: OutlinedButton(
@@ -472,7 +475,7 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                           ),
                           child: Text(
                             "Cancel",
-                            style: GoogleFonts.nunito(
+                            style: GoogleFonts.poppins(
                               fontSize: 13.sp,
                               fontWeight: FontWeight.w700,
                             ),
@@ -500,9 +503,9 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                               SizedBox(width: 6.w),
                               Text(
                                 "Apply Theme",
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 13.sp,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
@@ -512,9 +515,8 @@ class _ThemePickerSheetState extends State<ThemePickerSheet> {
                     ],
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ),
       ),
     );

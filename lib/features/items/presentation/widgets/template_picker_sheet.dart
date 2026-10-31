@@ -131,16 +131,16 @@ class _TemplatePickerSheetState extends State<TemplatePickerSheet> {
               children: [
                 Text(
                   "Select Template",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 15.sp,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w600,
                     color: const Color(0xFF111827),
                   ),
                 ),
                 SizedBox(height: 2.h),
                 Text(
                   "Items shown are scoped to the selected template",
-                  style: GoogleFonts.nunito(
+                  style: GoogleFonts.poppins(
                     fontSize: 11.sp,
                     color: const Color(0xFF6B7280),
                   ),
@@ -156,7 +156,9 @@ class _TemplatePickerSheetState extends State<TemplatePickerSheet> {
             child: ListView.separated(
               shrinkWrap: true,
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.only(bottom: 24.h),
+              padding: EdgeInsets.only(
+                bottom: 16.h + MediaQuery.of(context).padding.bottom,
+              ),
               itemCount: _templates.length,
               separatorBuilder: (context, index) => const Divider(
                 height: 1,
@@ -205,7 +207,7 @@ class _TemplatePickerSheetState extends State<TemplatePickerSheet> {
                             children: [
                               Text(
                                 item.name,
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w700,
                                   color: const Color(0xFF111827),
@@ -214,7 +216,7 @@ class _TemplatePickerSheetState extends State<TemplatePickerSheet> {
                               SizedBox(height: 2.h),
                               Text(
                                 item.details,
-                                style: GoogleFonts.nunito(
+                                style: GoogleFonts.poppins(
                                   fontSize: 10.sp,
                                   color: const Color(0xFF6B7280),
                                 ),
@@ -277,7 +279,7 @@ class _TemplatePickerSheetState extends State<TemplatePickerSheet> {
       ),
       child: Text(
         priceList,
-        style: GoogleFonts.nunito(
+        style: GoogleFonts.poppins(
           fontSize: 9.sp,
           fontWeight: FontWeight.w600,
           color: fg,

@@ -13,15 +13,8 @@ class AppTheme {
           foregroundColor: AppColors.text,
           elevation: 0,
           scrolledUnderElevation: 0,
-          titleTextStyle: AppTypography.h3,
+          titleTextStyle: AppTypography.titleLarge,
         ),
-        textTheme: TextTheme(
-          displayLarge: AppTypography.h1,
-          displayMedium: AppTypography.h2,
-          displaySmall: AppTypography.h3,
-          bodyLarge: AppTypography.bodyLarge,
-          bodyMedium: AppTypography.bodyMedium,
-          bodySmall: AppTypography.bodySmall,
-        ),
+        textTheme: AppTypography.textTheme,
       );
 }

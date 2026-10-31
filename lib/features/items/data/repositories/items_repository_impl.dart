@@ -18,6 +18,11 @@ class ItemsRepositoryImpl implements ItemsRepository {
 
   static final Map<String, int> _categoryNameToId = {};
 
+  /// Clears in-memory category lookup cache on logout
+  static void clearCache() {
+    _categoryNameToId.clear();
+  }
+
   @override
   Map<String, int> get categoryNameToId => Map.unmodifiable(_categoryNameToId);
 
@@ -27,6 +32,183 @@ class ItemsRepositoryImpl implements ItemsRepository {
     this._storageService,
   );
 
+  // --------------------------------------------------------------------------
+  // Private Isar Cache Helpers (Accept Non-Nullable Isar)
+  // --------------------------------------------------------------------------
+
+  static Future<List<MenuItemCollection>> _queryCachedItems(
+    Isar isar, {
+    String? category,
+    String? search,
+  }) async {
+    final Isar db1 = isar;
+    var query = db1.menuItemCollections.where();
+    List<MenuItemCollection> list;
+    if (search != null && search.trim().isNotEmpty) {
+      list = await query.filter().nameContains(search.trim(), caseSensitive: false).findAll();
+    } else {
+      list = await query.findAll();
+    }
+
+    if (category != null && category.trim().isNotEmpty) {
+      list = list.where((item) => item.itemGroup.toUpperCase() == category.trim().toUpperCase()).toList();
+    }
+
+    return list;
+  }
+
+  Future<void> _saveCategoriesToIsar(
+    Isar isar,
+    List<V6MenuCategory> categories,
+  ) async {
+    final Isar db1 = isar;
+    final treasureUrl = _storageService.treasureUrl;
+    final syncData = _storageService.cachedLoginSyncData;
+
+    final existingItems = await db1.menuItemCollections.where().findAll();
+    final existingMap = {for (final e in existingItems) e.remoteId: e};
+
+    final recordsToSave = <MenuItemCollection>[];
+    final seenIds = <int>{};
+
+    for (final cat in categories) {
+      final catName = cat.categoryName.trim();
+      final catNameUpper = catName.toUpperCase();
+      if (cat.itemCatId == -1 || catNameUpper == 'FSI') continue;
+      if (cat.itemCatId > 0 && catNameUpper.isNotEmpty) {
+        _categoryNameToId[catNameUpper] = cat.itemCatId;
+      }
+
+      for (final item in cat.items) {
+        if (seenIds.contains(item.id)) continue;
+        seenIds.add(item.id);
+
+        if (item.itemCatId > 0 && catNameUpper.isNotEmpty) {
+          _categoryNameToId[catNameUpper] = item.itemCatId;
+        }
+
+        final existing = existingMap[item.id];
+        final kitchenName = syncData?.getKitchenCategoryName(item.kitchenCatId);
+        final salesName = syncData?.getSalesCategoryName(item.itemSalesCatId);
+        final taxName = syncData?.getTaxTemplateName(item.taxTmplMastId);
+
+        final dbRecord = item.toIsarCollection(
+          categoryName: catName,
+          treasureUrl: (item.baseUrl != null && item.baseUrl!.isNotEmpty)
+              ? item.baseUrl
+              : treasureUrl,
+          kitchenCategoryName: kitchenName,
+          salesCategoryName: salesName,
+          taxTemplateName: taxName,
+          existingRecord: existing,
+        );
+
+        recordsToSave.add(dbRecord);
+      }
+    }
+
+    final idsToDelete = existingItems
+        .where((e) => !seenIds.contains(e.remoteId))
+        .map((e) => e.id)
+        .toList();
+
+    final Isar db2 = isar;
+    await db2.writeTxn(() async {
+      final Isar innerDb = db2;
+      if (idsToDelete.isNotEmpty) {
+        await innerDb.menuItemCollections.deleteAll(idsToDelete);
+      }
+      await innerDb.menuItemCollections.putAll(recordsToSave);
+    });
+  }
+
+  static Future<String> _getItemCategoryFromIsar(Isar isar, int itemId) async {
+    final Isar db1 = isar;
+    final existing = await db1.menuItemCollections
+        .filter()
+        .remoteIdEqualTo(itemId)
+        .findFirst();
+    return existing?.itemGroup ?? '';
+  }
+
+  static Future<MenuItemCollection?> _getExistingRecordFromIsar(Isar isar, int itemId) async {
+    final Isar db1 = isar;
+    return await db1.menuItemCollections
+        .filter()
+        .remoteIdEqualTo(itemId)
+        .findFirst();
+  }
+
+  static Future<void> _updateItemRecordInIsar(Isar isar, int itemId, ItemModel model) async {
+    final Isar db1 = isar;
+    final existing = await db1.menuItemCollections
+        .filter()
+        .remoteIdEqualTo(itemId)
+        .findFirst();
+    if (existing != null) {
+      final rec = existing;
+      final Isar db2 = isar;
+      await db2.writeTxn(() async {
+        final Isar innerDb = db2;
+        rec.name = model.name;
+        rec.shortCode = model.shortCode;
+        rec.price = model.price;
+        rec.isAvailable = model.isAvailable;
+        rec.isFrequentlySold = model.isFrequentlySold;
+        rec.vegType = model.vegType;
+        rec.portion = model.portion;
+        rec.calorificValue = model.calorificValue;
+        rec.serviceTime = model.serviceTime;
+        rec.ingredients = model.ingredients;
+        rec.shortDescription = model.shortDescription;
+        rec.itemGroup = model.itemGroup;
+        rec.taxTemplate = model.taxTemplate;
+        rec.kitchenCategory = model.kitchenCategory;
+        rec.salesCategory = model.salesCategory;
+        rec.dietaryTags = model.dietaryTags;
+        rec.allergens = model.allergens;
+        rec.variantsJson = model.variantsJson;
+        rec.addonsJson = model.addonsJson;
+        rec.specialInstructions = model.specialInstructions;
+        if (model.imageUrl != null) rec.imageUrl = model.imageUrl;
+        await innerDb.menuItemCollections.put(rec);
+      });
+    }
+  }
+
+  static Future<void> _saveItemToIsar(
+    Isar isar,
+    V6ApiMenuItem created,
+    String catName,
+    String treasureUrl,
+  ) async {
+    final Isar db1 = isar;
+    final dbRecord = created.toIsarCollection(
+      categoryName: catName,
+      treasureUrl: treasureUrl,
+    );
+    await db1.writeTxn(() async {
+      final Isar innerDb = db1;
+      await innerDb.menuItemCollections.put(dbRecord);
+    });
+  }
+
+  static Future<void> _deleteItemFromIsar(Isar isar, int id) async {
+    final Isar db1 = isar;
+    final existing = await db1.menuItemCollections.filter().remoteIdEqualTo(id).findFirst();
+    if (existing != null) {
+      final Isar db2 = isar;
+      await db2.writeTxn(() async {
+        final Isar innerDb = db2;
+        await innerDb.menuItemCollections.delete(existing.id);
+      });
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Repository Interface Implementation
+  // --------------------------------------------------------------------------
+
   @override
   Future<Either<ApiException, List<ItemModel>>> getItems({
     String? category,
@@ -34,14 +216,14 @@ class ItemsRepositoryImpl implements ItemsRepository {
     int? ptId,
     bool forceRefresh = false,
   }) async {
-    final isar = _dbService.isar;
-
-    // 1. OFFLINE-FIRST: Read from local Isar cache immediately
-    if (!forceRefresh) {
-      final cachedList = await _queryCachedItems(isar, category: category, search: search);
-      if (cachedList.isNotEmpty) {
-        return Right(cachedList.map((e) => _mapToModel(e)).toList());
-      }
+    // 1. OFFLINE-FIRST: Read from local Isar cache immediately if available
+    if (!forceRefresh && _dbService.isReady) {
+      try {
+        final cachedList = await _queryCachedItems(_dbService.isar!, category: category, search: search);
+        if (cachedList.isNotEmpty) {
+          return Right(cachedList.map((e) => _mapToModel(e)).toList());
+        }
+      } catch (_) {}
     }
 
     // 2. Network Sync: Fetch from remote V6 endpoint
@@ -52,22 +234,74 @@ class ItemsRepositoryImpl implements ItemsRepository {
       );
 
       if (remoteCategories.isNotEmpty) {
-        await _cacheCategoriesAndItems(isar, remoteCategories);
-        final freshCached = await _queryCachedItems(isar, category: category, search: search);
-        return Right(freshCached.map((e) => _mapToModel(e)).toList());
+        if (_dbService.isReady) {
+          try {
+            await _saveCategoriesToIsar(_dbService.isar!, remoteCategories);
+            final freshCached = await _queryCachedItems(_dbService.isar!, category: category, search: search);
+            if (freshCached.isNotEmpty) {
+              return Right(freshCached.map((e) => _mapToModel(e)).toList());
+            }
+          } catch (_) {
+            // Fall through to direct in-memory mapping if Isar write/read fails
+          }
+        }
+
+        // Direct in-memory mapping fallback if Isar is unavailable or cache query yielded empty
+        final syncData = _storageService.cachedLoginSyncData;
+        final remoteModels = <ItemModel>[];
+        final seenIds = <int>{};
+        for (final cat in remoteCategories) {
+          final catName = cat.categoryName.trim();
+          final catNameUpper = catName.toUpperCase();
+          if (cat.itemCatId == -1 || catNameUpper == 'FSI') continue;
+          if (cat.itemCatId > 0 && catNameUpper.isNotEmpty) {
+            _categoryNameToId[catNameUpper] = cat.itemCatId;
+          }
+          for (final item in cat.items) {
+            if (seenIds.contains(item.id)) continue;
+            seenIds.add(item.id);
+            if (item.itemCatId > 0 && catNameUpper.isNotEmpty) {
+              _categoryNameToId[catNameUpper] = item.itemCatId;
+            }
+            final kitchenName = syncData?.getKitchenCategoryName(item.kitchenCatId);
+            final salesName = syncData?.getSalesCategoryName(item.itemSalesCatId);
+            final taxName = syncData?.getTaxTemplateName(item.taxTmplMastId);
+
+            final model = item.toItemModel(
+              categoryName: catName,
+              treasureUrl: (item.baseUrl != null && item.baseUrl!.isNotEmpty)
+                  ? item.baseUrl
+                  : _storageService.treasureUrl,
+              kitchenCategoryName: kitchenName,
+              salesCategoryName: salesName,
+              taxTemplateName: taxName,
+            );
+            remoteModels.add(model);
+          }
+        }
+        return Right(remoteModels);
       }
     } catch (e) {
-      // Remote failed: check if we have any cached records to serve
-      final fallbackCached = await _queryCachedItems(isar, category: category, search: search);
-      if (fallbackCached.isNotEmpty) {
-        return Right(fallbackCached.map((e) => _mapToModel(e)).toList());
+      if (_dbService.isReady) {
+        try {
+          final fallbackCached = await _queryCachedItems(_dbService.isar!, category: category, search: search);
+          if (fallbackCached.isNotEmpty) {
+            return Right(fallbackCached.map((e) => _mapToModel(e)).toList());
+          }
+        } catch (_) {}
       }
       return Left(e is ApiException ? e : ApiException(message: e.toString()));
     }
 
-    // Final fallback
-    final allCached = await _queryCachedItems(isar, category: category, search: search);
-    return Right(allCached.map((e) => _mapToModel(e)).toList());
+    if (_dbService.isReady) {
+      try {
+        final allCached = await _queryCachedItems(_dbService.isar!, category: category, search: search);
+        if (allCached.isNotEmpty) {
+          return Right(allCached.map((e) => _mapToModel(e)).toList());
+        }
+      } catch (_) {}
+    }
+    return const Right([]);
   }
 
   @override
@@ -88,12 +322,8 @@ class ItemsRepositoryImpl implements ItemsRepository {
         }
       }
 
-      if (catName.isEmpty) {
-        final existing = await _dbService.isar.menuItemCollections
-            .filter()
-            .remoteIdEqualTo(itemId)
-            .findFirst();
-        catName = existing?.itemGroup ?? 'GENERAL';
+      if (catName.isEmpty && _dbService.isReady) {
+        catName = await _getItemCategoryFromIsar(_dbService.isar!, itemId);
       }
 
       final syncData = _storageService.cachedLoginSyncData;
@@ -103,162 +333,49 @@ class ItemsRepositoryImpl implements ItemsRepository {
 
       final model = details.toItemModel(
         categoryName: catName.isNotEmpty ? catName : 'GENERAL',
-        treasureUrl: _storageService.treasureUrl,
+        treasureUrl: (details.baseUrl != null && details.baseUrl!.isNotEmpty)
+            ? details.baseUrl
+            : _storageService.treasureUrl,
         kitchenCategoryName: kitchenName,
         salesCategoryName: salesName,
         taxTemplateName: taxName,
       );
 
-      final isar = _dbService.isar;
-      final existing = await isar.menuItemCollections
-          .filter()
-          .remoteIdEqualTo(itemId)
-          .findFirst();
-      if (existing != null) {
-        await isar.writeTxn(() async {
-          existing.name = model.name;
-          existing.shortCode = model.shortCode;
-          existing.price = model.price;
-          existing.isAvailable = model.isAvailable;
-          existing.isFrequentlySold = model.isFrequentlySold;
-          existing.vegType = model.vegType;
-          existing.portion = model.portion;
-          existing.calorificValue = model.calorificValue;
-          existing.serviceTime = model.serviceTime;
-          existing.ingredients = model.ingredients;
-          existing.shortDescription = model.shortDescription;
-          existing.itemGroup = model.itemGroup;
-          existing.taxTemplate = model.taxTemplate;
-          existing.kitchenCategory = model.kitchenCategory;
-          existing.salesCategory = model.salesCategory;
-          existing.dietaryTags = model.dietaryTags;
-          existing.allergens = model.allergens;
-          existing.variantsJson = model.variantsJson;
-          existing.addonsJson = model.addonsJson;
-          existing.specialInstructions = model.specialInstructions;
-          if (model.imageUrl != null) existing.imageUrl = model.imageUrl;
-          await isar.menuItemCollections.put(existing);
-        });
+      if (_dbService.isReady) {
+        await _updateItemRecordInIsar(_dbService.isar!, itemId, model);
       }
 
       return Right(model);
     } catch (e) {
-      final existing = await _dbService.isar.menuItemCollections
-          .filter()
-          .remoteIdEqualTo(itemId)
-          .findFirst();
-      if (existing != null) {
-        return Right(_mapToModel(existing));
+      if (_dbService.isReady) {
+        final existing = await _getExistingRecordFromIsar(_dbService.isar!, itemId);
+        if (existing != null) {
+          return Right(_mapToModel(existing));
+        }
       }
       return Left(e is ApiException ? e : ApiException(message: e.toString()));
     }
   }
-
-  Future<List<MenuItemCollection>> _queryCachedItems(
-    Isar isar, {
-    String? category,
-    String? search,
-  }) async {
-    var query = isar.menuItemCollections.where();
-    List<MenuItemCollection> list;
-    if (search != null && search.trim().isNotEmpty) {
-      list = await query.filter().nameContains(search.trim(), caseSensitive: false).findAll();
-    } else {
-      list = await query.findAll();
-    }
-
-    if (category != null && category.trim().isNotEmpty) {
-      list = list.where((item) => item.itemGroup.toUpperCase() == category.trim().toUpperCase()).toList();
-    }
-
-    return list;
-  }
-
-  Future<void> _cacheCategoriesAndItems(
-    Isar isar,
-    List<V6MenuCategory> categories,
-  ) async {
-    final treasureUrl = _storageService.treasureUrl;
-    final syncData = _storageService.cachedLoginSyncData;
-
-    // 1. Fetch all existing records in ONE fast query before opening writeTxn (prevents Isar worker deadlock)
-    final existingItems = await isar.menuItemCollections.where().findAll();
-    final existingMap = {for (final e in existingItems) e.remoteId: e};
-
-    // 2. Prepare all records in memory with duplicate prevention
-    final recordsToSave = <MenuItemCollection>[];
-    final seenIds = <int>{};
-
-    for (final cat in categories) {
-      final catName = cat.categoryName.trim();
-      final catNameUpper = catName.toUpperCase();
-      // Exclude virtual FSI category (-1) from storing as separate category
-      if (cat.itemCatId == -1 || catNameUpper == 'FSI') {
-        continue;
-      }
-      if (cat.itemCatId > 0 && catNameUpper.isNotEmpty) {
-        _categoryNameToId[catNameUpper] = cat.itemCatId;
-      }
-
-      for (final item in cat.items) {
-        if (seenIds.contains(item.id)) continue;
-        seenIds.add(item.id);
-
-        if (item.itemCatId > 0 && catNameUpper.isNotEmpty) {
-          _categoryNameToId[catNameUpper] = item.itemCatId;
-        }
-
-        final existing = existingMap[item.id];
-
-        // Resolve kitchen, sales categories, and tax template from cached login sync data
-        final kitchenName = syncData?.getKitchenCategoryName(item.kitchenCatId);
-        final salesName = syncData?.getSalesCategoryName(item.itemSalesCatId);
-        final taxName = syncData?.getTaxTemplateName(item.taxTmplMastId);
-
-        final dbRecord = item.toIsarCollection(
-          categoryName: catName,
-          treasureUrl: treasureUrl,
-          kitchenCategoryName: kitchenName,
-          salesCategoryName: salesName,
-          taxTemplateName: taxName,
-          existingRecord: existing,
-        );
-
-        recordsToSave.add(dbRecord);
-      }
-    }
-
-    // Identify stale / orphaned records in local Isar that no longer exist in server menu
-    final idsToDelete = existingItems
-        .where((e) => !seenIds.contains(e.remoteId))
-        .map((e) => e.id)
-        .toList();
-
-    // 3. Batch write all records in ONE atomic transaction
-    await isar.writeTxn(() async {
-      if (idsToDelete.isNotEmpty) {
-        await isar.menuItemCollections.deleteAll(idsToDelete);
-      }
-      await isar.menuItemCollections.putAll(recordsToSave);
-    });
-  }
-
-
 
   @override
   Future<Either<ApiException, void>> updateAvailability({
     required int id,
     required bool isAvailable,
   }) async {
-    final isar = _dbService.isar;
-    final existing = await isar.menuItemCollections.filter().remoteIdEqualTo(id).findFirst();
+    MenuItemCollection? existing;
+    if (_dbService.isReady) {
+      existing = await _getExistingRecordFromIsar(_dbService.isar!, id);
+    }
     final previousVal = existing?.isAvailable ?? !isAvailable;
 
     // 1. Optimistic local update (0ms UI latency)
-    if (existing != null) {
+    if (_dbService.isReady && existing != null) {
+      final isar = _dbService.isar!;
+      final rec = existing;
       await isar.writeTxn(() async {
-        existing.isAvailable = isAvailable;
-        await isar.menuItemCollections.put(existing);
+        final Isar innerDb = isar;
+        rec.isAvailable = isAvailable;
+        await innerDb.menuItemCollections.put(rec);
       });
     }
 
@@ -272,10 +389,13 @@ class ItemsRepositoryImpl implements ItemsRepository {
       return const Right(null);
     } catch (e) {
       // 3. Rollback on failure
-      if (existing != null) {
+      if (_dbService.isReady && existing != null) {
+        final isar = _dbService.isar!;
+        final rec = existing;
         await isar.writeTxn(() async {
-          existing.isAvailable = previousVal;
-          await isar.menuItemCollections.put(existing);
+          final Isar innerDb = isar;
+          rec.isAvailable = previousVal;
+          await innerDb.menuItemCollections.put(rec);
         });
       }
       return Left(e is ApiException ? e : ApiException(message: e.toString()));
@@ -287,15 +407,20 @@ class ItemsRepositoryImpl implements ItemsRepository {
     required int id,
     required bool isFsi,
   }) async {
-    final isar = _dbService.isar;
-    final existing = await isar.menuItemCollections.filter().remoteIdEqualTo(id).findFirst();
+    MenuItemCollection? existing;
+    if (_dbService.isReady) {
+      existing = await _getExistingRecordFromIsar(_dbService.isar!, id);
+    }
     final previousVal = existing?.isFrequentlySold ?? !isFsi;
 
     // 1. Optimistic local update
-    if (existing != null) {
+    if (_dbService.isReady && existing != null) {
+      final isar = _dbService.isar!;
+      final rec = existing;
       await isar.writeTxn(() async {
-        existing.isFrequentlySold = isFsi;
-        await isar.menuItemCollections.put(existing);
+        final Isar innerDb = isar;
+        rec.isFrequentlySold = isFsi;
+        await innerDb.menuItemCollections.put(rec);
       });
     }
 
@@ -309,10 +434,13 @@ class ItemsRepositoryImpl implements ItemsRepository {
       return const Right(null);
     } catch (e) {
       // 3. Rollback on failure
-      if (existing != null) {
+      if (_dbService.isReady && existing != null) {
+        final isar = _dbService.isar!;
+        final rec = existing;
         await isar.writeTxn(() async {
-          existing.isFrequentlySold = previousVal;
-          await isar.menuItemCollections.put(existing);
+          final Isar innerDb = isar;
+          rec.isFrequentlySold = previousVal;
+          await innerDb.menuItemCollections.put(rec);
         });
       }
       return Left(e is ApiException ? e : ApiException(message: e.toString()));
@@ -324,14 +452,19 @@ class ItemsRepositoryImpl implements ItemsRepository {
     required int id,
     required double price,
   }) async {
-    final isar = _dbService.isar;
-    final existing = await isar.menuItemCollections.filter().remoteIdEqualTo(id).findFirst();
+    MenuItemCollection? existing;
+    if (_dbService.isReady) {
+      existing = await _getExistingRecordFromIsar(_dbService.isar!, id);
+    }
     final previousVal = existing?.price ?? price;
 
-    if (existing != null) {
+    if (_dbService.isReady && existing != null) {
+      final isar = _dbService.isar!;
+      final rec = existing;
       await isar.writeTxn(() async {
-        existing.price = price;
-        await isar.menuItemCollections.put(existing);
+        final Isar innerDb = isar;
+        rec.price = price;
+        await innerDb.menuItemCollections.put(rec);
       });
     }
 
@@ -343,10 +476,13 @@ class ItemsRepositoryImpl implements ItemsRepository {
       );
       return const Right(null);
     } catch (e) {
-      if (existing != null) {
+      if (_dbService.isReady && existing != null) {
+        final isar = _dbService.isar!;
+        final rec = existing;
         await isar.writeTxn(() async {
-          existing.price = previousVal;
-          await isar.menuItemCollections.put(existing);
+          final Isar innerDb = isar;
+          rec.price = previousVal;
+          await innerDb.menuItemCollections.put(rec);
         });
       }
       return Left(e is ApiException ? e : ApiException(message: e.toString()));
@@ -359,7 +495,6 @@ class ItemsRepositoryImpl implements ItemsRepository {
     required Map<String, dynamic> data,
     File? imageFile,
   }) async {
-    final isar = _dbService.isar;
     try {
       await _remoteDataSource.updateItemFull(
         restoId: _storageService.restoId > 0 ? _storageService.restoId : null,
@@ -368,94 +503,98 @@ class ItemsRepositoryImpl implements ItemsRepository {
         itemImage: imageFile,
       );
 
-      final existing = await isar.menuItemCollections.filter().remoteIdEqualTo(id).findFirst();
-      if (existing != null) {
-        await isar.writeTxn(() async {
-          if (data['item_name'] != null) existing.name = data['item_name'].toString();
-          if (data['name'] != null) existing.name = data['name'].toString();
-          if (data['item_price'] != null) {
-            existing.price = double.tryParse(data['item_price'].toString()) ?? existing.price;
-          } else if (data['price'] != null) {
-            existing.price = double.tryParse(data['price'].toString()) ?? existing.price;
-          }
-          if (data['item_short_name'] != null) existing.shortCode = data['item_short_name'].toString();
-          if (data['short_code'] != null) existing.shortCode = data['short_code'].toString();
-          if (data['short_desc'] != null) existing.shortDescription = data['short_desc'].toString();
-          if (data['short_description'] != null) existing.shortDescription = data['short_description'].toString();
-          if (data['ingredients'] != null) existing.ingredients = data['ingredients'].toString();
-          if (data['is_nonveg'] != null) {
-            existing.vegType = (data['is_nonveg'] == 1 || data['is_nonveg'] == '1') ? 'non_veg' : 'veg';
-          } else if (data['veg_type'] != null) {
-            existing.vegType = (data['veg_type'] == 'non_veg' || data['veg_type'] == 'nv') ? 'non_veg' : 'veg';
-          }
-          if (data['is_available'] != null) {
-            existing.isAvailable = data['is_available'] == true || data['is_available'] == 1;
-          } else if (data['is_na'] != null) {
-            existing.isAvailable = data['is_na'] == 0;
-          }
-          if (data['is_frequently_sold'] != null) {
-            existing.isFrequentlySold = data['is_frequently_sold'] == true || data['is_frequently_sold'] == 1;
-          } else if (data['is_fsi'] != null) {
-            existing.isFrequentlySold = data['is_fsi'] == 1;
-          }
-          if (data['portion'] != null) existing.portion = data['portion'].toString();
-          if (data['cal'] != null) existing.calorificValue = int.tryParse(data['cal'].toString());
-          if (data['calorific_value'] != null) existing.calorificValue = int.tryParse(data['calorific_value'].toString());
-          if (data['delivery_time'] != null) existing.serviceTime = int.tryParse(data['delivery_time'].toString());
-          if (data['service_time'] != null) existing.serviceTime = int.tryParse(data['service_time'].toString());
-          if (data['category_name'] != null) existing.itemGroup = data['category_name'].toString().toUpperCase();
-          if (data['item_group'] != null) existing.itemGroup = data['item_group'].toString().toUpperCase();
-          if (data['kitchen_category'] != null) existing.kitchenCategory = data['kitchen_category'].toString();
-          if (data['sales_category'] != null) existing.salesCategory = data['sales_category'].toString();
-          if (data['allergens'] != null) {
-            existing.allergens = (data['allergens'] as List).map((e) => e.toString()).toList();
-          } else if (data['aik'] != null) {
-            existing.allergens = data['aik'].toString().split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-          }
-          if (data['dietary_tags'] != null) {
-            existing.dietaryTags = (data['dietary_tags'] as List).map((e) => e.toString()).toList();
-          } else if (data['item_att'] != null) {
-            existing.dietaryTags = data['item_att'].toString().split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-          }
-          if (data['item_tax_tmpl_id'] != null || data['tax_tmpl_mast_id'] != null) {
-            final taxId = int.tryParse((data['item_tax_tmpl_id'] ?? data['tax_tmpl_mast_id']).toString());
-            if (taxId != null) {
-              final taxName = _storageService.cachedLoginSyncData?.getTaxTemplateName(taxId);
-              if (taxName != null) existing.taxTemplate = taxName;
+      if (_dbService.isReady) {
+        final isar = _dbService.isar!;
+        final existing = await isar.menuItemCollections.filter().remoteIdEqualTo(id).findFirst();
+        if (existing != null && _dbService.isReady) {
+          final isarWrite = _dbService.isar!;
+          final rec = existing;
+          await isarWrite.writeTxn(() async {
+            final Isar innerDb = isarWrite;
+            if (data['item_name'] != null) rec.name = data['item_name'].toString();
+            if (data['name'] != null) rec.name = data['name'].toString();
+            if (data['item_price'] != null) {
+              rec.price = double.tryParse(data['item_price'].toString()) ?? rec.price;
+            } else if (data['price'] != null) {
+              rec.price = double.tryParse(data['price'].toString()) ?? rec.price;
             }
-          } else if (data['tax_template'] != null && !data['tax_template'].toString().startsWith('[')) {
-            existing.taxTemplate = data['tax_template'].toString();
-          }
-          if (data['vrnt_json'] != null) {
-            existing.variantsJson = data['vrnt_json'].toString();
-          } else if (data['vrnt'] != null) {
-            existing.variantsJson = data['vrnt'].toString();
-          }
-          if (data['aoi_json'] != null) {
-            existing.addonsJson = data['aoi_json'].toString();
-          } else if (data['aoi'] != null) {
-            existing.addonsJson = data['aoi'].toString();
-          }
-          if (data['sp_inst'] != null) {
-            try {
-              final decoded = jsonDecode(data['sp_inst'].toString());
-              if (decoded is List) {
-                existing.specialInstructions = decoded.map((e) => e.toString()).toList();
+            if (data['item_short_name'] != null) rec.shortCode = data['item_short_name'].toString();
+            if (data['short_code'] != null) rec.shortCode = data['short_code'].toString();
+            if (data['short_desc'] != null) rec.shortDescription = data['short_desc'].toString();
+            if (data['short_description'] != null) rec.shortDescription = data['short_description'].toString();
+            if (data['ingredients'] != null) rec.ingredients = data['ingredients'].toString();
+            if (data['is_nonveg'] != null) {
+              rec.vegType = (data['is_nonveg'] == 1 || data['is_nonveg'] == '1') ? 'non_veg' : 'veg';
+            } else if (data['veg_type'] != null) {
+              rec.vegType = (data['veg_type'] == 'non_veg' || data['veg_type'] == 'nv') ? 'non_veg' : 'veg';
+            }
+            if (data['is_available'] != null) {
+              rec.isAvailable = data['is_available'] == true || data['is_available'] == 1;
+            } else if (data['is_na'] != null) {
+              rec.isAvailable = data['is_na'] == 0;
+            }
+            if (data['is_frequently_sold'] != null) {
+              rec.isFrequentlySold = data['is_frequently_sold'] == true || data['is_frequently_sold'] == 1;
+            } else if (data['is_fsi'] != null) {
+              rec.isFrequentlySold = data['is_fsi'] == 1;
+            }
+            if (data.containsKey('qty') || data.containsKey('portion')) {
+              final raw = (data['qty'] ?? data['portion'])?.toString().trim();
+              rec.portion = (raw != null && raw.isNotEmpty) ? raw : null;
+            }
+            if (data['cal'] != null) rec.calorificValue = int.tryParse(data['cal'].toString());
+            if (data['calorific_value'] != null) rec.calorificValue = int.tryParse(data['calorific_value'].toString());
+            if (data['delivery_time'] != null) rec.serviceTime = int.tryParse(data['delivery_time'].toString());
+            if (data['service_time'] != null) rec.serviceTime = int.tryParse(data['service_time'].toString());
+            if (data['category_name'] != null) rec.itemGroup = data['category_name'].toString().toUpperCase();
+            if (data['item_group'] != null) rec.itemGroup = data['item_group'].toString().toUpperCase();
+            if (data['kitchen_category'] != null) rec.kitchenCategory = data['kitchen_category'].toString();
+            if (data['sales_category'] != null) rec.salesCategory = data['sales_category'].toString();
+            if (data['allergens'] != null) {
+              rec.allergens = (data['allergens'] as List).map((e) => e.toString()).toList();
+            } else if (data['aik'] != null) {
+              rec.allergens = data['aik'].toString().split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+            }
+            if (data['dietary_tags'] != null) {
+              rec.dietaryTags = (data['dietary_tags'] as List).map((e) => e.toString()).toList();
+            } else if (data['item_att'] != null) {
+              rec.dietaryTags = data['item_att'].toString().split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+            }
+            if (data['item_tax_tmpl_id'] != null || data['tax_tmpl_mast_id'] != null) {
+              final taxId = int.tryParse((data['item_tax_tmpl_id'] ?? data['tax_tmpl_mast_id']).toString());
+              if (taxId != null) {
+                final taxName = _storageService.cachedLoginSyncData?.getTaxTemplateName(taxId);
+                if (taxName != null) rec.taxTemplate = taxName;
               }
-            } catch (_) {
-              existing.specialInstructions = data['sp_inst'].toString().split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+            } else if (data['tax_template'] != null && !data['tax_template'].toString().startsWith('[')) {
+              rec.taxTemplate = data['tax_template'].toString();
             }
-          }
-          if (data['image_url'] != null) {
-            existing.imageUrl = V6ApiMenuItem.resolveImageUrl(
-              itemImage: data['image_url'].toString(),
-              treasureUrl: _storageService.treasureUrl,
-              restoId: _storageService.restoId,
-            );
-          }
-          await isar.menuItemCollections.put(existing);
-        });
-        return Right(_mapToModel(existing));
+            if (data['vrnt_json'] != null) {
+              rec.variantsJson = data['vrnt_json'].toString();
+            } else if (data['aoi_json'] != null) {
+              rec.addonsJson = data['aoi_json'].toString();
+            }
+            if (data['sp_inst'] != null) {
+              try {
+                final decoded = jsonDecode(data['sp_inst'].toString());
+                if (decoded is List) {
+                  rec.specialInstructions = decoded.map((e) => e.toString()).toList();
+                }
+              } catch (_) {
+                rec.specialInstructions = data['sp_inst'].toString().split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+              }
+            }
+            if (data['image_url'] != null) {
+              rec.imageUrl = V6ApiMenuItem.resolveImageUrl(
+                itemImage: data['image_url'].toString(),
+                treasureUrl: _storageService.treasureUrl,
+                restoId: _storageService.restoId,
+              );
+            }
+            await innerDb.menuItemCollections.put(rec);
+          });
+          return Right(_mapToModel(rec));
+        }
       }
 
       // Re-fetch item details from V6 API
@@ -470,7 +609,9 @@ class ItemsRepositoryImpl implements ItemsRepository {
 
       final model = details.toItemModel(
         categoryName: data['category_name']?.toString() ?? 'STARTERS',
-        treasureUrl: _storageService.treasureUrl,
+        treasureUrl: (details.baseUrl != null && details.baseUrl!.isNotEmpty)
+            ? details.baseUrl
+            : _storageService.treasureUrl,
         kitchenCategoryName: kitchenName,
         salesCategoryName: salesName,
         taxTemplateName: taxName,
@@ -486,7 +627,6 @@ class ItemsRepositoryImpl implements ItemsRepository {
     required Map<String, dynamic> data,
     File? imageFile,
   }) async {
-    final isar = _dbService.isar;
     try {
       final created = await _remoteDataSource.createItem(
         restoId: _storageService.restoId > 0 ? _storageService.restoId : null,
@@ -500,14 +640,9 @@ class ItemsRepositoryImpl implements ItemsRepository {
         treasureUrl: _storageService.treasureUrl,
       );
 
-      // Cache into local Isar DB
-      final dbRecord = created.toIsarCollection(
-        categoryName: catName,
-        treasureUrl: _storageService.treasureUrl,
-      );
-      await isar.writeTxn(() async {
-        await isar.menuItemCollections.put(dbRecord);
-      });
+      if (_dbService.isReady) {
+        await _saveItemToIsar(_dbService.isar!, created, catName, _storageService.treasureUrl);
+      }
 
       return Right(model);
     } catch (e) {
@@ -520,7 +655,6 @@ class ItemsRepositoryImpl implements ItemsRepository {
     required int id,
     int isForce = 0,
   }) async {
-    final isar = _dbService.isar;
     try {
       final result = await _remoteDataSource.deleteItem(
         restoId: _storageService.restoId > 0 ? _storageService.restoId : null,
@@ -528,14 +662,8 @@ class ItemsRepositoryImpl implements ItemsRepository {
         isForce: isForce,
       );
 
-      // If deletion succeeded on server (status == 1), remove from local Isar cache
-      if (result['status'] == 1) {
-        final existing = await isar.menuItemCollections.filter().remoteIdEqualTo(id).findFirst();
-        if (existing != null) {
-          await isar.writeTxn(() async {
-            await isar.menuItemCollections.delete(existing.id);
-          });
-        }
+      if (result['status'] == 1 && _dbService.isReady) {
+        await _deleteItemFromIsar(_dbService.isar!, id);
       }
 
       return Right(result);
@@ -546,7 +674,10 @@ class ItemsRepositoryImpl implements ItemsRepository {
 
   @override
   Future<List<String>> getCategories() async {
-    final isar = _dbService.isar;
+    if (!_dbService.isReady) {
+      return _categoryNameToId.keys.toList();
+    }
+    final isar = _dbService.isar!;
     final all = await isar.menuItemCollections.where().findAll();
     final set = <String>{};
     for (final item in all) {

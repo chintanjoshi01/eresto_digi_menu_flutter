@@ -129,11 +129,17 @@ class ItemsRemoteDataSourceImpl implements ItemsRemoteDataSource {
               ? rawData['item'] as Map<String, dynamic>
               : rawData;
           final imgBase = (rawData['img_base'] ??
+                  rawData['item_base'] ??
+                  rawData['item_base_url'] ??
                   rawData['base_url'] ??
                   rawData['image_base'] ??
                   itemMap['img_base'] ??
+                  itemMap['item_base'] ??
+                  itemMap['item_base_url'] ??
                   itemMap['base_url'] ??
                   responseData['img_base'] ??
+                  responseData['item_base'] ??
+                  responseData['item_base_url'] ??
                   responseData['base_url'])
               ?.toString();
           if (imgBase != null && imgBase.isNotEmpty) {
@@ -264,6 +270,22 @@ class ItemsRemoteDataSourceImpl implements ItemsRemoteDataSource {
         mapData['item_tax_tmpl_id'] = mapData.remove('tax_tmpl_mast_id');
       }
 
+      // Standardize portion / qty parameters for V6 backend
+      if (mapData.containsKey('portion') && !mapData.containsKey('qty')) {
+        mapData['qty'] = mapData['portion'];
+      }
+      if (mapData.containsKey('qty') && !mapData.containsKey('portion')) {
+        mapData['portion'] = mapData['qty'];
+      }
+
+      // Ensure 'aik' is serialized if 'allergens' list is passed without 'aik'
+      if (mapData.containsKey('allergens') && (!mapData.containsKey('aik') || mapData['aik'] == null)) {
+        final rawAllergens = mapData['allergens'];
+        if (rawAllergens is List) {
+          mapData['aik'] = rawAllergens.join(',');
+        }
+      }
+
       if (itemImage != null) {
         final fileName = itemImage.path.split(Platform.pathSeparator).last;
         mapData['item_image'] = await MultipartFile.fromFile(itemImage.path, filename: fileName);
@@ -308,6 +330,22 @@ class ItemsRemoteDataSourceImpl implements ItemsRemoteDataSource {
         mapData['item_tax_tmpl_id'] = mapData.remove('tax_tmpl_mast_id');
       }
       mapData['item_tax_tmpl_id'] ??= 1;
+
+      // Standardize portion / qty parameters for V6 backend
+      if (mapData.containsKey('portion') && !mapData.containsKey('qty')) {
+        mapData['qty'] = mapData['portion'];
+      }
+      if (mapData.containsKey('qty') && !mapData.containsKey('portion')) {
+        mapData['portion'] = mapData['qty'];
+      }
+
+      // Ensure 'aik' is serialized if 'allergens' list is passed without 'aik'
+      if (mapData.containsKey('allergens') && (!mapData.containsKey('aik') || mapData['aik'] == null)) {
+        final rawAllergens = mapData['allergens'];
+        if (rawAllergens is List) {
+          mapData['aik'] = rawAllergens.join(',');
+        }
+      }
 
       if (itemImage != null) {
         final fileName = itemImage.path.split(Platform.pathSeparator).last;

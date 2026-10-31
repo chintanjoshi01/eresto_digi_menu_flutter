@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_typography.dart';
 
 /// Unified Prototype Bottom Navigation Bar used across Dashboard, Items, Menu, and Share screens.
 class AppBottomNav extends StatelessWidget {
@@ -112,10 +112,9 @@ class AppBottomNav extends StatelessWidget {
               SizedBox(height: 2.h),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 200),
-                style: GoogleFonts.nunito(
+                style: AppTypography.labelSmall.copyWith(
                   color: color,
-                  fontSize: 10.sp,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 ),
                 child: Text(label),
               ),

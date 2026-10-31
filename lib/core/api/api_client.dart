@@ -2,9 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:flutter/painting.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get/get.dart' hide Response;
 
 import '../errors/failures.dart';
+import '../services/device_service.dart';
+import '../storage/database_service.dart';
 import '../storage/storage_service.dart';
 import 'api_exception.dart';
 import 'endpoints.dart';
@@ -13,10 +17,13 @@ import 'endpoints.dart';
 /// bearer token authentication interceptor, and structured error classification.
 class ApiClient {
   late final Dio _dio;
+  late final String baseUrl;
 
   ApiClient({String? baseUrl}) {
     final resolvedBaseUrl = baseUrl ??
-        const String.fromEnvironment('API_BASE_URL', defaultValue: Endpoints.baseUrl);
+        const String.fromEnvironment('API_BASE_URL', defaultValue: Endpoints.defaultBaseUrl);
+    this.baseUrl = resolvedBaseUrl;
+    Endpoints.baseUrl = resolvedBaseUrl;
 
     _dio = Dio(BaseOptions(
       baseUrl: resolvedBaseUrl,
@@ -48,6 +55,8 @@ class ApiClient {
             options.headers['Authorization'] = 'Bearer ${storage.token}';
           }
         }
+        // Always attach current client app version to request headers
+        options.headers['X-App-Version'] = DeviceService.appVersion;
         return handler.next(options);
       },
       onError: (e, handler) async {
@@ -56,6 +65,15 @@ class ApiClient {
           if (Get.isRegistered<StorageService>()) {
             await Get.find<StorageService>().clearSession();
           }
+          if (Get.isRegistered<DatabaseService>()) {
+            await Get.find<DatabaseService>().clearAll();
+          }
+          try {
+            PaintingBinding.instance.imageCache.clear();
+            PaintingBinding.instance.imageCache.clearLiveImages();
+            await DefaultCacheManager().emptyCache();
+          } catch (_) {}
+
           if (Get.currentRoute != '/login') {
             Get.offAllNamed('/login');
           }
