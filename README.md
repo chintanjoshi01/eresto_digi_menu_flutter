@@ -3,6 +3,10 @@
 **Enterprise Digital Restaurant Menu Management, Analytics, Session Scheduling, QR Studio & Vector PDF Publishing Suite**  
 Built with Flutter, GetX, and Isar NoSQL Offline Caching, powered by the **eResto Plus V6 Digital Menu Platform (`/api/v6`)**.
 
+> [!NOTE]
+> **Official Latest Production Digital Menu Application**:
+> This Flutter repository (`eresto_digi_menu_flutter`, `in.eresto.digimenu`, **`product_id: 9`**) is the **latest active production release** of eResto DigiMenu, superseding the legacy native Android V1 app ([`Restosoft-Solutions/eresto_digi_menu`](https://github.com/Restosoft-Solutions/eresto_digi_menu) / [`chintanjoshi01/DigiMenu`](https://github.com/chintanjoshi01/DigiMenu), `com.digimenu.eresto`, `product_id: 1`).
+
 ---
 
 ## Overview
