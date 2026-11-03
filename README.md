@@ -5,7 +5,7 @@ Built with Flutter, GetX, and Isar NoSQL Offline Caching, powered by the **eRest
 
 > [!NOTE]
 > **Official Latest Production Digital Menu Application**:
-> This Flutter repository (`eresto_digi_menu_flutter`, `in.eresto.digimenu`, **`product_id: 9`**) is the **latest active production release** of eResto DigiMenu, superseding the legacy native Android V1 app ([`Restosoft-Solutions/eresto_digi_menu`](https://github.com/Restosoft-Solutions/eresto_digi_menu) / [`chintanjoshi01/DigiMenu`](https://github.com/chintanjoshi01/DigiMenu), `com.digimenu.eresto`, `product_id: 1`).
+> This Flutter repository (`eresto_digi_menu_flutter`, `in.eresto.digimenu`, **`product_id: 9`**) is the **latest active production release** of eResto DigiMenu, superseding the legacy native Android V1 app ([`Restosoft-Solutions/eresto_digi_menu`](https://github.com/Restosoft-Solutions/eresto_digi_menu), `com.digimenu.eresto`, `product_id: 1`).
 
 ---
 
@@ -122,7 +122,7 @@ lib/
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/chintanjoshi01/eresto_digi_menu_flutter.git
+   git clone https://github.com/Restosoft-Solutions/eresto_digi_menu_flutter.git
    cd eresto_digi_menu_flutter
    ```
 
