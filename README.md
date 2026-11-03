@@ -14,6 +14,7 @@ Built with Flutter, GetX, and Isar NoSQL Offline Caching, powered by the **eRest
 | **Package Name** | `eresto_menu` (`in.eresto.digimenu`) |
 | **Current Version** | `1.1.7+16` |
 | **API Platform** | eResto Plus V6 Digital Menu API (`/api/v6`) |
+| **Product ID** | `9` (eResto One / DigiMenu, `login_from: 1`, `tsf: 1`, Module ID: `'1'`) |
 | **State Management** | GetX (`get: ^4.6.6`) + Clean Architecture (Data / Domain / Presentation) |
 | **Local Database** | Isar NoSQL (`isar: ^3.1.0`) with Android 15+ **16 KB Memory Page Size (`0x4000`)** native binaries |
 | **Supported Platforms** | Android (API 24+, 16 KB page-aligned), iOS, Web, Desktop |
@@ -23,7 +24,7 @@ Built with Flutter, GetX, and Isar NoSQL Offline Caching, powered by the **eRest
 ## Core Modules & Enterprise Features
 
 ### 1. Authentication & V6 Master Data Sync (`lib/features/auth`)
-- **V6 Authentication** (`POST /api/v6/login`) with AES/SHA encryption helpers, device metadata, and session persistence via `StorageService`.
+- **V6 Authentication** (`POST /api/v6/login`) with `product_id: 9`, client version (`cv`), persistent device UUID (`IMEI`), `login_from: 1`, `tsf: 1`, AES/SHA encryption helpers, and session persistence via `StorageService`.
 - **Master Sync Engine** (`GET /api/v6/get_login_sync_data`): Synchronizes kitchen categories, sales categories, dietary tags, tax groups, and outlet profile (`resto_info`) on login.
 - **Custom Canvas Micro-Animations**: `BrandProgressIndicator` custom painter and responsive login layout for phones and tablets.
 
