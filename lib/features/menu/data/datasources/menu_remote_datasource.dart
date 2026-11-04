@@ -46,11 +46,19 @@ class MenuRemoteDataSourceImpl implements MenuRemoteDataSource {
     try {
       final response = await _apiClient.dio.post(Endpoints.v6MenuBuilderData, data: {});
       final data = response.data;
-      if (data != null && data['status'] == 1 && data['data'] != null) {
-        return data['data'] as Map<String, dynamic>;
-      } else {
-        throw Exception(data?['message'] ?? 'Failed to load menu builder data');
+      if (data is Map<String, dynamic>) {
+        if (data['status'] == 1 && data['data'] is Map<String, dynamic>) {
+          return data['data'] as Map<String, dynamic>;
+        }
+        final msg = (data['message'] ?? '').toString().trim().toLowerCase();
+        if (data['status'] == 1 ||
+            msg.contains('no record') ||
+            msg.contains('no menu template') ||
+            msg.contains('not found')) {
+          return {'templates': <dynamic>[], 'sessions': <dynamic>[]};
+        }
       }
+      throw Exception(data?['message'] ?? 'Failed to load menu builder data');
     } on DioException catch (e) {
       throw _apiClient.handleDioError(e);
     }

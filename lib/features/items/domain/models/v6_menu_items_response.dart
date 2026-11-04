@@ -21,6 +21,18 @@ class V6MenuItemsResponse {
 
   bool get isSuccess => status == 1;
 
+  /// True when the API returns status 0 simply because the restaurant has no items yet
+  /// (e.g. {"status": 0, "data": null, "message": "No Record Found."})
+  bool get isEmptyRecord {
+    final msg = message.trim().toLowerCase();
+    return status == 0 &&
+        data.isEmpty &&
+        (msg.contains('no record') ||
+            msg.contains('no item') ||
+            msg.contains('not found') ||
+            msg.contains('empty'));
+  }
+
   factory V6MenuItemsResponse.fromJson(Map<String, dynamic> json) {
     final rawData = json['data'];
     final List<V6MenuCategory> categories = [];

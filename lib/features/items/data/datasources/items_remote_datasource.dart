@@ -80,7 +80,7 @@ class ItemsRemoteDataSourceImpl implements ItemsRemoteDataSource {
       final responseData = response.data;
       if (responseData is Map<String, dynamic>) {
         final parsed = V6MenuItemsResponse.fromJson(responseData);
-        if (parsed.isSuccess) {
+        if (parsed.isSuccess || parsed.isEmptyRecord) {
           if (parsed.baseUrl != null && parsed.baseUrl!.isNotEmpty) {
             if (Get.isRegistered<StorageService>()) {
               await Get.find<StorageService>().setTreasureUrl(parsed.baseUrl!);

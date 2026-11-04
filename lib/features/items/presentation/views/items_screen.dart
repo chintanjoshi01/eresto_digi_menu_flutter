@@ -317,55 +317,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
           child: controller.obx(
             (state) {
               if (state == null || state.isEmpty) {
-                return RefreshIndicator(
-                  onRefresh: () => controller.refreshItems(),
-                  color: AppColors.primary,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    children: [
-                      SizedBox(height: 80.h),
-                      Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.flatware_rounded, size: 48.sp, color: const Color(0xFF9CA3AF)),
-                            SizedBox(height: 12.h),
-                            Text(
-                              "No Items Found",
-                              style: GoogleFonts.poppins(
-                                fontSize: 15.sp,
-                                fontWeight: FontWeight.w700,
-                                color: const Color(0xFF111827),
-                              ),
-                            ),
-                            SizedBox(height: 4.h),
-                            Text(
-                              "Try modifying search filters or pull down to refresh",
-                              style: GoogleFonts.poppins(
-                                fontSize: 12.sp,
-                                color: const Color(0xFF6B7280),
-                              ),
-                            ),
-                            if (controller.activeFiltersCount > 0) ...[
-                              SizedBox(height: 12.h),
-                              TextButton.icon(
-                                onPressed: () => controller.resetFilters(),
-                                icon: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.primary),
-                                label: Text(
-                                  "Reset All Filters",
-                                  style: GoogleFonts.poppins(
-                                    fontWeight: FontWeight.w700,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+                return _buildEmptyItemsState();
               }
 
               return Obx(() {
@@ -441,6 +393,7 @@ class _ItemsScreenState extends State<ItemsScreen> {
             onLoading: Obx(() => controller.isGridView.value
                 ? _buildShimmerGrid(isTablet)
                 : _buildShimmerList()),
+            onEmpty: _buildEmptyItemsState(),
             onError: (err) => AppErrorView(
               errorMessage: err,
               onRetry: () => controller.refreshItems(),
@@ -460,6 +413,70 @@ class _ItemsScreenState extends State<ItemsScreen> {
       body: SafeArea(child: content),
       bottomNavigationBar: const AppBottomNav(currentIndex: 1),
     );
+  }
+
+  Widget _buildEmptyItemsState() {
+    return Obx(() {
+      final hasFiltersOrSearch = controller.activeFiltersCount > 0 ||
+          controller.searchText.value.trim().isNotEmpty ||
+          controller.selectedCategory.value.isNotEmpty;
+
+      return RefreshIndicator(
+        onRefresh: () => controller.refreshItems(),
+        color: AppColors.primary,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(height: 80.h),
+            Center(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.flatware_rounded, size: 48.sp, color: const Color(0xFF9CA3AF)),
+                    SizedBox(height: 12.h),
+                    Text(
+                      "No Items Found",
+                      style: GoogleFonts.poppins(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF111827),
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      hasFiltersOrSearch
+                          ? "Try modifying search filters or pull down to refresh"
+                          : "No menu items have been added for this restaurant yet",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 12.sp,
+                        color: const Color(0xFF6B7280),
+                      ),
+                    ),
+                    if (controller.activeFiltersCount > 0) ...[
+                      SizedBox(height: 12.h),
+                      TextButton.icon(
+                        onPressed: () => controller.resetFilters(),
+                        icon: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.primary),
+                        label: Text(
+                          "Reset All Filters",
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildShimmerGrid(bool isTablet) {

@@ -236,8 +236,6 @@ class DownloadMenuPdfSheet extends StatelessWidget {
   // --------------------------------------------------------------------------
 
   Widget _buildStep1Header(ShareController controller) {
-    final templates = controller.getAvailableTemplates();
-
     return Column(
       key: const ValueKey("step1"),
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -245,6 +243,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
         _buildSectionTitle("1. Select Menu Template *"),
         SizedBox(height: 6.h),
         Obx(() {
+          final templates = controller.getAvailableTemplates();
           final selectedId = controller.selectedTemplateId.value;
           final hasError = controller.showTemplateValidationError.value;
 
@@ -280,6 +279,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
           }
 
           final effectiveValue = (selectedId > 0 && validIds.contains(selectedId)) ? selectedId : null;
+          final noTemplatesAvailable = dropdownItems.isEmpty;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,7 +287,7 @@ class DownloadMenuPdfSheet extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: noTemplatesAvailable ? const Color(0xFFF9FAFB) : Colors.white,
                   borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(
                     color: hasError ? const Color(0xFFEF4444) : const Color(0xFFE5E7EB),
@@ -299,7 +299,15 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                     isExpanded: true,
                     value: effectiveValue,
                     hint: Text(
-                      "Select Menu Template",
+                      noTemplatesAvailable ? "No Menu Template Found" : "Select Menu Template",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                        color: hasError ? const Color(0xFFEF4444) : const Color(0xFF9CA3AF),
+                      ),
+                    ),
+                    disabledHint: Text(
+                      "No Menu Template Found",
                       style: GoogleFonts.poppins(
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
@@ -308,15 +316,19 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                     ),
                     icon: Icon(
                       Icons.arrow_drop_down_rounded,
-                      color: hasError ? const Color(0xFFEF4444) : AppColors.primary,
+                      color: hasError
+                          ? const Color(0xFFEF4444)
+                          : (noTemplatesAvailable ? const Color(0xFF9CA3AF) : AppColors.primary),
                       size: 24.sp,
                     ),
                     items: dropdownItems,
-                    onChanged: (newId) {
-                      if (newId != null) {
-                        controller.selectTemplateForPdf(newId);
-                      }
-                    },
+                    onChanged: noTemplatesAvailable
+                        ? null
+                        : (newId) {
+                            if (newId != null) {
+                              controller.selectTemplateForPdf(newId);
+                            }
+                          },
                   ),
                 ),
               ),
@@ -328,7 +340,9 @@ class DownloadMenuPdfSheet extends StatelessWidget {
                     SizedBox(width: 4.w),
                     Expanded(
                       child: Text(
-                        "Please select a Menu Template before proceeding",
+                        noTemplatesAvailable
+                            ? "No menu templates found for this restaurant"
+                            : "Please select a Menu Template before proceeding",
                         style: GoogleFonts.poppins(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w500,

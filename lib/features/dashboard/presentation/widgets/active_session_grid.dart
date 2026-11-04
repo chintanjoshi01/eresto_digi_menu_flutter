@@ -55,39 +55,6 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
   late AnimationController _blinkController;
   late Animation<double> _blinkAnimation;
 
-  static const List<ActiveSessionItemData> _fallbackSessions = [
-    ActiveSessionItemData(
-      id: 1,
-      title: 'Lunch',
-      channel: 'dine-in',
-      channelLabel: 'Dine-IN',
-      templateAndTime: 'Main · 10:30–18:30',
-      scansText: '156 scans',
-      statusText: 'Orders On',
-      isLive: true,
-    ),
-    ActiveSessionItemData(
-      id: 2,
-      title: 'Dinner',
-      channel: 'ird',
-      channelLabel: 'IRD',
-      templateAndTime: 'Main · 18:30–23:59',
-      scansText: '91 scans',
-      statusText: 'Orders On',
-      isLive: true,
-    ),
-    ActiveSessionItemData(
-      id: 3,
-      title: 'HI-TEA',
-      channel: 'ird',
-      channelLabel: 'IRD',
-      templateAndTime: 'HI-TEA · 15:00–18:00',
-      scansText: '— scans',
-      statusText: 'No Orders',
-      isLive: true,
-    ),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -109,7 +76,7 @@ class _ActiveSessionGridState extends State<ActiveSessionGrid>
 
   List<ActiveSessionItemData> _resolveItems() {
     if (widget.sessions == null || widget.sessions!.isEmpty) {
-      return _fallbackSessions.where((s) => s.isLive).toList();
+      return const [];
     }
 
     // Strictly show ONLY LIVE sessions

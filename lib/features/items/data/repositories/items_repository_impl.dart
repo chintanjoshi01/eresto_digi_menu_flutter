@@ -280,6 +280,16 @@ class ItemsRepositoryImpl implements ItemsRepository {
           }
         }
         return Right(remoteModels);
+      } else {
+        // Remote API succeeded with 0 categories/items ("No Record Found."):
+        // Clear any stale local cache and return an empty list.
+        _categoryNameToId.clear();
+        if (_dbService.isReady) {
+          try {
+            await _saveCategoriesToIsar(_dbService.isar!, const []);
+          } catch (_) {}
+        }
+        return const Right([]);
       }
     } catch (e) {
       if (_dbService.isReady) {
@@ -292,16 +302,6 @@ class ItemsRepositoryImpl implements ItemsRepository {
       }
       return Left(e is ApiException ? e : ApiException(message: e.toString()));
     }
-
-    if (_dbService.isReady) {
-      try {
-        final allCached = await _queryCachedItems(_dbService.isar!, category: category, search: search);
-        if (allCached.isNotEmpty) {
-          return Right(allCached.map((e) => _mapToModel(e)).toList());
-        }
-      } catch (_) {}
-    }
-    return const Right([]);
   }
 
   @override

@@ -172,179 +172,12 @@ class MenuThemeController extends GetxController {
     }
   }
 
-  /// Initial high-fidelity enterprise data matching HTML prototype & Screenshots
+  /// Initial clean state — templates & sessions are loaded dynamically from V6 API
   void loadDefaultData() {
-    // Menu templates are loaded dynamically from remote V6 get_menu_builder_data API
     templatesList.clear();
     templates.clear();
-
-    channelGroups.assignAll([
-      // 1. DINE-IN
-      const ChannelSessionGroupModel(
-        id: 'dine-in',
-        title: 'DINE-IN SESSIONS',
-        accentColor: Color(0xFFC1272D),
-        activeCountText: '● 1 Active',
-        activeCount: 1,
-        sessions: [
-          SessionCardModel(
-            id: 1,
-            name: 'Breakfast',
-            statusText: 'Ended',
-            statusBg: Color(0xFFF3F4F6),
-            statusFg: Color(0xFF6B7280),
-            isActiveNow: false,
-            templateName: 'Breakfast',
-            startTime: '06:00 am',
-            endTime: '10:30 am',
-            customerOrderEnabled: false,
-            geoFenceEnabled: false,
-            sectionName: '---',
-            hasOffer: false,
-            hasSplash: false,
-          ),
-          SessionCardModel(
-            id: 2,
-            name: 'Lunch',
-            statusText: 'Active Now',
-            statusBg: Color(0xFFDCFCE7),
-            statusFg: Color(0xFF16A34A),
-            isActiveNow: true,
-            templateName: 'Main',
-            startTime: '10:30 am',
-            endTime: '06:30 pm',
-            customerOrderEnabled: true,
-            geoFenceEnabled: false,
-            sectionName: 'Dine-In',
-            hasOffer: true,
-            hasSplash: true,
-          ),
-          SessionCardModel(
-            id: 3,
-            name: 'Dinner',
-            statusText: 'Starts 18:30',
-            statusBg: Color(0xFFFEF3C7),
-            statusFg: Color(0xFFD97706),
-            isActiveNow: false,
-            templateName: 'Main',
-            startTime: '06:30 pm',
-            endTime: '11:59 pm',
-            customerOrderEnabled: true,
-            geoFenceEnabled: false,
-            sectionName: 'Dine-In, TakeAway',
-            hasOffer: false,
-            hasSplash: false,
-          ),
-        ],
-      ),
-
-      // 2. IRD (IN-ROOM DINING)
-      const ChannelSessionGroupModel(
-        id: 'ird',
-        title: 'IRD SESSIONS',
-        accentColor: Color(0xFF6366F1),
-        activeCountText: '● 1 Active',
-        activeCount: 1,
-        sessions: [
-          SessionCardModel(
-            id: 4,
-            name: 'All Day IRD Menu',
-            statusText: 'Active Now',
-            statusBg: Color(0xFFDCFCE7),
-            statusFg: Color(0xFF16A34A),
-            isActiveNow: true,
-            templateName: 'Main',
-            startTime: '12:00 am',
-            endTime: '11:59 pm',
-            customerOrderEnabled: true,
-            geoFenceEnabled: false,
-            sectionName: 'Rooms',
-            hasOffer: false,
-            hasSplash: true,
-          ),
-          SessionCardModel(
-            id: 5,
-            name: 'HI-TEA Special',
-            statusText: 'Ended',
-            statusBg: Color(0xFFF3F4F6),
-            statusFg: Color(0xFF6B7280),
-            isActiveNow: false,
-            templateName: 'HI-TEA',
-            startTime: '03:00 pm',
-            endTime: '06:00 pm',
-            customerOrderEnabled: true,
-            geoFenceEnabled: false,
-            sectionName: 'Rooms',
-            hasOffer: true,
-            hasSplash: false,
-          ),
-        ],
-      ),
-
-      // 3. TAKEAWAY SESSIONS
-      const ChannelSessionGroupModel(
-        id: 'takeaway',
-        title: 'TAKEAWAY SESSIONS',
-        accentColor: Color(0xFFF59E0B),
-        activeCountText: '● 1 Active',
-        activeCount: 1,
-        sessions: [
-          SessionCardModel(
-            id: 6,
-            name: 'Takeaway Express',
-            statusText: 'Active Now',
-            statusBg: Color(0xFFDCFCE7),
-            statusFg: Color(0xFF16A34A),
-            isActiveNow: true,
-            templateName: 'Main',
-            startTime: '11:00 am',
-            endTime: '11:00 pm',
-            customerOrderEnabled: true,
-            geoFenceEnabled: true,
-            sectionName: 'Counter',
-            hasOffer: true,
-            hasSplash: false,
-          ),
-        ],
-      ),
-
-      // 4. DELIVERY SESSIONS
-      const ChannelSessionGroupModel(
-        id: 'delivery',
-        title: 'DELIVERY SESSIONS',
-        accentColor: Color(0xFF10B981),
-        activeCountText: '0 Active',
-        activeCount: 0,
-        sessions: [
-          SessionCardModel(
-            id: 7,
-            name: 'Online Delivery',
-            statusText: 'Ended',
-            statusBg: Color(0xFFF3F4F6),
-            statusFg: Color(0xFF6B7280),
-            isActiveNow: false,
-            templateName: 'Main',
-            startTime: '12:00 pm',
-            endTime: '10:00 pm',
-            customerOrderEnabled: false,
-            geoFenceEnabled: true,
-            sectionName: 'Delivery',
-            hasOffer: false,
-            hasSplash: false,
-          ),
-        ],
-      ),
-    ]);
-
-    // Populate legacy models for backward compatibility
-    templates.assignAll(templatesList.map((t) => TemplateModel(
-      id: t.id,
-      name: t.name,
-      primaryColor: '0x${t.themeColor.value.toRadixString(16)}',
-      backgroundColor: '0xFFFFFFFF',
-      textColor: '0xFF111827',
-      isActive: t.isActive,
-    )));
+    channelGroups.clear();
+    sessions.clear();
   }
 
   /// Syncs with remote Menu Builder API (V6 get_menu_builder_data)
@@ -382,12 +215,18 @@ class MenuThemeController extends GetxController {
               textColor: '0xFF111827',
               isActive: t.isActive,
             )));
+          } else {
+            templatesList.clear();
+            templates.clear();
           }
 
           // 2. Parse Channel Sessions
           final rawSessions = data['sessions'] as List? ?? [];
           if (rawSessions.isNotEmpty) {
             _mergeMenuBuilderSessions(rawSessions);
+          } else {
+            channelGroups.clear();
+            sessions.clear();
           }
         },
       );

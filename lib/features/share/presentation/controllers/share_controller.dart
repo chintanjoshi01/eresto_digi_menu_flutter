@@ -196,24 +196,38 @@ class ShareController extends GetxController {
   }
 
   void _setFallbackChannels() {
-    digitalChannels.assignAll([
-      DigitalMenuLinkModel(
-        name: 'Dine In',
-        slug: 'dine-in',
-        fullUrl: 'https://menu.eresto.in/trulyy-tadkaaz/dine-in',
-      ),
-      DigitalMenuLinkModel(
-        name: 'Ird',
-        slug: 'ird',
-        fullUrl: 'https://menu.eresto.in/trulyy-tadkaaz/ird',
-      ),
-      DigitalMenuLinkModel(
-        name: 'Takeaway',
-        slug: 'takeaway',
-        fullUrl: 'https://menu.eresto.in/trulyy-tadkaaz/takeaway',
-      ),
-    ]);
-    selectChannelByIndex(0, animate: false);
+    if (Get.isRegistered<MenuDashboardController>()) {
+      final raw = Get.find<MenuDashboardController>().rawData;
+      if (raw != null) {
+        final urls = raw.hero.menuUrls.isNotEmpty
+            ? raw.hero.menuUrls
+            : (raw.hero.menuUrl.isNotEmpty ? [raw.hero.menuUrl] : <String>[]);
+        if (urls.isNotEmpty) {
+          final parsed = <DigitalMenuLinkModel>[];
+          for (final u in urls) {
+            final clean = u.trim();
+            if (clean.isEmpty) continue;
+            final slug = clean.split('/').where((s) => s.isNotEmpty).last;
+            final label = slug.toLowerCase() == 'menu'
+                ? 'Main Menu'
+                : (slug.toLowerCase() == 'dine-in'
+                    ? 'Dine In'
+                    : (slug.toLowerCase() == 'ird' ? 'IRD' : slug.toUpperCase()));
+            parsed.add(DigitalMenuLinkModel(
+              name: label,
+              slug: slug,
+              fullUrl: clean,
+            ));
+          }
+          if (parsed.isNotEmpty) {
+            digitalChannels.assignAll(parsed);
+            selectChannelByIndex(0, animate: false);
+            return;
+          }
+        }
+      }
+    }
+    digitalChannels.clear();
   }
 
   void selectChannelByIndex(int index, {bool animate = true}) {
@@ -538,13 +552,27 @@ class ShareController extends GetxController {
         return mtc.templatesList;
       }
     }
-    return [
-      {'id': 1, 'name': 'Breakfast'},
-      {'id': 2, 'name': 'Main Menu'},
-      {'id': 3, 'name': 'Mid-Night'},
-      {'id': 4, 'name': 'HI-TEA'},
-      {'id': 5, 'name': 'Multi Menu'},
-    ];
+    if (Get.isRegistered<MenuDashboardController>()) {
+      final raw = Get.find<MenuDashboardController>().rawData;
+      if (raw != null && raw.allSessions.isNotEmpty) {
+        final seen = <int>{};
+        final fromSessions = <Map<String, dynamic>>[];
+        for (final s in raw.allSessions) {
+          if (s.menuTemplateId > 0 &&
+              s.menuTemplateName.trim().isNotEmpty &&
+              seen.add(s.menuTemplateId)) {
+            fromSessions.add({
+              'id': s.menuTemplateId,
+              'name': s.menuTemplateName.trim(),
+            });
+          }
+        }
+        if (fromSessions.isNotEmpty) {
+          return fromSessions;
+        }
+      }
+    }
+    return const [];
   }
 
   void selectTemplateForPdf(int id, {String? name}) {
@@ -584,10 +612,23 @@ class ShareController extends GetxController {
     isGeneratingPdf.value = false;
     isDownloadingPdfFile.value = false;
     _loadCachedProfileInfo();
+    if (Get.isRegistered<MenuThemeController>()) {
+      final mtc = Get.find<MenuThemeController>();
+      if (mtc.templatesList.isEmpty && !mtc.isLoading.value) {
+        mtc.fetchRemoteMenuData();
+      }
+    }
   }
 
   void nextPdfStep() {
     if (pdfCurrentStep.value == 0) {
+      final templates = getAvailableTemplates();
+      if (templates.isEmpty) {
+        showTemplateValidationError.value = true;
+        HapticFeedback.heavyImpact();
+        ToastService.showError("No Menu Template found for this restaurant");
+        return;
+      }
       if (selectedTemplateId.value <= 0) {
         showTemplateValidationError.value = true;
         HapticFeedback.heavyImpact();

@@ -637,6 +637,26 @@ class MenuScreen extends GetView<MenuThemeController> {
         return _buildShimmerSessions();
       }
 
+      if (groups.isEmpty) {
+        return Container(
+          padding: EdgeInsets.all(24.w),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14.r),
+            border: Border.all(color: const Color(0xFFE5E7EB), width: 1.w),
+          ),
+          child: Text(
+            "No sessions found",
+            style: GoogleFonts.poppins(
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
+        );
+      }
+
       return Column(
         children: groups.asMap().entries.map((entry) {
           final index = entry.key;
