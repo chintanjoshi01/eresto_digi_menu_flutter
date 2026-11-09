@@ -405,8 +405,8 @@ class ShareScreen extends GetView<ShareController> {
             iconBg: const Color(0xFFFDF2F8),
             iconColor: const Color(0xFFE1306C),
             title: "Share to Instagram",
-            subtitle: "Post your menu link in bio",
-            onTap: () => controller.shareToInstagram(),
+            subtitle: "Share QR image to Instagram Story or Post",
+            onTap: () => _showInstagramShareSheet(context),
           ),
           const Divider(height: 1, color: Color(0xFFF9FAFB)),
 
@@ -515,6 +515,163 @@ class ShareScreen extends GetView<ShareController> {
                   size: 18.sp,
                   color: const Color(0xFFD1D5DB),
                 ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showInstagramShareSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        return Container(
+          padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
+                Row(
+                  children: [
+                    Container(
+                      width: 38.w,
+                      height: 38.w,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFDF2F8),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.camera_alt_outlined,
+                        size: 20.sp,
+                        color: const Color(0xFFE1306C),
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Share QR to Instagram",
+                            style: GoogleFonts.poppins(
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF111827),
+                            ),
+                          ),
+                          Text(
+                            "Choose where to share your Menu QR code image",
+                            style: GoogleFonts.poppins(
+                              fontSize: 11.sp,
+                              color: const Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16.h),
+                _buildInstagramTargetOption(
+                  icon: Icons.auto_stories_outlined,
+                  title: "Instagram Story",
+                  subtitle: "Open Story editor with your Menu QR image",
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    controller.shareToInstagram(target: 'story');
+                  },
+                ),
+                SizedBox(height: 10.h),
+                _buildInstagramTargetOption(
+                  icon: Icons.grid_on_rounded,
+                  title: "Instagram Post",
+                  subtitle: "Open Feed Post editor with your Menu QR image",
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    controller.shareToInstagram(target: 'post');
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildInstagramTargetOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12.r),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9FAFB),
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36.w,
+              height: 36.w,
+              decoration: const BoxDecoration(
+                color: Color(0xFFFDF2F8),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 18.sp, color: const Color(0xFFE1306C)),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.poppins(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.poppins(
+                      fontSize: 10.5.sp,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18.sp,
+              color: const Color(0xFF9CA3AF),
+            ),
           ],
         ),
       ),

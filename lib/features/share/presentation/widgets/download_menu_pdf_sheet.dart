@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -371,12 +372,49 @@ class DownloadMenuPdfSheet extends StatelessWidget {
         ),
         SizedBox(height: 10.h),
 
-        _buildInputField(
-          label: "Contact Phone Number",
-          controller: controller.headerContactCtrl,
-          icon: Icons.phone_rounded,
-          keyboardType: TextInputType.phone,
-        ),
+        Obx(() {
+          final hasPhoneError = controller.showPhoneValidationError.value;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInputField(
+                label: "Contact Phone Number (10 digits)",
+                controller: controller.headerContactCtrl,
+                icon: Icons.phone_rounded,
+                keyboardType: TextInputType.phone,
+                hasError: hasPhoneError,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                onChanged: (val) {
+                  if (controller.showPhoneValidationError.value && val.trim().length == 10) {
+                    controller.showPhoneValidationError.value = false;
+                  }
+                },
+              ),
+              if (hasPhoneError) ...[
+                SizedBox(height: 5.h),
+                Row(
+                  children: [
+                    Icon(Icons.error_outline_rounded, size: 13.sp, color: const Color(0xFFEF4444)),
+                    SizedBox(width: 4.w),
+                    Expanded(
+                      child: Text(
+                        "Please enter a valid 10-digit phone number",
+                        style: GoogleFonts.poppins(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFFEF4444),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          );
+        }),
         _buildCheckboxRow(
           label: "Show contact phone on header",
           value: controller.showHeaderContact,
@@ -1104,21 +1142,36 @@ class DownloadMenuPdfSheet extends StatelessWidget {
     required TextEditingController controller,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    ValueChanged<String>? onChanged,
+    bool hasError = false,
   }) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: hasError ? const Color(0xFFEF4444) : const Color(0xFFE5E7EB),
+          width: hasError ? 1.5.w : 1.w,
+        ),
       ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        onChanged: onChanged,
         style: GoogleFonts.poppins(fontSize: 13.sp, color: const Color(0xFF111827)),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: GoogleFonts.poppins(fontSize: 11.sp, color: const Color(0xFF6B7280)),
-          prefixIcon: Icon(icon, color: const Color(0xFF9CA3AF), size: 18.sp),
+          labelStyle: GoogleFonts.poppins(
+            fontSize: 11.sp,
+            color: hasError ? const Color(0xFFEF4444) : const Color(0xFF6B7280),
+          ),
+          prefixIcon: Icon(
+            icon,
+            color: hasError ? const Color(0xFFEF4444) : const Color(0xFF9CA3AF),
+            size: 18.sp,
+          ),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
         ),

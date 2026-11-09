@@ -78,6 +78,45 @@ class MenuDashboardController extends GetxController
   V6DashboardData? get rawData => _rawData;
 
   static const List<String> _weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const List<String> _monthShortNames = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
+  static String _formatHourLabel(int hour24) {
+    final h = ((hour24 % 24) + 24) % 24;
+    if (h == 0) return '12am';
+    if (h < 12) return '${h}am';
+    if (h == 12) return '12pm';
+    return '${h - 12}pm';
+  }
+
+  /// Generates 6 chronological time labels for Today ending at 'Now'
+  /// so no future hour (like 12pm/3pm/6pm at 11am) ever appears before 'Now'.
+  static List<String> _buildTodayTimeLabels(DateTime now) {
+    final currentHour = now.hour;
+    if (currentHour >= 19) {
+      return const ['6am', '9am', '12pm', '3pm', '6pm', 'Now'];
+    }
+    if (currentHour >= 11) {
+      // Pick 5 evenly spaced past hours from 6am up to (currentHour - 1), plus 'Now'
+      final span = (currentHour - 1) - 6; // >= 4
+      final labels = <String>[];
+      for (int i = 0; i < 5; i++) {
+        final h = 6 + ((span * i) / 4).round();
+        labels.add(_formatHourLabel(h));
+      }
+      labels.add('Now');
+      return labels;
+    }
+    // Early morning (< 11am): 5 preceding 1-hour slots leading up to 'Now'
+    final labels = <String>[];
+    for (int i = 5; i >= 1; i--) {
+      labels.add(_formatHourLabel(currentHour - i));
+    }
+    labels.add('Now');
+    return labels;
+  }
 
   @override
   void onInit() {
@@ -430,120 +469,255 @@ class MenuDashboardController extends GetxController
       List<int> chartData = [];
       List<String> chartLabels = [];
 
+      // Helper to extract filtered scan count for a single daily scan entry
+      int extractDayScans(V6DailyScan day) {
+        if (menuFilter == 'all') return day.totalScans;
+        final normKey = menuFilter.toLowerCase();
+        return day.byMenu[normKey] ??
+            day.byMenu[normKey.replaceAll('_', '-')] ??
+            day.byMenu[normKey.replaceAll('-', '_')] ??
+            0;
+      }
+
+      String fmtDateKey(DateTime dt) =>
+          '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
+
+      // Build calendar-accurate lookup map from sparse dailyScans
+      final Map<String, int> scansByDate = {};
+      DateTime? latestScanDate;
+      for (final day in data.scanData.dailyScans) {
+        final parsed = DateTime.tryParse(day.date.trim());
+        if (parsed != null) {
+          final normalized = DateTime(parsed.year, parsed.month, parsed.day);
+          final key = fmtDateKey(normalized);
+          scansByDate[key] = (scansByDate[key] ?? 0) + extractDayScans(day);
+          if (latestScanDate == null || normalized.isAfter(latestScanDate)) {
+            latestScanDate = normalized;
+          }
+        }
+      }
+
+      // Resolve live today & yesterday scans for the active filter
+      int liveTodayScans = 0;
+      int liveYesterdayScans = 0;
+      if (menuFilter == 'all') {
+        liveTodayScans = data.hero.scansToday;
+        liveYesterdayScans = data.hero.scansYesterday;
+      } else {
+        final b = data.hero.breakdown.firstWhereOrNull((e) =>
+            e.sessionFor.toLowerCase() == menuFilter.toLowerCase() ||
+            e.sessionFor.replaceAll('-', '_').toLowerCase() ==
+                menuFilter.replaceAll('-', '_').toLowerCase());
+        liveTodayScans = b?.scansToday ?? 0;
+        liveYesterdayScans = b?.scansYesterday ?? 0;
+      }
+
+      // Determine reference end date for the calendar window
+      final parsedToDate = DateTime.tryParse(data.scanData.toDate.trim());
+      final rawEndDate = parsedToDate ?? latestScanDate ?? DateTime.now();
+      final endDate = DateTime(rawEndDate.year, rawEndDate.month, rawEndDate.day);
+
+      // Ensure today's live scan count is reflected on endDate if higher
+      final endKey = fmtDateKey(endDate);
+      if (liveTodayScans > (scansByDate[endKey] ?? 0)) {
+        scansByDate[endKey] = liveTodayScans;
+      }
+
+      // Helper to sum scans for any channel across a date range
+      int sumChannelForDays(String channelId, int startDaysAgo, int endDaysAgo) {
+        int sum = 0;
+        for (int i = startDaysAgo; i >= endDaysAgo; i--) {
+          final d = endDate.subtract(Duration(days: i));
+          final key = fmtDateKey(d);
+          if (i == 0 && channelId == 'all' && liveTodayScans > 0) {
+            // handled via dailyScans or liveTodayScans
+          }
+          for (final day in data.scanData.dailyScans) {
+            final parsed = DateTime.tryParse(day.date.trim());
+            if (parsed != null &&
+                parsed.year == d.year &&
+                parsed.month == d.month &&
+                parsed.day == d.day) {
+              if (channelId == 'all') {
+                sum += day.totalScans;
+              } else {
+                final norm = channelId.toLowerCase();
+                sum += day.byMenu[norm] ??
+                    day.byMenu[norm.replaceAll('_', '-')] ??
+                    day.byMenu[norm.replaceAll('-', '_')] ??
+                    0;
+              }
+            }
+          }
+          if (key == endKey) {
+            // If today's live scan count is greater than what's in dailyScans for today
+            int todayRecorded = 0;
+            for (final day in data.scanData.dailyScans) {
+              final parsed = DateTime.tryParse(day.date.trim());
+              if (parsed != null && fmtDateKey(parsed) == endKey) {
+                if (channelId == 'all') {
+                  todayRecorded += day.totalScans;
+                } else {
+                  final norm = channelId.toLowerCase();
+                  todayRecorded += day.byMenu[norm] ??
+                      day.byMenu[norm.replaceAll('_', '-')] ??
+                      day.byMenu[norm.replaceAll('-', '_')] ??
+                      0;
+                }
+              }
+            }
+            int liveChannelToday = 0;
+            if (channelId == 'all') {
+              liveChannelToday = data.hero.scansToday;
+            } else {
+              final b = data.hero.breakdown.firstWhereOrNull((e) =>
+                  e.sessionFor.toLowerCase() == channelId.toLowerCase() ||
+                  e.sessionFor.replaceAll('-', '_').toLowerCase() ==
+                      channelId.replaceAll('-', '_').toLowerCase());
+              liveChannelToday = b?.scansToday ?? 0;
+            }
+            if (liveChannelToday > todayRecorded) {
+              sum += (liveChannelToday - todayRecorded);
+            }
+          }
+        }
+        return sum;
+      }
+
+      // Update top menu filter tabs to reflect scan counts for the active period
+      final updatedServices = <MenuServiceStat>[];
+      int totalSessions = 0;
+      for (final b in data.hero.breakdown) {
+        totalSessions += b.sessionsCount;
+      }
+      if (totalSessions == 0) totalSessions = data.allSessions.length;
+
+      final periodDaysBack = period == 'week' ? 6 : (period == 'month' ? 29 : 0);
+      final allTabScans = period == 'today'
+          ? data.hero.scansToday
+          : sumChannelForDays('all', periodDaysBack, 0);
+
+      updatedServices.add(MenuServiceStat(
+        id: 'all',
+        name: 'All menus',
+        scansCount: allTabScans,
+        sessionsCount: totalSessions,
+      ));
+      for (final b in data.hero.breakdown) {
+        final chScans = period == 'today'
+            ? b.scansToday
+            : sumChannelForDays(b.sessionFor, periodDaysBack, 0);
+        updatedServices.add(MenuServiceStat(
+          id: b.sessionFor,
+          name: b.name,
+          scansCount: chScans,
+          sessionsCount: b.sessionsCount,
+        ));
+      }
+      menuServices.assignAll(updatedServices);
+
       // --- 1. Compute Analytics per period ---
       if (period == 'week') {
-        final dailyScans = data.scanData.dailyScans;
-        final recentDays = dailyScans.length > 7
-            ? dailyScans.sublist(dailyScans.length - 7)
-            : dailyScans;
-
         chartLabels = [];
         chartData = [];
         int weekSum = 0;
         int maxVal = 0;
-        String maxDay = "Fri";
+        String maxDay = _weekDays[endDate.weekday - 1];
 
-        for (final day in recentDays) {
-          final date = DateTime.tryParse(day.date);
-          final label = (date != null && date.weekday >= 1 && date.weekday <= 7)
-              ? _weekDays[date.weekday - 1]
-              : day.date;
+        // Generate the exact 7 consecutive calendar days ending on endDate
+        for (int i = 6; i >= 0; i--) {
+          final d = endDate.subtract(Duration(days: i));
+          final label = _weekDays[d.weekday - 1];
+          final scans = scansByDate[fmtDateKey(d)] ?? 0;
+
           chartLabels.add(label);
-
-          int scans;
-          if (menuFilter == 'all') {
-            scans = day.totalScans;
-          } else {
-            final normKey = menuFilter.toLowerCase();
-            scans = day.byMenu[normKey] ??
-                day.byMenu[normKey.replaceAll('_', '-')] ??
-                day.byMenu[normKey.replaceAll('-', '_')] ??
-                0;
-          }
-
           chartData.add(scans);
           weekSum += scans;
-          if (scans > maxVal) {
+          if (scans >= maxVal && scans > 0) {
             maxVal = scans;
             maxDay = label;
           }
         }
 
-        // If less than 7 days, pad with standard weekdays
-        if (chartData.length < 7) {
-          chartLabels = const ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-          if (recentDays.isEmpty) {
-            chartData = const [0, 0, 0, 0, 0, 0, 0];
-          } else {
-            while (chartData.length < 7) {
-              chartData.insert(0, 0);
-            }
-          }
-          weekSum = chartData.reduce((a, b) => a + b);
-          maxVal = chartData.reduce((a, b) => a > b ? a : b);
+        // Sum prior 7 calendar days (endDate - 13 .. endDate - 7) for true week-over-week comparison
+        int prevWeekSum = 0;
+        for (int i = 13; i >= 7; i--) {
+          final d = endDate.subtract(Duration(days: i));
+          prevWeekSum += scansByDate[fmtDateKey(d)] ?? 0;
         }
 
         totalScans = weekSum;
         peakScans = maxVal;
-        peakHour = maxVal > 0 ? "$maxDay 8 PM" : "—";
-        yesterdayScans = (weekSum * 0.82).round();
-        deltaPercent = yesterdayScans > 0
-            ? (((totalScans - yesterdayScans) / yesterdayScans) * 100).toDouble()
+        peakHour = maxVal > 0 ? maxDay : "—";
+        yesterdayScans = prevWeekSum;
+        deltaPercent = prevWeekSum > 0
+            ? (((totalScans - prevWeekSum) / prevWeekSum) * 100).toDouble()
             : (totalScans > 0 ? 100.0 : 0.0);
       } else if (period == 'month') {
-        chartLabels = const ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'];
-        final dailyScans = data.scanData.dailyScans;
+        chartLabels = [];
+        chartData = [0, 0, 0, 0];
 
-        if (dailyScans.isNotEmpty) {
-          // Chunk dailyScans into 4 weekly buckets
-          final chunkSize = (dailyScans.length / 4).ceil().clamp(1, dailyScans.length);
-          chartData = [];
-          for (int i = 0; i < 4; i++) {
-            final start = (i * chunkSize).clamp(0, dailyScans.length);
-            final end = ((i + 1) * chunkSize).clamp(0, dailyScans.length);
-            int sum = 0;
-            for (int j = start; j < end; j++) {
-              final d = dailyScans[j];
-              if (menuFilter == 'all') {
-                sum += d.totalScans;
-              } else {
-                final normKey = menuFilter.toLowerCase();
-                sum += d.byMenu[normKey] ??
-                    d.byMenu[normKey.replaceAll('_', '-')] ??
-                    d.byMenu[normKey.replaceAll('-', '_')] ??
-                    0;
-              }
-            }
-            chartData.add(sum);
+        // Bucket the 28-day (4 calendar weeks) window ending on endDate chronologically
+        // and label each point with its actual calendar week start-date (e.g. "13 Oct", "20 Oct")
+        for (int w = 0; w < 4; w++) {
+          int bucketSum = 0;
+          final startOffset = (3 - w) * 7 + 6;
+          final endOffset = (3 - w) * 7;
+          final bucketStartDate = endDate.subtract(Duration(days: startOffset));
+          final bucketEndDate = endDate.subtract(Duration(days: endOffset));
+          final startMonth = _monthShortNames[bucketStartDate.month - 1];
+          final endMonth = _monthShortNames[bucketEndDate.month - 1];
+          final weekLabel = bucketStartDate.month == bucketEndDate.month
+              ? '${bucketStartDate.day}–${bucketEndDate.day} $startMonth'
+              : '${bucketStartDate.day} $startMonth–${bucketEndDate.day} $endMonth';
+          chartLabels.add(weekLabel);
+
+          for (int dayOffset = startOffset; dayOffset >= endOffset; dayOffset--) {
+            final d = endDate.subtract(Duration(days: dayOffset));
+            bucketSum += scansByDate[fmtDateKey(d)] ?? 0;
           }
-        } else {
-          chartData = const [0, 0, 0, 0];
+          chartData[w] = bucketSum;
+        }
+
+        // Include any scans older than 28 days (e.g. day 28..30 in a 30-day API window) into bucket 0
+        final parsedFromDate = DateTime.tryParse(data.scanData.fromDate.trim());
+        if (parsedFromDate != null) {
+          final startDate = DateTime(parsedFromDate.year, parsedFromDate.month, parsedFromDate.day);
+          final oldestBucketStart = endDate.subtract(const Duration(days: 27));
+          if (startDate.isBefore(oldestBucketStart)) {
+            final firstBucketEnd = endDate.subtract(const Duration(days: 21));
+            final sMonth = _monthShortNames[startDate.month - 1];
+            final eMonth = _monthShortNames[firstBucketEnd.month - 1];
+            chartLabels[0] = startDate.month == firstBucketEnd.month
+                ? '${startDate.day}–${firstBucketEnd.day} $sMonth'
+                : '${startDate.day} $sMonth–${firstBucketEnd.day} $eMonth';
+            for (DateTime d = startDate;
+                d.isBefore(oldestBucketStart);
+                d = d.add(const Duration(days: 1))) {
+              chartData[0] += scansByDate[fmtDateKey(d)] ?? 0;
+            }
+          }
         }
 
         totalScans = chartData.reduce((a, b) => a + b);
         peakScans = chartData.reduce((a, b) => a > b ? a : b);
         int maxWkIdx = 0;
         for (int i = 0; i < chartData.length; i++) {
-          if (chartData[i] == peakScans) maxWkIdx = i;
+          if (chartData[i] == peakScans && peakScans > 0) maxWkIdx = i;
         }
-        peakHour = peakScans > 0 ? "Week ${maxWkIdx + 1}" : "—";
-        yesterdayScans = (totalScans * 0.75).round();
-        deltaPercent = yesterdayScans > 0
-            ? (((totalScans - yesterdayScans) / yesterdayScans) * 100).toDouble()
+        peakHour = peakScans > 0 ? chartLabels[maxWkIdx] : "—";
+        final prevWeek = chartData[2];
+        final currWeek = chartData[3];
+        yesterdayScans = prevWeek;
+        deltaPercent = prevWeek > 0
+            ? (((currWeek - prevWeek) / prevWeek) * 100).toDouble()
             : (totalScans > 0 ? 100.0 : 0.0);
       } else {
-        // 'today'
-        chartLabels = const ['6am', '9am', '12pm', '3pm', '6pm', 'Now'];
-        if (menuFilter == 'all') {
-          totalScans = data.hero.scansToday;
-          yesterdayScans = data.hero.scansYesterday;
-        } else {
-          final b = data.hero.breakdown.firstWhereOrNull((e) =>
-              e.sessionFor.toLowerCase() == menuFilter.toLowerCase() ||
-              e.sessionFor.replaceAll('-', '_').toLowerCase() == menuFilter.replaceAll('-', '_').toLowerCase());
-          totalScans = b?.scansToday ?? 0;
-          yesterdayScans = b?.scansYesterday ?? 0;
-        }
+        // 'today' — dynamic time labels up to current hour so no future hour appears before 'Now'
+        final now = DateTime.now();
+        chartLabels = _buildTodayTimeLabels(now);
+        totalScans = liveTodayScans;
+        yesterdayScans = liveYesterdayScans;
 
         if (totalScans > 0) {
           chartData = [
@@ -554,8 +728,8 @@ class MenuDashboardController extends GetxController
             (totalScans * 0.58).round(),
             totalScans,
           ];
-          peakHour = "6–7 PM";
-          peakScans = (totalScans * 0.15).round().clamp(1, totalScans);
+          peakHour = "Now";
+          peakScans = totalScans;
         } else {
           chartData = const [0, 0, 0, 0, 0, 0];
           peakHour = "—";

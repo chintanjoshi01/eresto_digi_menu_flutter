@@ -65,6 +65,7 @@ class ShareController extends GetxController {
   final selectedTemplateId = 0.obs; // 0 = unselected ("Select Menu Template")
   final selectedTemplateName = ''.obs;
   final showTemplateValidationError = false.obs;
+  final showPhoneValidationError = false.obs;
 
   // Step 1: Header Fields (Populated dynamically from authenticated restaurant info)
   final headerNameCtrl = TextEditingController();
@@ -153,8 +154,14 @@ class ShareController extends GetxController {
       headerNameCtrl.text = resolvedName;
     }
     if (resolvedContact.isNotEmpty) {
-      headerContactCtrl.text = resolvedContact;
-      showHeaderContact.value = true;
+      String digitsOnly = resolvedContact.replaceAll(RegExp(r'\D'), '');
+      if (digitsOnly.length > 10 && digitsOnly.startsWith('91')) {
+        digitsOnly = digitsOnly.substring(digitsOnly.length - 10);
+      } else if (digitsOnly.length > 10) {
+        digitsOnly = digitsOnly.substring(0, 10);
+      }
+      headerContactCtrl.text = digitsOnly;
+      showHeaderContact.value = digitsOnly.length == 10;
     }
     if (resolvedAddress.isNotEmpty) {
       headerAddressCtrl.text = resolvedAddress;
@@ -330,19 +337,66 @@ class ShareController extends GetxController {
     }
   }
 
-  Future<void> shareToInstagram() async {
-    HapticFeedback.lightImpact();
-    Clipboard.setData(ClipboardData(text: qrUrl.value));
-    ToastService.showSuccess("Menu link copied! Paste it into your Instagram bio.");
+  static const MethodChannel _socialShareChannel =
+      MethodChannel('in.eresto.digimenu/social_share');
 
-    final igAppUri = Uri.parse("instagram://app");
+  Future<void> shareToInstagram({String target = 'story'}) async {
+    HapticFeedback.lightImpact();
+    final url = qrUrl.value.trim();
+    final caption = url.isNotEmpty
+        ? "Scan this QR code to view our digital menu:\n$url"
+        : "Scan this QR code to view our digital menu";
+
+    if (url.isNotEmpty) {
+      await Clipboard.setData(ClipboardData(text: url));
+    }
+
     try {
-      if (await canLaunchUrl(igAppUri)) {
-        await launchUrl(igAppUri, mode: LaunchMode.externalApplication);
+      final activeKey = getQrKey(activeChannelIndex.value);
+      final imageBytes = await captureQrPng(activeKey);
+
+      if (imageBytes != null) {
+        final tempDir = await getTemporaryDirectory();
+        final file = File('${tempDir.path}/eresto_menu_qr.png');
+        await file.writeAsBytes(imageBytes, flush: true);
+
+        ToastService.showSuccess(
+          target == 'post'
+              ? "Opening Instagram Post with QR image (link copied!)"
+              : "Opening Instagram Story with QR image (link copied!)",
+        );
+
+        if (Platform.isAndroid) {
+          try {
+            final shared = await _socialShareChannel.invokeMethod<bool>(
+              'shareToInstagram',
+              {
+                'filePath': file.path,
+                'target': target,
+                'caption': caption,
+                'url': url,
+              },
+            );
+            if (shared == true) return;
+          } catch (_) {
+            // Fallback to system file share below
+          }
+        }
+
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: caption,
+        );
+        return;
       }
     } catch (_) {
-      // Ignored
+      // Fallback below
     }
+
+    // Fallback if QR widget could not be captured
+    try {
+      await Share.share(caption);
+    } catch (_) {}
   }
 
   // --------------------------------------------------------------------------
@@ -607,6 +661,7 @@ class ShareController extends GetxController {
     selectedTemplateId.value = 0;
     selectedTemplateName.value = '';
     showTemplateValidationError.value = false;
+    showPhoneValidationError.value = false;
     generatedPdfResponse.value = null;
     downloadedLocalPdfFile.value = null;
     isGeneratingPdf.value = false;
@@ -636,6 +691,19 @@ class ShareController extends GetxController {
         return;
       }
       showTemplateValidationError.value = false;
+
+      // Validate 10-digit Contact Phone Number when entered or enabled for header
+      final rawPhone = headerContactCtrl.text.trim();
+      final digitsOnly = rawPhone.replaceAll(RegExp(r'\D'), '');
+      if (rawPhone.isNotEmpty || showHeaderContact.value) {
+        if (digitsOnly.length != 10) {
+          showPhoneValidationError.value = true;
+          HapticFeedback.heavyImpact();
+          ToastService.showError("Please enter a valid 10-digit phone number");
+          return;
+        }
+      }
+      showPhoneValidationError.value = false;
     }
     if (pdfCurrentStep.value < 2) {
       HapticFeedback.selectionClick();

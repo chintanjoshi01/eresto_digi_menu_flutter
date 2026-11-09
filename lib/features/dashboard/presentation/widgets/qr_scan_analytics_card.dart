@@ -45,11 +45,12 @@ class QrScanAnalyticsCard extends StatelessWidget {
     int maxVal = 0;
     int maxIdx = 0;
     for (int i = 0; i < chartData.length; i++) {
-      if (chartData[i] > maxVal) {
+      if (chartData[i] >= maxVal && chartData[i] > 0) {
         maxVal = chartData[i];
         maxIdx = i;
       }
     }
+    final effectivePeak = maxVal > 0 ? maxVal : peakScans;
 
     return Container(
       margin: margin,
@@ -164,12 +165,15 @@ class QrScanAnalyticsCard extends StatelessWidget {
           ),
           SizedBox(height: 8.h),
 
-          // 3. Main Metric readout (247 + ↑ 18% vs yesterday)
+          // 3. Main Metric readout (247 + ↑ 18% vs yesterday/last week)
           Builder(
             builder: (context) {
               final isPositive = deltaPercent >= 0;
               final deltaColor = isPositive ? const Color(0xFF16A34A) : const Color(0xFFDC2626);
               final deltaIcon = isPositive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+              final comparisonSuffix = activePeriod == 'week'
+                  ? 'vs last week'
+                  : (activePeriod == 'month' ? 'vs prev. week' : 'vs yesterday');
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +193,7 @@ class QrScanAnalyticsCard extends StatelessWidget {
                       Icon(deltaIcon, size: 11.sp, color: deltaColor),
                       SizedBox(width: 2.w),
                       Text(
-                        "${deltaPercent.abs().toInt()}% vs yesterday",
+                        "${deltaPercent.abs().toInt()}% $comparisonSuffix",
                         style: GoogleFonts.poppins(
                           fontSize: 10.5.sp,
                           fontWeight: FontWeight.w500,
@@ -202,134 +206,202 @@ class QrScanAnalyticsCard extends StatelessWidget {
               );
             },
           ),
-          SizedBox(height: 12.h),
+          SizedBox(height: 10.h),
 
-          // 4. Cubic Curve Chart with Floating Tooltip Box (Peak - 38)
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              SizedBox(
-                height: 94.h,
-                child: LineChart(
-                  LineChartData(
-                    gridData: const FlGridData(show: false),
-                    titlesData: FlTitlesData(
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 18,
-                          interval: 1.0,
-                          getTitlesWidget: (value, meta) {
-                            final idx = value.toInt();
-                            if (idx >= 0 && idx < chartLabels.length) {
-                              final isNow = chartLabels[idx].toLowerCase() == 'now';
-                              return Padding(
-                                padding: EdgeInsets.only(top: 4.h),
-                                child: Text(
-                                  chartLabels[idx],
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 8.5.sp,
-                                    color: isNow ? AppColors.primary : const Color(0xFF9CA3AF),
-                                    fontWeight: isNow ? FontWeight.w600 : FontWeight.w400,
-                                  ),
+          // 4. Cubic Curve Chart with Dynamically Aligned Peak Callout & Bottom X-Axis Labels
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final chartHorizontalPad = 8.w;
+              final chartTopPad = 24.h;
+              final chartPlotHeight = 68.h;
+              final labelAreaHeight = 22.h;
+              final totalStackHeight = chartTopPad + chartPlotHeight + labelAreaHeight;
+              final plotWidth = (constraints.maxWidth - (chartHorizontalPad * 2)).clamp(1.0, double.infinity);
+              final count = chartData.length;
+              final fractionX = count > 1 ? (maxIdx / (count - 1)).clamp(0.0, 1.0) : 0.5;
+              final peakCenterX = chartHorizontalPad + (fractionX * plotWidth);
+              final badgeEstimatedWidth = 58.w;
+              final badgeLeft = (peakCenterX - (badgeEstimatedWidth / 2))
+                  .clamp(chartHorizontalPad, (constraints.maxWidth - badgeEstimatedWidth - chartHorizontalPad).clamp(chartHorizontalPad, double.infinity));
+
+              return SizedBox(
+                height: totalStackHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // Subtle horizontal reference grid lines matching prototype HTML
+                    Positioned(
+                      left: chartHorizontalPad,
+                      right: chartHorizontalPad,
+                      top: chartTopPad + (chartPlotHeight * 0.35),
+                      child: Container(height: 1, color: const Color(0xFFF9FAFB)),
+                    ),
+                    Positioned(
+                      left: chartHorizontalPad,
+                      right: chartHorizontalPad,
+                      top: chartTopPad + (chartPlotHeight * 0.70),
+                      child: Container(height: 1, color: const Color(0xFFF9FAFB)),
+                    ),
+
+                    // Main LineChart Plot Area (without fl_chart bottom titles so edge labels never overhang)
+                    Positioned(
+                      left: chartHorizontalPad,
+                      right: chartHorizontalPad,
+                      top: chartTopPad,
+                      height: chartPlotHeight,
+                      child: LineChart(
+                        LineChartData(
+                          gridData: const FlGridData(show: false),
+                          titlesData: const FlTitlesData(
+                            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                            bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          minX: 0,
+                          maxX: (chartData.isNotEmpty ? (chartData.length - 1) : 0).toDouble(),
+                          minY: 0,
+                          maxY: (maxVal > 0 ? maxVal * 1.18 : 10).toDouble(),
+                          lineBarsData: [
+                            LineChartBarData(
+                              spots: List.generate(
+                                chartData.length,
+                                (i) => FlSpot(i.toDouble(), chartData[i].toDouble()),
+                              ),
+                              isCurved: true,
+                              curveSmoothness: 0.32,
+                              preventCurveOverShooting: true,
+                              color: AppColors.primary,
+                              barWidth: 2.4.w,
+                              isStrokeCapRound: true,
+                              dotData: FlDotData(
+                                show: true,
+                                getDotPainter: (spot, percent, barData, index) {
+                                  if (maxVal > 0 && index == maxIdx) {
+                                    return FlDotCirclePainter(
+                                      radius: 4.r,
+                                      color: Colors.white,
+                                      strokeWidth: 2.w,
+                                      strokeColor: const Color(0xFFC1272D),
+                                    );
+                                  }
+                                  if (maxVal > 0 && index == chartData.length - 1) {
+                                    return FlDotCirclePainter(
+                                      radius: 3.5.r,
+                                      color: Colors.white,
+                                      strokeWidth: 1.8.w,
+                                      strokeColor: const Color(0xFFC1272D),
+                                    );
+                                  }
+                                  return FlDotCirclePainter(
+                                    radius: 0,
+                                    color: Colors.transparent,
+                                    strokeWidth: 0,
+                                  );
+                                },
+                              ),
+                              belowBarData: BarAreaData(
+                                show: true,
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    const Color(0xFFC1272D).withOpacity(0.12),
+                                    const Color(0xFFC1272D).withOpacity(0.0),
+                                  ],
                                 ),
-                              );
-                            }
-                            return const SizedBox.shrink();
-                          },
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
-                    borderData: FlBorderData(show: false),
-                    minX: 0,
-                    maxX: (chartData.isNotEmpty ? (chartData.length - 1) : 0).toDouble(),
-                    minY: 0,
-                    maxY: (maxVal > 0 ? maxVal * 1.3 : 10).toDouble(),
-                    lineBarsData: [
-                      LineChartBarData(
-                        spots: List.generate(
-                          chartData.length,
-                          (i) => FlSpot(i.toDouble(), chartData[i].toDouble()),
-                        ),
-                        isCurved: true,
-                        curveSmoothness: 0.35,
-                        color: AppColors.primary,
-                        barWidth: 2.4.w,
-                        isStrokeCapRound: true,
-                        dotData: FlDotData(
-                          show: true,
-                          getDotPainter: (spot, percent, barData, index) {
-                            if (maxVal > 0 && index == maxIdx) {
-                              return FlDotCirclePainter(
-                                radius: 4.r,
-                                color: Colors.white,
-                                strokeWidth: 2.w,
-                                strokeColor: const Color(0xFFC1272D),
-                              );
-                            }
-                            if (maxVal > 0 && index == chartData.length - 1) {
-                              return FlDotCirclePainter(
-                                radius: 3.5.r,
-                                color: Colors.white,
-                                strokeWidth: 1.8.w,
-                                strokeColor: const Color(0xFFC1272D),
-                              );
-                            }
-                            return FlDotCirclePainter(
-                              radius: 0,
-                              color: Colors.transparent,
-                              strokeWidth: 0,
-                            );
-                          },
-                        ),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              const Color(0xFFC1272D).withOpacity(0.12),
-                              const Color(0xFFC1272D).withOpacity(0.0),
+
+                    // Floating Peak Tooltip Callout Box (Centered above maxIdx)
+                    if (effectivePeak > 0)
+                      Positioned(
+                        left: badgeLeft,
+                        top: 2.h,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.5.h),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFC1272D),
+                            borderRadius: BorderRadius.circular(4.r),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFC1272D).withOpacity(0.25),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              ),
                             ],
+                          ),
+                          child: Text(
+                            "Peak · $effectivePeak",
+                            style: GoogleFonts.poppins(
+                              color: Colors.white,
+                              fontSize: 8.5.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-              // Floating Peak Tooltip Callout Box (Peak · 38)
-              if (peakScans > 0)
-                Positioned(
-                  right: 36.w,
-                  top: 2.h,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 2.5.h),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFC1272D),
-                      borderRadius: BorderRadius.circular(4.r),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFC1272D).withOpacity(0.25),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      "Peak · $peakScans",
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontSize: 8.5.sp,
-                        fontWeight: FontWeight.w500,
+
+                    // Bottom X-Axis Labels aligned with exact data point X positions
+                    // First label is left-aligned with x=0, last label is right-aligned with x=maxX,
+                    // and intermediate labels are centered on their exact data point X coordinate.
+                    for (int i = 0; i < chartLabels.length; i++)
+                      Builder(
+                        builder: (context) {
+                          final label = chartLabels[i];
+                          final isHighlighted = label.toLowerCase() == 'now' ||
+                              (i == chartLabels.length - 1);
+                          final textWidget = Text(
+                            label,
+                            maxLines: 1,
+                            style: GoogleFonts.poppins(
+                              fontSize: activePeriod == 'month' ? 8.sp : 8.5.sp,
+                              color: isHighlighted
+                                  ? AppColors.primary
+                                  : const Color(0xFF9CA3AF),
+                              fontWeight: isHighlighted
+                                  ? FontWeight.w600
+                                  : FontWeight.w500,
+                            ),
+                          );
+
+                          final labelTop = chartTopPad + chartPlotHeight + 6.h;
+                          if (i == 0) {
+                            return Positioned(
+                              left: chartHorizontalPad,
+                              top: labelTop,
+                              child: textWidget,
+                            );
+                          }
+                          if (i == chartLabels.length - 1) {
+                            return Positioned(
+                              right: chartHorizontalPad,
+                              top: labelTop,
+                              child: textWidget,
+                            );
+                          }
+                          final pointX = chartHorizontalPad +
+                              (chartLabels.length > 1
+                                  ? (i / (chartLabels.length - 1)) * plotWidth
+                                  : plotWidth / 2);
+                          final slotWidth = plotWidth / (chartLabels.length - 1);
+                          return Positioned(
+                            left: pointX - (slotWidth / 2),
+                            width: slotWidth,
+                            top: labelTop,
+                            child: Center(child: textWidget),
+                          );
+                        },
                       ),
-                    ),
-                  ),
+                  ],
                 ),
-            ],
+              );
+            },
           ),
         ],
       ),
