@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- eresto digiMenu: adaptive icon foreground. 108 dp canvas, glyph inside the 66 dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.140625"
+        android:scaleY="0.140625"
+        android:translateX="18"
+        android:translateY="18">
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="28"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M160,140h52a20,20 0 0,1 20,20v52a20,20 0 0,1 -20,20h-52a20,20 0 0,1 -20,-20v-52a20,20 0 0,1 20,-20z" />
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="28"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:pathData="M290,152H372M290,220H336M140,300H372M140,372H296" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M178,170h16a8,8 0 0,1 8,8v16a8,8 0 0,1 -8,8h-16a8,8 0 0,1 -8,-8v-16a8,8 0 0,1 8,-8z" />
+    </group>
+</vector>

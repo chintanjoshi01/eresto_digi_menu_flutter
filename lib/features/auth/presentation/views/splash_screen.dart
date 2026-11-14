@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/storage/storage_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -33,13 +34,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   void initState() {
     super.initState();
 
-    // Set immersive status bar matching light background #F9F9F9
+    // Set immersive status bar matching background
+    final isDark = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
     SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
+      SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        systemNavigationBarColor: AppColors.lightBackground,
-        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarColor: isDark ? const Color(0xFF121212) : AppColors.lightBackground,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       ),
     );
 
@@ -135,8 +137,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF121212) : AppColors.lightBackground;
+
     return Scaffold(
-      backgroundColor: AppColors.lightBackground,
+      backgroundColor: bgColor,
       body: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: _navigateToNext,
@@ -161,15 +166,59 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         scale: _pulseAnimation.value,
                         child: child,
                       ),
-                      child: Image.asset(
-                        'assets/images/eresto-pos-logo.png',
-                        height: 64.h,
-                        fit: BoxFit.contain,
+                      child: Container(
+                        width: 84.w,
+                        height: 84.w,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20.r),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primary.withOpacity(0.22),
+                              blurRadius: 18,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20.r),
+                          child: Image.asset(
+                            'assets/images/app_icon.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ),
-                SizedBox(height: 24.h),
+                SizedBox(height: 16.h),
+
+                // 2. Official Brand Title Lockup
+                FadeTransition(
+                  opacity: _logoFadeAnimation,
+                  child: Text.rich(
+                    TextSpan(
+                      children: [
+                        TextSpan(
+                          text: "eresto ",
+                          style: GoogleFonts.poppins(
+                            fontSize: 23.sp,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? Colors.white : const Color(0xFF1F2937),
+                          ),
+                        ),
+                        TextSpan(
+                          text: "DigiMenu",
+                          style: GoogleFonts.poppins(
+                            fontSize: 23.sp,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.h),
 
                 // 3. Animated Brand Taglines
                 FadeTransition(
@@ -182,6 +231,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         style: AppTypography.taglinePrimary.copyWith(
                           fontSize: 15.sp,
                           letterSpacing: 0.3,
+                          color: isDark ? Colors.white : AppColors.charcoalGray,
                         ),
                       ),
                       SizedBox(height: 6.h),
@@ -191,6 +241,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         style: AppTypography.taglineSequence.copyWith(
                           fontSize: 10.sp,
                           letterSpacing: 2.2,
+                          color: isDark ? const Color(0xFF9CA3AF) : AppColors.coolGray,
                         ),
                       ),
                     ],
