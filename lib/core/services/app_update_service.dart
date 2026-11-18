@@ -40,26 +40,29 @@ class AppUpdateService {
     final marketUri = Uri.parse('$marketUriPrefix$pkg');
     final webUri = Uri.parse('$webPlayStorePrefix$pkg');
 
+    HapticFeedback.mediumImpact();
+
+    // 1. Open the native Google Play Store app directly on the app's listing.
+    //    launchUrl is attempted directly (not gated by canLaunchUrl), because
+    //    canLaunchUrl can return false on Android 11+ package-visibility rules.
     try {
-      HapticFeedback.mediumImpact();
-      if (await canLaunchUrl(marketUri)) {
-        final launched = await launchUrl(
-          marketUri,
-          mode: LaunchMode.externalApplication,
-        );
-        if (launched) return true;
-      }
+      final launched = await launchUrl(
+        marketUri,
+        mode: LaunchMode.externalNonBrowserApplication,
+      );
+      if (launched) return true;
     } catch (_) {
-      // Ignore and fallback to web browser URL
+      // Play Store app not available — fall back to the web listing.
     }
 
+    // 2. Fallback: Play Store web listing (opens Play Store app if it claims
+    //    play.google.com links, otherwise the browser).
     try {
-      if (await canLaunchUrl(webUri)) {
-        return await launchUrl(
-          webUri,
-          mode: LaunchMode.externalApplication,
-        );
-      }
+      final launched = await launchUrl(
+        webUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (launched) return true;
     } catch (e) {
       Get.log("Failed to launch Google Play Store URL: $e", isError: true);
     }

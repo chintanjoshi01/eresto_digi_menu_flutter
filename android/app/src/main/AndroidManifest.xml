@@ -51,6 +51,12 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:scheme="http" />
         </intent>
+        <!-- Google Play Store app + market:// deep links (App Update redirect) on Android 11+ -->
+        <package android:name="com.android.vending" />
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="market" />
+        </intent>
         <!-- WhatsApp & Instagram package/scheme queries for sharing on Android 11+ -->
         <package android:name="com.whatsapp" />
         <package android:name="com.whatsapp.w4b" />
